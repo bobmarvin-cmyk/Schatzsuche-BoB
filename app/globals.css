@@ -7,3 +7,13 @@ input,button,select{font:inherit}.input{width:100%;padding:11px 12px;border-radi
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}.muted{color:var(--muted)}.topnav{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
 .card{background:var(--panel2);border-radius:12px;padding:14px;border:1px solid #293956}.stat{font-size:26px;font-weight:800}.small{font-size:12px;color:var(--muted)}
 canvas{display:block;background:#07101c;border-radius:10px;image-rendering:pixelated}.mapwrap{overflow:auto;max-height:70vh;border:1px solid #22324d;border-radius:12px}
+
+.gameLayout{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:16px;align-items:start}
+.branchTabs{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}
+.branchTab{border:1px solid #32425e;background:#17243a;color:#dce4f1;border-radius:8px;padding:7px 9px;font-weight:700;cursor:pointer}
+.branchTab.active{background:#efb94f;color:#172033}
+.techList{display:flex;flex-direction:column;gap:9px;max-height:72vh;overflow:auto}
+.techCard{border:1px solid #33425b;border-radius:11px;padding:10px;background:#1c2536}
+.techCard.available{background:#17364d;border-color:#4f91c7}.techCard.bought{background:#173b30;border-color:#3dbb83}.techCard.locked{opacity:.45}
+.techBottom{display:flex;justify-content:space-between;align-items:center;margin-top:8px}.techBottom button:disabled{opacity:.4}
+@media(max-width:1100px){.gameLayout{grid-template-columns:1fr}}
