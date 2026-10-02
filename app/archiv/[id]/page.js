@@ -58,6 +58,18 @@ export default function ArchivedGame(){
    <ArchiveMap archive={archive} fields={fields}/>
   </section>
 
+  {archive.game_type==='pay'&&<section className="panel">
+   <h2>✨ Goldstaub-Verteilung</h2>
+   <p className="small">Auszahlung der gefundenen Test-Gold-Schatzteile in diesem Spiel. Insgesamt an Spieler ausgezahlt: <strong>✨ {(players.reduce((sum,p)=>sum+Number(p.gold_received_ug||0),0)/1000000).toFixed(6)} g</strong>.</p>
+   <div className="archivePlayerList">
+    {players.map(p=><div className="card archivePlayer" key={'gold-'+p.user_id}>
+      <div className="playerNameLine"><span className="colorDot large" style={{background:p.player_color||'#35516d'}}></span><strong>{p.display_name||'Spieler'}</strong></div>
+      <div className="stat">✨ {(Number(p.gold_received_ug||0)/1000000).toFixed(6)} g</div>
+      <div className="small">{(Number(p.treasure_share_bps||0)/100).toFixed(2)} % Schatzanteil · {Number(p.treasure_parts_found||0)} Teile</div>
+    </div>)}
+   </div>
+  </section>}
+
   <section className="panel">
    <h2>Endstand</h2>
    <div className="archivePlayerList">

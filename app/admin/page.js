@@ -166,9 +166,9 @@ export default function Admin(){
    <h2>🎁 Karten-Gimmicks</h2>
    <p className="small">Steuert, wie häufig Überraschungsfelder bei der Spielerstellung gewählt werden dürfen und wie stark ihre Effekte sind.</p>
    <div className="adminGrid">
-    <Field label="Min. Gimmicks (%)" step="0.1" value={settings.min_gimmick_percent} onChange={v=>setSetting('min_gimmick_percent',v)}/>
-    <Field label="Max. Gimmicks (%)" step="0.1" value={settings.max_gimmick_percent} onChange={v=>setSetting('max_gimmick_percent',v)}/>
-    <Field label="Standard Gimmicks (%)" step="0.1" value={settings.default_gimmick_percent} onChange={v=>setSetting('default_gimmick_percent',v)}/>
+    <Field label="Min. Gimmicks (%)" step="0.01" value={settings.min_gimmick_percent} onChange={v=>setSetting('min_gimmick_percent',v)}/>
+    <Field label="Max. Gimmicks (%)" step="0.01" value={settings.max_gimmick_percent} onChange={v=>setSetting('max_gimmick_percent',v)}/>
+    <Field label="Standard Gimmicks (%)" step="0.01" value={settings.default_gimmick_percent} onChange={v=>setSetting('default_gimmick_percent',v)}/>
     <Field label="Taler-Kiste Bonus" step="0.1" value={settings.gimmick_taler_bonus} onChange={v=>setSetting('gimmick_taler_bonus',v)}/>
     <Field label="Extra-Züge pro Fund" value={settings.gimmick_move_bonus} onChange={v=>setSetting('gimmick_move_bonus',v)}/>
     <Field label="Scanner-Bonus nächster manueller Zug" value={settings.gimmick_reveal_bonus} onChange={v=>setSetting('gimmick_reveal_bonus',v)}/>

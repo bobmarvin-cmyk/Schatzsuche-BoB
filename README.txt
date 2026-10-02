@@ -1,109 +1,120 @@
-SCHATZSUCHE ONLINE V6.11
+SCHATZSUCHE ONLINE V6.12
 
-DIESE VERSION BEHEBT ZWEI KONKRETE FEHLER UND ERWEITERT DAS GAMEPLAY.
+1. GIMMICK-MINIINFO IM SPIEL
+Oben in der kompakten Spielanzeige steht jetzt z. B.:
+  0,10 % · 37 / 1.000
+  Gimmicks
 
-1. PAYGAME-FEHLER „UPDATE requires a WHERE clause“
-Ursache war die Community-Ausschüttung, die absichtlich alle vorhandenen Test-Wallets
-aktualisiert hatte. Supabase Safe Update blockiert ein UPDATE ohne WHERE.
+Bedeutung:
+- 0,10 % = eingestellte Dichte
+- 37 = bisher gefundene Gimmicks
+- 1.000 = für dieses Spiel geplante Gesamtzahl
 
-V6.11:
-- explizite WHERE-Bedingung
-- Paygame-Erstellung und Community-Verteilung funktionieren mit Safe Update
+Die geplante Gesamtzahl wird bei Spielstart aus Kartenfeldern × Gimmickdichte berechnet.
 
-2. MASCHINEN-TIMEOUT
-Fehler:
-  Maschinen: canceling statement due to statement timeout
+2. GIMMICK-POPUP
+Das Popup schließt sich automatisch nach 1,5 Sekunden.
+Man kann es weiterhin vorher anklicken.
 
-V6.11 erzeugt keine unkontrolliert großen Suchquadrate mehr.
-Pro Maschinentakt gibt es eine harte Obergrenze von 12.000 Kandidaten.
+3. GIMMICKDICHTE
+Die Spielerstellung arbeitet jetzt in 0,01-%-Schritten.
 
-Zwei Suchmodi sind jetzt im laufenden Spiel wählbar:
-- 📍 Letzte Suche
-  Maschinen arbeiten um den letzten manuellen Kartenklick.
-- 🎲 Zufällig
-  Maschinen wählen Kandidaten verteilt über die ganze Spielkarte.
+Beispiele:
+  0,01 %
+  0,05 %
+  0,10 %
+  0,25 %
 
-Beide Modi:
-- nur solange das jeweilige Spiel sichtbar/fokussiert geöffnet ist
-- kein Offline-Farming
-- keine nachträgliche Aufholung verpasster Takte
-- Timer wird nach jedem fälligen Maschinentakt sauber neu gestartet
+Bei Karten ab 100.000 Feldern und einer Dichte über 0,10 % erscheint vor dem Erstellen
+eine Warnung, weil sehr viele Überraschungen den Spielfluss beeinträchtigen können.
 
-3. KARTEN-GIMMICKS
-Bei der Spielerstellung kann der Host einen Prozentsatz für Überraschungsfelder wählen.
+Min/Max/Standard bleiben über die Schaltzentrale steuerbar.
+Die Eingabegenauigkeit dort wurde ebenfalls auf 0,01 % erhöht.
 
-Standard:
-  1,0 %
+4. TECHNOLOGIEN
+Der separate Bereich „Basis“ entfällt.
+„Grundlagen“ befindet sich jetzt direkt unter „Erkundung“.
 
-Die erlaubten Grenzen kommen aus der Schaltzentrale.
+Die Überschrift heißt weiterhin einfach:
+  Technologien
 
-Erste drei Gimmick-Arten:
-- 💰 Taler-Kiste
-- ⚡ Extra-Zug
-- 📡 Scanner-Boost für den nächsten manuellen Zug
+5. HALL OF FAME / SOLO-PUSH
+In der Hall of Fame werden nur Spiele mit mindestens 2 tatsächlichen Teilnehmern angezeigt.
 
-Bei einem Fund erscheint ein Popup.
+Neue Solo-Spiele erhöhen außerdem die offizielle Siegeszahl nicht mehr.
+Damit kann man die Wertung nicht durch selbst erstellte Einzelspieler-Partien pushen.
 
-In der Schaltzentrale einstellbar:
-- Minimum Gimmicks %
-- Maximum Gimmicks %
-- Standard Gimmicks %
-- Taler-Bonus
-- Extra-Züge
-- zusätzliche Felder durch Scanner
+6. GOLDGAME-ENDABRECHNUNG
+Bei beendeten Paygames zeigt das Archiv jetzt:
+- jeden Spieler
+- erhaltenes Test-Gold
+- Schatzanteil in %
+- gefundene Schatzteile
+- insgesamt an Spieler ausgezahltes Test-Gold
 
-Technisch wird die Chance ausschließlich beim erstmaligen Aufdecken eines neuen Feldes
-serverseitig ausgewertet. Dadurch kann ein Feld nicht wiederholt für Gimmicks gefarmt werden.
+Die Werte werden mit dem Spiel archiviert und nicht später aus dem aktuellen Wallet
+zurückgerechnet.
 
-4. KOMPAKTERES INGAME-DESIGN
-- wichtige Werte oben in einer kompakten horizontalen Statusleiste
-- Statusbereich bleibt beim Scrollen an der Karte sichtbar
-- Schatzbereich ist standardmäßig eingeklappt
-- Schatzanteil / offene Teile / Paygame-Pool sind trotzdem sofort sichtbar
-- Technologien statt „Technologiebaum“
-- Maschinenmodus direkt im Game umschaltbar
+7. PROFIL
+Im eigenen und im öffentlichen Spielerprofil steht jetzt:
+  Mitglied seit <Monat Jahr>
 
-5. HALL OF FAME
-Die missverständliche Formulierung „Sieger benötigte X ...“ wurde ersetzt.
+8. GLOBALERE ZUFALLSORTE
+Zufallsspiele wählen jetzt aus einem wesentlich globaleren Pool, unter anderem:
+- Europa
+- Afrika
+- Asien
+- Australien / Neuseeland
+- Nordamerika
+- Mittelamerika
+- Südamerika
+- Inselregionen
 
-Jetzt:
-  Siegerwertung: XX,XX % Schatz · YY manuelle Züge
+Beispiele sind Reykjavík, Nairobi, Kapstadt, Delhi, Bangkok, Tokio, Bali, Sydney,
+Auckland, Honolulu, Vancouver, Mexiko-Stadt, Lima, Rio und Buenos Aires.
 
-Im detaillierten Endstand bleiben zusätzlich Felder, Maschinentakte und Spielerwerte sichtbar.
+9. MANUELLE ZÜGE BEI STARKEN MASCHINEN
+Maschinen sperren während ihrer großen Feldsuche nicht mehr die game_players-Zeile.
 
-6. KOMPAKTERE SPIELERSTELLUNG
-Der Bereich wurde enger formatiert.
-Neu ist dort außerdem der Gimmick-Prozentregler.
+Neu:
+- eigener machine_runtime-Datensatz für die Taktreservierung
+- maximal 6.000 Kandidaten pro Maschinentakt
+- Kandidatenmenge hängt nur noch von der Maschinenleistung ab, nicht zusätzlich von
+  einer eventuell extrem hohen manuellen Felder/Zug-Leistung
+- manuelle Aufdeckung hat dadurch praktisch Vorrang
+- Maschinen schreiben ihre Statistiken erst nach der Feldsuche kurz zurück
 
-7. IMPRESSUM
-Zentrale Betreiberangaben sind jetzt eingetragen:
-- Marvin Reipert
-- Herrenwald 2
-- 66640 Namborn
-- Deutschland
-- bobmarvin@gmx.de
-
-Die Platzhalter-Warnung im Impressum wurde entfernt.
+Das ist gezielt gegen das Problem gedacht, dass im Endgame mit starkem Maschinenpark
+manuelle Felder irgendwann nicht mehr sinnvoll anklickbar waren.
 
 INSTALLATION
-1. Inhalt dieser ZIP in dein bestehendes GitHub-Repository hochladen und vorhandene Dateien ersetzen.
+1. Inhalt dieser ZIP in das bestehende GitHub-Repository hochladen und ersetzen.
 2. Supabase → SQL Editor.
 3. NUR:
-   supabase/v6_11_migration.sql
+   supabase/v6_12_migration.sql
    einmal vollständig ausführen.
 4. Vercel deployt automatisch.
 
 TESTEMPFEHLUNG
-A) Paygame mit kleinem Testeinsatz erstellen.
-   Der Safe-Update-Fehler darf nicht mehr erscheinen.
+A) Gimmicks:
+- neues Spiel mit 0,01 % testen
+- großes Spiel (>100.000 Felder) mit >0,10 % wählen → Warnpopup prüfen
+- Gimmick finden → Popup sollte nach 1,5 Sekunden verschwinden
+- Zähler oben prüfen
 
-B) Maschine kaufen:
-   - „Letzte Suche“ mehrere Takte testen.
-   - dann auf „Zufällig“ wechseln.
-   - beide sollten ohne SQL-Timeout weiterlaufen.
+B) Maschinen:
+- starken Maschinenpark verwenden
+- Maschinen laufen lassen
+- gleichzeitig mehrfach manuell verschiedene Kartenfelder anklicken
+- manuelle Klicks sollten weiter zeitnah reagieren
 
-C) In der Schaltzentrale Gimmicks z. B. testweise auf 10 % stellen.
-   Neues Testspiel erstellen und mehrere Felder aufdecken.
-   Popup und Bonuswerte prüfen.
+C) Hall of Fame:
+- Solo-Spiel beenden → darf nicht in Hall of Fame auftauchen
+- Zwei-Spieler-Spiel beenden → muss auftauchen
 
-D) Hall of Fame und Impressum öffnen.
+D) Paygame:
+- Paygame beenden
+- Archiv → Goldstaub-Verteilung prüfen
+
+E) Profil:
+- eigenes und öffentliches Profil → „Mitglied seit“ prüfen

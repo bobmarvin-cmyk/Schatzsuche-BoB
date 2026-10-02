@@ -14,7 +14,7 @@ export default function Lobby(){
  const [regen,setRegen]=useState(5),[capacity,setCapacity]=useState(4),[maxPlayers,setMaxPlayers]=useState(20)
  const [privateGame,setPrivateGame]=useState(false),[password,setPassword]=useState('')
  const [inviteCode,setInviteCode]=useState(''),[joinPassword,setJoinPassword]=useState('')
- const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('0.01'),[treasureCount,setTreasureCount]=useState(1),[gimmickPercent,setGimmickPercent]=useState(1)
+ const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('0.01'),[treasureCount,setTreasureCount]=useState(1),[gimmickPercent,setGimmickPercent]=useState(1),[gimmickWarn,setGimmickWarn]=useState(false)
 
  useEffect(()=>{
    init()
@@ -65,15 +65,18 @@ export default function Lobby(){
    await loadWallet()
  }
 
- async function createGame(){
+ async function createGame(force=false){
    setMsg('Spiel wird erstellt…')
+   if(!force && Number(fields)>=100000 && Number(gimmickPercent)>0.1){
+     setGimmickWarn(true);setMsg('');return
+   }
    if(privateGame && password.trim().length>0 && password.trim().length<4){
      setMsg('Das Passwort muss mindestens 4 Zeichen haben.');return
    }
    const entryUg=gameType==='pay'?goldToUg(entryGold):0
    if(gameType==='pay' && entryUg<=0){setMsg('Bitte einen Goldstaub-Einsatz größer 0 wählen.');return}
 
-   const {data,error}=await supabase.rpc('create_game_v611',{
+   const {data,error}=await supabase.rpc('create_game_v612',{
     p_name:name,
     p_field_count:Number(fields),
     p_cell_size_m:Number(cellSize),
@@ -207,10 +210,10 @@ export default function Lobby(){
        <input type="range"
         min={settings?.min_gimmick_percent??0}
         max={settings?.max_gimmick_percent??5}
-        step="0.1"
+        step="0.01"
         value={gimmickPercent}
         onChange={e=>setGimmickPercent(Number(e.target.value))}/>
-       <strong>{Number(gimmickPercent).toFixed(1)}%</strong>
+       <strong>{Number(gimmickPercent).toFixed(2)}%</strong>
       </div>
       <div className="small">Anteil der Felder mit Überraschungseffekt. Grenzen kommen aus der Schaltzentrale.</div>
 
@@ -293,5 +296,16 @@ export default function Lobby(){
    </div>
   </section>
  </main>
+  {gimmickWarn&&<div className="gimmickOverlay" role="dialog" aria-modal="true">
+   <div className="gimmickModal">
+    <div className="gimmickIcon">⚠️</div>
+    <h2>Viele Gimmicks</h2>
+    <p>Bei großen Karten können mehr als 0,10 % Gimmicks sehr häufige Popups und Boni erzeugen und dadurch den Spielfluss beeinträchtigen.</p>
+    <div className="winnerActions">
+     <button className="btn" onClick={()=>setGimmickWarn(false)}>Zurück</button>
+     <button className="btn primary" onClick={()=>{setGimmickWarn(false);createGame(true)}}>Trotzdem erstellen</button>
+    </div>
+   </div>
+  </div>}
  </>
 }

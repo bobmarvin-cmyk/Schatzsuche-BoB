@@ -118,6 +118,7 @@ export default function Profile(){
    <div className="card"><div className="small">Spiele</div><div className="stat">{p.total_games}</div></div>
    <div className="card"><div className="small">Siege</div><div className="stat">{p.wins}</div></div>
    <div className="card"><div className="small">Erforschte Felder</div><div className="stat">{Number(p.total_fields_revealed||0).toLocaleString('de-DE')}</div></div>
+   <div className="card"><div className="small">Mitglied seit</div><div className="stat memberSince">{new Date(user?.created_at||p.created_at).toLocaleDateString('de-DE',{month:'short',year:'numeric'})}</div></div>
   </div>
 
   <div className="panel profileEditor">

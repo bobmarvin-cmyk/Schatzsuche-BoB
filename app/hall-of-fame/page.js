@@ -25,7 +25,7 @@ export default function HallOfFame(){
   <div className="panel hallHero">
    <div className="small">SPIELARCHIV</div>
    <h1>🏛️ Hall of Fame</h1>
-   <p className="muted">Beendete Spiele bleiben hier als dauerhafter Rückblick erhalten – inklusive Sieger, Endstand und Endkarte.</p>
+   <p className="muted">Beendete Multiplayer-Spiele bleiben hier als dauerhafter Rückblick erhalten – inklusive Sieger, Endstand und Endkarte. Solo-Spiele zählen hier nicht.</p>
   </div>
 
   {msg&&<div className="noticeBar">{msg}</div>}

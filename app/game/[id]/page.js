@@ -140,7 +140,7 @@ export default function Game(){
   setMsg('Suche läuft…')
   try{
     await supabase.rpc('set_machine_focus_v690',{p_game_id:id,p_x:x,p_y:y})
-    const {data,error}=await supabase.rpc('reveal_area_v611',{p_game_id:id,p_x:x,p_y:y})
+    const {data,error}=await supabase.rpc('reveal_area_v612',{p_game_id:id,p_x:x,p_y:y})
     if(error){setMsg(error.message);return}
 
     setMsg(data?.message||'Gebiet untersucht')
@@ -172,13 +172,15 @@ export default function Game(){
   if(!g)return
   const total=Number(g.total||0)
   if(total<=0)return
-  setGimmickPopup({
+  const popup={
     total,
     taler:Number(g.taler_bonus||0),
     moves:Number(g.move_bonus||0),
     scanner:Number(g.reveal_bonus||0),
     source:g.source||'manual'
-  })
+  }
+  setGimmickPopup(popup)
+  setTimeout(()=>setGimmickPopup(current=>current===popup?null:current),1500)
  }
 
  async function setMachineMode(mode){
@@ -192,7 +194,7 @@ export default function Game(){
   machineBusy.current=true
   try{
     await supabase.rpc('machine_presence_v690',{p_game_id:id})
-    const {data,error}=await supabase.rpc('run_machines_v611',{p_game_id:id})
+    const {data,error}=await supabase.rpc('run_machines_v612',{p_game_id:id})
     if(error){
       if(!error.message?.includes('Noch nicht fällig'))setMsg('Maschinen: '+error.message)
       return
@@ -310,6 +312,7 @@ export default function Game(){
      [(me?.reward_multiplier??1)+'×','Bonus'],
      ['Stufe '+(me?.analysis_level??0),'Analyse'],
      [machinePower>0?`${machinePower.toLocaleString('de-DE')} / ${secondsUntilMachine===null?'–':secondsUntilMachine+'s'}`:'0','Maschinenfelder / nächster Takt'],
+     [`${Number(game?.gimmick_percent||0).toFixed(2)}% · ${Number(game?.gimmicks_found_count||0).toLocaleString('de-DE')}/${Number(game?.gimmick_target_count||0).toLocaleString('de-DE')}`,'Gimmicks'],
      [left.toLocaleString('de-DE'),'Felder übrig']
     ].map((v,i)=><div className="quickStat" key={i}><span>{v[1]}</span><strong>{v[0]}</strong></div>)}
    </div>
