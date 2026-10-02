@@ -2,6 +2,7 @@
 import {useEffect,useState} from 'react'
 import {supabase} from '../../lib/supabase-browser'
 import {formatGold,goldToUg} from '../../lib/gold'
+import FirstLoginHelp from '../../components/FirstLoginHelp'
 
 export default function Lobby(){
  const [games,setGames]=useState([])
@@ -108,7 +109,9 @@ export default function Lobby(){
  const communityPct=settings?settings.community_share_bps/100:5
  const platformPct=settings?settings.platform_share_bps/100:5
 
- return <main className="container lobbyPage">
+ return <>
+  <FirstLoginHelp/>
+  <main className="container lobbyPage">
   <div className="topnav">
    <a className="btn" href="/profile">Profil</a>
    <a className="btn" href="/legenden">🏆 Legenden</a>
@@ -227,4 +230,5 @@ export default function Lobby(){
    </div>
   </section>
  </main>
+ </>
 }
