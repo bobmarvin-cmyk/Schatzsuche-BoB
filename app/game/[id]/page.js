@@ -29,27 +29,41 @@ async function loadAllFields(gameId){
   return all
 }
 
+
+function mergeFields(current,incoming){
+  if(!incoming?.length)return current
+  const map=new Map(current.map(f=>[`${f.x}:${f.y}`,f]))
+  for(const f of incoming)map.set(`${f.x}:${f.y}`,f)
+  return [...map.values()]
+}
+
 export default function Game(){
  const {id}=useParams()
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[tick,setTick]=useState(0)
- const fieldReloadTimer=useRef(null),moveRefreshBusy=useRef(false)
+ const moveRefreshBusy=useRef(false),revealBusy=useRef(false),realtimeFieldBuffer=useRef([]),realtimeFlushTimer=useRef(null)
 
  useEffect(()=>{
   init()
   const ch=supabase.channel('game-'+id)
-   .on('postgres_changes',{event:'*',schema:'public',table:'explored_fields',filter:`game_id=eq.${id}`},()=>{
-     clearTimeout(fieldReloadTimer.current)
-     fieldReloadTimer.current=setTimeout(()=>loadFieldsOnly(),220)
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'explored_fields',filter:`game_id=eq.${id}`},payload=>{
+     if(!payload?.new)return
+     realtimeFieldBuffer.current.push(payload.new)
+     if(realtimeFlushTimer.current)return
+     realtimeFlushTimer.current=setTimeout(()=>{
+       const batch=realtimeFieldBuffer.current.splice(0)
+       realtimeFlushTimer.current=null
+       if(batch.length)setFields(current=>mergeFields(current,batch))
+     },80)
    })
    .on('postgres_changes',{event:'*',schema:'public',table:'game_players',filter:`game_id=eq.${id}`},()=>loadPlayersOnly())
    .on('postgres_changes',{event:'*',schema:'public',table:'games',filter:`id=eq.${id}`},()=>loadGameOnly())
    .on('postgres_changes',{event:'*',schema:'public',table:'player_technologies',filter:`game_id=eq.${id}`},()=>loadOwnedOnly())
    .subscribe()
   const timer=setInterval(()=>setTick(t=>t+1),1000)
-  return()=>{supabase.removeChannel(ch);clearInterval(timer);clearTimeout(fieldReloadTimer.current)}
+  return()=>{supabase.removeChannel(ch);clearInterval(timer);clearTimeout(realtimeFlushTimer.current)}
  },[id])
 
  async function init(){
@@ -138,13 +152,25 @@ export default function Game(){
  }
 
  async function reveal(x,y){
-  const {data,error}=await supabase.rpc('reveal_area_v66',{p_game_id:id,p_x:x,p_y:y})
-  if(error){setMsg(error.message);return}
-  setMsg(data?.message||'Gebiet untersucht')
-  const {data:hint}=await supabase.rpc('get_analysis_hint_v68',{p_game_id:id,p_x:x,p_y:y})
-  if(hint)setAnalysisHint(hint)
-  await Promise.all([loadPlayersOnly(),loadGameOnly(),loadGoldOnly()])
-  clearTimeout(fieldReloadTimer.current);fieldReloadTimer.current=setTimeout(()=>loadFieldsOnly(),120)
+  if(revealBusy.current)return
+  revealBusy.current=true
+  setMsg('Suche läuft…')
+  try{
+    const {data,error}=await supabase.rpc('reveal_area_v681',{p_game_id:id,p_x:x,p_y:y})
+    if(error){setMsg(error.message);return}
+
+    const openedFields=data?.fields||[]
+    if(openedFields.length)setFields(current=>mergeFields(current,openedFields))
+    setMsg(data?.message||'Gebiet untersucht')
+
+    const {data:hint}=await supabase.rpc('get_analysis_hint_v68',{p_game_id:id,p_x:x,p_y:y})
+    if(hint)setAnalysisHint(hint)
+
+    // Nur kleine Statusdaten nachladen. Die komplette Feldliste bleibt unangetastet.
+    await Promise.all([loadPlayersOnly(),loadGameOnly(),loadGoldOnly()])
+  }finally{
+    revealBusy.current=false
+  }
  }
 
  async function buy(t){
