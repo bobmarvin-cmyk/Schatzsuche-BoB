@@ -40,7 +40,7 @@ export default function ArchivedGame(){
    {archive.winner_name&&<div className="archiveWinnerBadge">
     <span>🏆 Sieger</span>
     <strong>{archive.winner_name}</strong>
-    {archive.winner_moves_used!=null&&<small>{Number(archive.winner_moves_used).toLocaleString('de-DE')} Züge · {(Number(archive.winner_share_bps||0)/100).toFixed(2)}% Schatz</small>}
+    <small>Siegerwertung: {(Number(archive.winner_share_bps||0)/100).toFixed(2)}% Schatz{archive.winner_moves_used!=null?` · ${Number(archive.winner_moves_used).toLocaleString('de-DE')} manuelle Züge`:''}</small>
    </div>}
   </div>
 

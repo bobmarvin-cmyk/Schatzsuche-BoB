@@ -1,104 +1,109 @@
-SCHATZSUCHE ONLINE V6.10 – SCHATZTEILE, MASCHINENFIX & MEHR KARTE
+SCHATZSUCHE ONLINE V6.11
 
-1. MASCHINEN-TIMER REPARIERT
-Das Problem:
-Der Timer lief einmal herunter, danach passierte häufig nichts mehr.
+DIESE VERSION BEHEBT ZWEI KONKRETE FEHLER UND ERWEITERT DAS GAMEPLAY.
 
-Ursache:
-Die Maschine suchte nur in einem sehr kleinen Radius um den letzten manuellen Klick.
-Wenn der manuelle Zug diesen Bereich bereits aufgedeckt hatte, fand die Maschine keine
-freien Felder. Außerdem wurde der Clienttimer bei einem leeren Maschinentakt nicht immer
-sauber mit dem Server synchronisiert.
+1. PAYGAME-FEHLER „UPDATE requires a WHERE clause“
+Ursache war die Community-Ausschüttung, die absichtlich alle vorhandenen Test-Wallets
+aktualisiert hatte. Supabase Safe Update blockiert ein UPDATE ohne WHERE.
 
-V6.10:
-- Maschinen erweitern ihren Suchradius automatisch.
-- Die Größe berücksichtigt auch deine manuelle Felder/Zug-Leistung.
-- Vor jedem automatischen Takt wird die aktive Spielpräsenz erneuert.
-- Nach JEDEM fälligen Takt wird machine_last_run_at aktualisiert.
-- Der Browser lädt danach den neuen Maschinenstatus nach.
-- Findet die Maschine im größeren Gebiet trotzdem nichts, fordert das Spiel dich auf,
-  mit einem manuellen Klick einen neuen Maschinenfokus zu setzen.
-- Kein Offline-Catch-up bleibt bestehen.
+V6.11:
+- explizite WHERE-Bedingung
+- Paygame-Erstellung und Community-Verteilung funktionieren mit Safe Update
 
-2. 1,000 GESAMTSCHATZ – AUF MEHRERE TEILE AUFTEILBAR
-Bei der Spielerstellung gibt es jetzt für Standard- UND Paygames:
-  Schatzteile
+2. MASCHINEN-TIMEOUT
+Fehler:
+  Maschinen: canceling statement due to statement timeout
 
-Grundwert:
-  1 Teil = 1,000 Schatz
+V6.11 erzeugt keine unkontrolliert großen Suchquadrate mehr.
+Pro Maschinentakt gibt es eine harte Obergrenze von 12.000 Kandidaten.
 
-Beispiele:
-  2 Teile = 0,500 + 0,500
-  3 Teile = ca. 0,333 + 0,333 + 0,334
-  5 Teile = 5 × 0,200
-  10 Teile = 10 × 0,100
+Zwei Suchmodi sind jetzt im laufenden Spiel wählbar:
+- 📍 Letzte Suche
+  Maschinen arbeiten um den letzten manuellen Kartenklick.
+- 🎲 Zufällig
+  Maschinen wählen Kandidaten verteilt über die ganze Spielkarte.
 
-Die Summe ist serverseitig IMMER exakt 1,000.
+Beide Modi:
+- nur solange das jeweilige Spiel sichtbar/fokussiert geöffnet ist
+- kein Offline-Farming
+- keine nachträgliche Aufholung verpasster Takte
+- Timer wird nach jedem fälligen Maschinentakt sauber neu gestartet
 
-Die maximal erlaubte Teilezahl kommt aus:
-  platform_settings.max_treasures
-und kann über die Schaltzentrale geändert werden.
-V6.10 setzt bestehende Installationen zunächst auf mindestens 10 erlaubte Teile.
+3. KARTEN-GIMMICKS
+Bei der Spielerstellung kann der Host einen Prozentsatz für Überraschungsfelder wählen.
 
-3. NEUE SIEGERREGEL
-Das Spiel endet NICHT mehr beim ersten Fund.
+Standard:
+  1,0 %
 
-Es endet erst, wenn ALLE Schatzteile gefunden wurden.
+Die erlaubten Grenzen kommen aus der Schaltzentrale.
 
-Gewonnen hat:
-  der Spieler mit dem größten aufsummierten Schatzanteil.
+Erste drei Gimmick-Arten:
+- 💰 Taler-Kiste
+- ⚡ Extra-Zug
+- 📡 Scanner-Boost für den nächsten manuellen Zug
 
-Bei exakt gleichem Anteil entscheidet als Tie-Breaker:
-  1. wer seinen letzten Schatzanteil früher gefunden hat
-  2. danach weniger manuelle Züge
-  3. danach frühere Teilnahme am Spiel
+Bei einem Fund erscheint ein Popup.
 
-4. PAYGAME
-Auch der Test-Goldpool wird auf die Schatzteile verteilt.
-Die Gesamtmenge steigt dadurch nicht.
+In der Schaltzentrale einstellbar:
+- Minimum Gimmicks %
+- Maximum Gimmicks %
+- Standard Gimmicks %
+- Taler-Bonus
+- Extra-Züge
+- zusätzliche Felder durch Scanner
 
-Tritt später noch ein Spieler bei, wird dessen neuer Schatzpool-Anteil nur noch auf
-die zu diesem Zeitpunkt offenen Schatzteile verteilt.
+Technisch wird die Chance ausschließlich beim erstmaligen Aufdecken eines neuen Feldes
+serverseitig ausgewertet. Dadurch kann ein Feld nicht wiederholt für Gimmicks gefarmt werden.
+
+4. KOMPAKTERES INGAME-DESIGN
+- wichtige Werte oben in einer kompakten horizontalen Statusleiste
+- Statusbereich bleibt beim Scrollen an der Karte sichtbar
+- Schatzbereich ist standardmäßig eingeklappt
+- Schatzanteil / offene Teile / Paygame-Pool sind trotzdem sofort sichtbar
+- Technologien statt „Technologiebaum“
+- Maschinenmodus direkt im Game umschaltbar
 
 5. HALL OF FAME
-Die Hall of Fame speichert jetzt zusätzlich:
-- Schatzanteil jedes Spielers
-- Anzahl gefundener Schatzteile
-- Maschinentakte
-- Schatzanteil des Gewinners
+Die missverständliche Formulierung „Sieger benötigte X ...“ wurde ersetzt.
 
-6. DIE REALE KARTE STÄRKER IM SPIEL
-Analyse-Hinweise arbeiten weiterhin mit einer absichtlich ungenauen geografischen Zone.
+Jetzt:
+  Siegerwertung: XX,XX % Schatz · YY manuelle Züge
 
-Neu:
-- Button „🗺️ Hinweisgebiet fokussieren“
-- Karte zoomt direkt in die Analysezone
-- soweit OpenFreeMap die Daten im sichtbaren Stil bereitstellt, liest das Spiel dort
-  benannte Kartenmerkmale aus:
-  - Straßen
-  - Orte
-  - Gewässer
-  - weitere benannte Orientierungspunkte
+Im detaillierten Endstand bleiben zusätzlich Felder, Maschinentakte und Spielerwerte sichtbar.
 
-Diese erscheinen unter dem Analysehinweis und sollen wirklich zum Kartenlesen animieren.
+6. KOMPAKTERE SPIELERSTELLUNG
+Der Bereich wurde enger formatiert.
+Neu ist dort außerdem der Gimmick-Prozentregler.
 
-Wichtig:
-Die exakte Schatzposition wird dadurch NICHT an den Browser übertragen.
-Es werden nur Merkmale aus dem ohnehin sichtbaren ungefähren Hinweisgebiet gelesen.
+7. IMPRESSUM
+Zentrale Betreiberangaben sind jetzt eingetragen:
+- Marvin Reipert
+- Herrenwald 2
+- 66640 Namborn
+- Deutschland
+- bobmarvin@gmx.de
+
+Die Platzhalter-Warnung im Impressum wurde entfernt.
 
 INSTALLATION
 1. Inhalt dieser ZIP in dein bestehendes GitHub-Repository hochladen und vorhandene Dateien ersetzen.
 2. Supabase → SQL Editor.
 3. NUR:
-   supabase/v6_10_migration.sql
+   supabase/v6_11_migration.sql
    einmal vollständig ausführen.
 4. Vercel deployt automatisch.
 
 TESTEMPFEHLUNG
-1. Neues Standardspiel mit 3 Schatzteilen starten.
-2. Prüfen, ob in der Spielanzeige Gesamtwert 1,000 und drei Teile erscheinen.
-3. Mehrere Spieler verschiedene Teile finden lassen.
-4. Prüfen, dass das Spiel bis zum letzten Teil aktiv bleibt.
-5. Danach Sieger nach größtem Anteil prüfen.
-6. Maschine kaufen → manuellen Fokus setzen → mehrere automatische Takte beobachten.
-7. Analyse-Technologie kaufen → Hinweis erzeugen → „Hinweisgebiet fokussieren“ testen.
+A) Paygame mit kleinem Testeinsatz erstellen.
+   Der Safe-Update-Fehler darf nicht mehr erscheinen.
+
+B) Maschine kaufen:
+   - „Letzte Suche“ mehrere Takte testen.
+   - dann auf „Zufällig“ wechseln.
+   - beide sollten ohne SQL-Timeout weiterlaufen.
+
+C) In der Schaltzentrale Gimmicks z. B. testweise auf 10 % stellen.
+   Neues Testspiel erstellen und mehrere Felder aufdecken.
+   Popup und Bonuswerte prüfen.
+
+D) Hall of Fame und Impressum öffnen.

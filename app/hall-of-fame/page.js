@@ -47,7 +47,7 @@ export default function HallOfFame(){
       <span>🎯 {Number(r.total_moves||0).toLocaleString('de-DE')} Züge</span>
       <span>🗺️ {Number(r.total_fields||0).toLocaleString('de-DE')} Felder</span>
     </div>
-    {r.winner_moves_used!=null&&<div className="small">Sieger benötigte {Number(r.winner_moves_used).toLocaleString('de-DE')} eigene Züge{r.winner_share_bps!=null?` · ${(Number(r.winner_share_bps)/100).toFixed(2)}% Schatzanteil`:''}.</div>}
+    <div className="small">Siegerwertung: {r.winner_share_bps!=null?`${(Number(r.winner_share_bps)/100).toFixed(2)}% Schatz`: '–'}{r.winner_moves_used!=null?` · ${Number(r.winner_moves_used).toLocaleString('de-DE')} manuelle Züge`:''}</div>
     <div className="small">{r.closed_at?new Date(r.closed_at).toLocaleString('de-DE'):'–'}</div>
    </a>)}
   </div>

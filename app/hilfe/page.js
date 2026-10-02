@@ -34,7 +34,7 @@ export default function Hilfe(){
 
       <h2>Technologien</h2>
       <p>
-        Für das Aufdecken leerer Felder erhältst du Taler. Diese kannst du im Technologiebaum einsetzen.
+        Für das Aufdecken leerer Felder erhältst du Taler. Diese kannst du im Technologien einsetzen.
         Technologien können unter anderem mehr Felder pro Zug freischalten, deine Hinweise verbessern,
         deinen Zugspeicher vergrößern oder die Regeneration beschleunigen.
       </p>
@@ -112,7 +112,7 @@ export default function Hilfe(){
 
       <h2>Maschinen und Automatisierung</h2>
       <p>
-        Im Technologiezweig „Automatisierung“ kannst du Maschinen kaufen, die zusätzlich zu deinen
+        Im Technologie-Bereich „Automatisierung“ kannst du Maschinen kaufen, die zusätzlich zu deinen
         manuellen Zügen automatisch Felder aufdecken. Die Maschinen arbeiten im Bereich deines letzten
         manuellen Kartenklicks und laufen nur, solange das jeweilige Spiel sichtbar geöffnet ist.
         Wechselst du den Tab oder verlässt das Spiel, stoppt die Automatisierung automatisch.
@@ -142,6 +142,22 @@ export default function Hilfe(){
         Daten liefert, zeigt das Spiel zusätzlich benannte Straßen, Orte, Gewässer oder andere
         Kartenmerkmale aus diesem Gebiet. Diese Merkmale sollen zur Orientierung genutzt werden,
         statt nur Rasterkoordinaten abzuzählen.
+      </p>
+
+
+      <h2>Gimmicks</h2>
+      <p>
+        Bei der Spielerstellung kann festgelegt werden, wie häufig Überraschungsfelder vorkommen.
+        Wird ein solches Feld erstmals aufgedeckt, erscheint ein Popup. Mögliche Effekte sind
+        zusätzliche Taler, Extra-Züge oder ein Scannerbonus für den nächsten manuellen Zug.
+        Häufigkeit und Stärke werden von der Spielleitung in der Schaltzentrale begrenzt.
+      </p>
+
+      <h2>Maschinen-Suchmodus</h2>
+      <p>
+        Spieler mit Automatisierungs-Technologien können im laufenden Spiel zwischen zwei Modi wählen:
+        „Letzte Suche“ arbeitet rund um den letzten manuellen Kartenklick, „Zufällig“ verteilt die
+        automatische Suche über die gesamte Karte. Maschinen arbeiten weiterhin nur bei sichtbar geöffnetem Spiel.
       </p>
 
       <h2>Tipps</h2>

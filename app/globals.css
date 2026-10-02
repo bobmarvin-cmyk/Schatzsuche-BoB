@@ -282,3 +282,67 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .mapFeatureTags{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}
 .mapFeatureTags>span{display:flex;flex-direction:column;gap:1px;padding:6px 9px;border-radius:9px;background:#1a2a41;border:1px solid #3b506e}
 .mapFeatureTags small{font-size:9px;color:#93a6bf}
+
+/* V6.11 – kompakteres Ingame UI / Spielerstellung */
+.gameTopPanel{
+ position:sticky;top:0;z-index:35;padding:10px 12px;margin-bottom:10px;
+ backdrop-filter:blur(10px);background:rgba(14,24,40,.94)
+}
+.gameTopPanel h1{font-size:20px;margin:0 0 5px}
+.gameTopPanel .worldMeta{font-size:11px;margin-bottom:7px}
+.gameQuickStats{
+ display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;
+ scrollbar-width:none;-webkit-overflow-scrolling:touch
+}
+.gameQuickStats::-webkit-scrollbar{display:none}
+.quickStat{
+ flex:0 0 auto;min-width:84px;padding:6px 9px;border-radius:9px;
+ background:#17253a;border:1px solid #30445f
+}
+.quickStat span{display:block;font-size:9px;color:#91a4bc;text-transform:uppercase;letter-spacing:.05em}
+.quickStat strong{display:block;font-size:15px;margin-top:1px;white-space:nowrap}
+.gameTopPanel .regenBarText{font-size:10px;margin-top:5px}
+
+.compactTreasurePanel{padding:0;overflow:hidden}
+.compactTreasurePanel summary{
+ cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;
+ padding:9px 12px;min-height:42px
+}
+.compactTreasurePanel summary::-webkit-details-marker{display:none}
+.compactTreasurePanel summary>span:last-child{margin-left:auto}
+.compactTreasureBody{padding:0 12px 10px}
+.compactTreasurePanel .treasurePills{margin:3px 0 7px}
+
+.machineModeRow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px}
+.machineModeRow .miniBtn.active{border-color:#6d9bd3;background:#213a58}
+
+.createGamePanel{padding:14px}
+.createGamePanel h2{margin-top:0;margin-bottom:10px}
+.createGamePanel label{font-size:11px;margin-top:8px}
+.createGamePanel .input{padding:8px 9px;margin-bottom:3px}
+.createGamePanel .createGrid{gap:12px}
+.createGamePanel .quickButtons{margin:4px 0}
+.rangeRow{display:flex;gap:10px;align-items:center}
+.rangeRow input[type=range]{width:100%}
+.rangeRow strong{min-width:48px;text-align:right}
+
+.gimmickOverlay{
+ position:fixed;inset:0;z-index:10070;background:rgba(2,7,15,.82);
+ backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;padding:18px
+}
+.gimmickModal{
+ width:min(430px,100%);text-align:center;background:#121f32;border:1px solid #6753a0;
+ border-radius:20px;padding:23px;box-shadow:0 24px 90px rgba(0,0,0,.6)
+}
+.gimmickIcon{font-size:58px;animation:winnerPop .5s ease-out}
+.gimmickModal h2{margin:5px 0 14px}
+.gimmickRewards{display:grid;gap:8px;margin:14px 0 18px}
+.gimmickRewards>div{padding:9px;border-radius:9px;background:#1b2940}
+
+@media(max-width:700px){
+ .gameTopPanel{margin-left:-4px;margin-right:-4px;border-radius:0 0 12px 12px}
+ .quickStat{min-width:78px;padding:5px 7px}
+ .quickStat strong{font-size:14px}
+ .compactTreasurePanel summary{font-size:12px;gap:7px}
+ .createGamePanel{padding:11px}
+}

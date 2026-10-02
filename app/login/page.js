@@ -17,7 +17,7 @@ export default function Page(){
     <div className="eyebrow">WILLKOMMEN ZURÜCK</div>
     <h1>🗺️ {siteConfig.brandName}</h1>
     <p className="landingLead">Finde versteckte Schätze auf einer echten Weltkarte und entwickle deine Suchstrategie mit Technologien und Analysehinweisen.</p>
-    <div className="authInfoPoints"><span>🌍 echte Weltkarte</span><span>⚡ kontinuierliche Züge</span><span>🧠 Technologiebaum</span><span>💬 Spielchat</span></div>
+    <div className="authInfoPoints"><span>🌍 echte Weltkarte</span><span>⚡ kontinuierliche Züge</span><span>🧠 Technologien</span><span>💬 Spielchat</span></div>
     <a className="textLink" href="/hilfe">Spielregeln ansehen →</a>
    </section>
    <section className="panel authCard">

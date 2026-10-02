@@ -11,7 +11,7 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null)
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null)
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null)
 
  useEffect(()=>{
@@ -67,7 +67,7 @@ export default function Game(){
  }
 
  async function loadPlayersOnly(){
-  const {data}=await supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at')
+  const {data}=await supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at')
   if(data)setPlayers(data)
  }
  async function loadGameOnly(){
@@ -92,7 +92,7 @@ export default function Game(){
   try{
     const [g,p,t,w,gt,tech]=await Promise.all([
       supabase.from('games').select('*').eq('id',id).single(),
-      supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
+      supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
       supabase.rpc('get_treasure_status_v610',{p_game_id:id}),
@@ -140,10 +140,11 @@ export default function Game(){
   setMsg('Suche läuft…')
   try{
     await supabase.rpc('set_machine_focus_v690',{p_game_id:id,p_x:x,p_y:y})
-    const {data,error}=await supabase.rpc('reveal_area_v610',{p_game_id:id,p_x:x,p_y:y})
+    const {data,error}=await supabase.rpc('reveal_area_v611',{p_game_id:id,p_x:x,p_y:y})
     if(error){setMsg(error.message);return}
 
     setMsg(data?.message||'Gebiet untersucht')
+    handleGimmicks(data?.gimmicks)
     if(data?.game_over){
       setWinnerCelebration({
         won:!!data.won,
@@ -167,17 +168,37 @@ export default function Game(){
   }
  }
 
+ function handleGimmicks(g){
+  if(!g)return
+  const total=Number(g.total||0)
+  if(total<=0)return
+  setGimmickPopup({
+    total,
+    taler:Number(g.taler_bonus||0),
+    moves:Number(g.move_bonus||0),
+    scanner:Number(g.reveal_bonus||0),
+    source:g.source||'manual'
+  })
+ }
+
+ async function setMachineMode(mode){
+  const {error}=await supabase.rpc('set_machine_mode_v611',{p_game_id:id,p_mode:mode})
+  if(error){setMsg('Maschinenmodus: '+error.message);return}
+  await loadPlayersOnly()
+ }
+
  async function runMachines(){
   if(machineBusy.current||machinePower<=0||document.visibilityState!=='visible'||!document.hasFocus())return
   machineBusy.current=true
   try{
     await supabase.rpc('machine_presence_v690',{p_game_id:id})
-    const {data,error}=await supabase.rpc('run_machines_v610',{p_game_id:id})
+    const {data,error}=await supabase.rpc('run_machines_v611',{p_game_id:id})
     if(error){
       if(!error.message?.includes('Noch nicht fällig'))setMsg('Maschinen: '+error.message)
       return
     }
     if(data?.message)setMsg(data.message)
+    handleGimmicks(data?.gimmicks)
     if(data?.opened>0&&currentViewport.current)await loadVisibleFields(currentViewport.current)
     await Promise.all([loadPlayersOnly(),loadGameOnly(),loadGoldOnly()])
     if(data?.game_over){
@@ -211,7 +232,8 @@ export default function Game(){
    .filter(t=>owned.includes(t.id))
    .reduce((sum,t)=>sum+Number(t.machine_auto_fields||0),0)
  const secondsUntilMachine=(()=>{
-   if(!me||!game||machinePower<=0||me.auto_focus_x==null||me.auto_focus_y==null)return null
+   if(!me||!game||machinePower<=0)return null
+   if((me.machine_mode||'focus')==='focus'&&(me.auto_focus_x==null||me.auto_focus_y==null))return null
    const last=new Date(me.machine_last_run_at||Date.now()).getTime()
    const due=last+effectiveRegen*1000
    return Math.max(0,Math.ceil((due-Date.now())/1000))
@@ -274,12 +296,12 @@ export default function Game(){
  return <main className="container">
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
-  <div className="panel"><h1>{game?.name||'Spiel'}</h1>
+  <div className="panel gameTopPanel"><h1>{game?.name||'Spiel'}</h1>
    <div className="worldMeta">
     <span>📍 {game?.center_label||'Kartenmittelpunkt'} · {game?.cell_size_m||100} m pro Feld · echte Weltkarte</span>
     {game?.invite_code&&<span className="inviteChip">Einladungscode: <strong>{game.invite_code}</strong>{game.is_private?' · 🔒 privat':''}</span>}
    </div>
-   <div className="grid">
+   <div className="gameQuickStats">
     {[
      [Number(me?.coins||0).toFixed(2),'Taler'],
      [`${me?.moves_left??0} / ${cap}`,'Züge'],
@@ -289,33 +311,38 @@ export default function Game(){
      ['Stufe '+(me?.analysis_level??0),'Analyse'],
      [machinePower>0?`${machinePower.toLocaleString('de-DE')} / ${secondsUntilMachine===null?'–':secondsUntilMachine+'s'}`:'0','Maschinenfelder / nächster Takt'],
      [left.toLocaleString('de-DE'),'Felder übrig']
-    ].map((v,i)=><div className="card" key={i}><div className="small">{v[1]}</div><div className="stat">{v[0]}</div></div>)}
+    ].map((v,i)=><div className="quickStat" key={i}><span>{v[1]}</span><strong>{v[0]}</strong></div>)}
    </div>
    <div className="regenBarText">Ungenutzte Züge werden bis zum Speicherlimit gesammelt; darüber hinaus verfallen sie.</div>
-   {machinePower>0&&<div className="machineStatus">⚙️ Deine Maschinen arbeiten nur, solange dieses Spiel sichtbar geöffnet ist. Zielbereich: dein letzter manueller Kartenklick.</div>}
+   {machinePower>0&&<div className="machineStatus">
+    <div><strong>⚙️ Maschinen</strong> · arbeiten nur solange dieses Spiel sichtbar geöffnet ist.</div>
+    <div className="machineModeRow">
+     <span>Suchmodus:</span>
+     <button className={'miniBtn '+((me?.machine_mode||'focus')==='focus'?'active':'')} onClick={()=>setMachineMode('focus')}>📍 Letzte Suche</button>
+     <button className={'miniBtn '+(me?.machine_mode==='random'?'active':'')} onClick={()=>setMachineMode('random')}>🎲 Zufällig</button>
+    </div>
+   </div>}
   </div>
 
-  {game&&<div className={'panel '+(game.game_type==='pay'?'goldGamePanel':'treasureGamePanel')}>
-   <div className="goldGameHeader">
-    <div><div className="small">{game.game_type==='pay'?'PAYGAME · TESTMODUS':'SCHATZWERTUNG'}</div><h2>🧩 Schatzteile</h2></div>
-    {game.game_type==='pay'&&<div className="goldBalance">Wallet: {formatGold(wallet?.balance_ug||0)}</div>}
+  {game&&<details className={'panel compactTreasurePanel '+(game.game_type==='pay'?'goldGamePanel':'treasureGamePanel')}>
+   <summary>
+    <span>🧩 Schatz</span>
+    <strong>{(Number(me?.treasure_share_bps||0)/100).toFixed(2)}%</strong>
+    <span>{goldTreasures.filter(t=>!t.found_by).length}/{goldTreasures.length||game.treasure_count||1} offen</span>
+    {game.game_type==='pay'&&<span>{formatGold(game.gold_prize_pool_ug)}</span>}
+   </summary>
+   <div className="compactTreasureBody">
+    <div className="treasurePills">{goldTreasures.map((t,i)=>{
+     const finder=players.find(p=>p.user_id===t.found_by)
+     return <span key={t.id} className={'treasurePill '+(t.found_by?'found':'')}>
+       {t.found_by?'✅':'🧩'} {i+1}: {(Number(t.share_bps||0)/10000).toFixed(3)}
+       {game.game_type==='pay'&&<> · {formatGold(t.amount_ug)}</>}
+       {t.found_by&&<> · {finder?.profiles?.display_name||'gefunden'}</>}
+     </span>
+    })}</div>
+    <div className="small">Gesamtschatz 1,000 · Spielende erst nach allen Teilen · größter Gesamtanteil gewinnt.</div>
    </div>
-   <div className="grid goldStats">
-    <div className="card"><div className="small">Gesamtschatz</div><div className="stat">1,000</div></div>
-    <div className="card"><div className="small">Teile offen</div><div className="stat">{goldTreasures.filter(t=>!t.found_by).length} / {goldTreasures.length||game.treasure_count||1}</div></div>
-    <div className="card"><div className="small">Dein Anteil</div><div className="stat">{(Number(me?.treasure_share_bps||0)/100).toFixed(2)}%</div></div>
-    {game.game_type==='pay'&&<div className="card"><div className="small">Schatzpool aktuell</div><div className="stat">{formatGold(game.gold_prize_pool_ug)}</div></div>}
-   </div>
-   <div className="treasurePills">{goldTreasures.map((t,i)=>{
-    const finder=players.find(p=>p.user_id===t.found_by)
-    return <span key={t.id} className={'treasurePill '+(t.found_by?'found':'')}>
-      {t.found_by?'✅':'🧩'} Teil {i+1}: {(Number(t.share_bps||0)/10000).toFixed(3)}
-      {game.game_type==='pay'&&<> · {formatGold(t.amount_ug)}</>}
-      {t.found_by&&<> · {finder?.profiles?.display_name||'gefunden'}</>}
-    </span>
-   })}</div>
-   <div className="small">Das Spiel endet erst, wenn alle Teile gefunden wurden. Sieger ist der Spieler mit dem größten Gesamtanteil.</div>
-  </div>}
+  </details>}
 
   <div className="gameLayout">
    <section className="panel">
@@ -337,7 +364,7 @@ export default function Game(){
    </section>
 
    <aside className="panel">
-    <h2>Technologiebaum</h2>
+    <h2>Technologien</h2>
     <div className="branchTabs">{branches.map(b=><button key={b} className={'branchTab '+(activeBranch===b?'active':'')} onClick={()=>setBranch(b)}>{b}</button>)}</div>
     <div className="techList">{technologies.filter(t=>t.branch===activeBranch).map(t=>{
      const req=t.requires||[]
@@ -356,6 +383,20 @@ export default function Game(){
    <div className="small">{Number(p.coins).toFixed(2)} T · {p.moves_left} gespeicherte Züge · {p.reveal_power} Felder/Zug · 🧩 {(Number(p.treasure_share_bps||0)/100).toFixed(2)}%</div>
   </div>)}</div></div>
   {game&&user&&<GameChat gameId={id} userId={user.id}/>}
+
+  {gimmickPopup&&<div className="gimmickOverlay" role="dialog" aria-modal="true">
+   <div className="gimmickModal">
+    <div className="gimmickIcon">🎁</div>
+    <div className="small">ÜBERRASCHUNGSFELD</div>
+    <h2>{gimmickPopup.total>1?`${gimmickPopup.total} Gimmicks gefunden!`:'Gimmick gefunden!'}</h2>
+    <div className="gimmickRewards">
+     {gimmickPopup.taler>0&&<div>💰 <strong>+{gimmickPopup.taler.toFixed(2)} Taler</strong></div>}
+     {gimmickPopup.moves>0&&<div>⚡ <strong>+{gimmickPopup.moves} Zug{gimmickPopup.moves===1?'':'e'}</strong></div>}
+     {gimmickPopup.scanner>0&&<div>📡 <strong>+{gimmickPopup.scanner} Felder beim nächsten manuellen Zug</strong></div>}
+    </div>
+    <button className="btn primary" onClick={()=>setGimmickPopup(null)}>Nice 😎</button>
+   </div>
+  </div>}
 
   {winnerCelebration&&<div className="winnerOverlay" role="dialog" aria-modal="true">
    <div className="winnerModal">

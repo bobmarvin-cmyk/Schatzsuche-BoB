@@ -71,6 +71,14 @@ export default function Admin(){
   if(!error){
     await supabase.rpc('admin_set_default_regen_v68',{p_seconds:NUM(settings.default_regen_seconds)})
     await supabase.rpc('admin_set_machine_reward_v690',{p_factor:NUM(settings.machine_reward_factor)})
+    await supabase.rpc('admin_set_gimmick_settings_v611',{
+      p_min:NUM(settings.min_gimmick_percent),
+      p_max:NUM(settings.max_gimmick_percent),
+      p_default:NUM(settings.default_gimmick_percent),
+      p_taler_bonus:NUM(settings.gimmick_taler_bonus),
+      p_move_bonus:NUM(settings.gimmick_move_bonus),
+      p_reveal_bonus:NUM(settings.gimmick_reveal_bonus)
+    })
   }
   setSaving(false)
   setMsg(error?error.message:(data?.message||'Globale Einstellungen gespeichert.'))
@@ -111,7 +119,7 @@ export default function Admin(){
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
-   <div><div className="small">SPIELLEITUNG</div><h1>🎛️ Schaltzentrale</h1><p className="muted">Zentrale Masterwerte für Spiel, Ökonomie, Lebenszyklus und Technologiebaum.</p></div>
+   <div><div className="small">SPIELLEITUNG</div><h1>🎛️ Schaltzentrale</h1><p className="muted">Zentrale Masterwerte für Spiel, Ökonomie, Lebenszyklus und Technologien.</p></div>
    <div className="adminStatus">SERVERSEITIG</div>
   </div>
 
@@ -155,6 +163,19 @@ export default function Admin(){
   </section>
 
   <section className="panel">
+   <h2>🎁 Karten-Gimmicks</h2>
+   <p className="small">Steuert, wie häufig Überraschungsfelder bei der Spielerstellung gewählt werden dürfen und wie stark ihre Effekte sind.</p>
+   <div className="adminGrid">
+    <Field label="Min. Gimmicks (%)" step="0.1" value={settings.min_gimmick_percent} onChange={v=>setSetting('min_gimmick_percent',v)}/>
+    <Field label="Max. Gimmicks (%)" step="0.1" value={settings.max_gimmick_percent} onChange={v=>setSetting('max_gimmick_percent',v)}/>
+    <Field label="Standard Gimmicks (%)" step="0.1" value={settings.default_gimmick_percent} onChange={v=>setSetting('default_gimmick_percent',v)}/>
+    <Field label="Taler-Kiste Bonus" step="0.1" value={settings.gimmick_taler_bonus} onChange={v=>setSetting('gimmick_taler_bonus',v)}/>
+    <Field label="Extra-Züge pro Fund" value={settings.gimmick_move_bonus} onChange={v=>setSetting('gimmick_move_bonus',v)}/>
+    <Field label="Scanner-Bonus nächster manueller Zug" value={settings.gimmick_reveal_bonus} onChange={v=>setSetting('gimmick_reveal_bonus',v)}/>
+   </div>
+  </section>
+
+  <section className="panel">
    <h2>⏱️ Spiel-Lebenszyklus</h2>
    <div className="adminGrid">
     <Field label="Schließen nach Inaktivität (h)" value={settings.game_inactivity_hours} onChange={v=>setSetting('game_inactivity_hours',v)}/>
@@ -170,7 +191,7 @@ export default function Admin(){
   </div>
 
   <section className="panel">
-   <h2>🧠 Technologiebaum</h2>
+   <h2>🧠 Technologien</h2>
    <p className="small">Diese Werte werden direkt vom Spiel geladen. Änderungen benötigen keinen neuen GitHub-Deploy.</p>
    <div className="adminTechList">
     {techs.map(t=><div className={'adminTech '+(!t.is_active?'disabledTech':'')} key={t.id}>

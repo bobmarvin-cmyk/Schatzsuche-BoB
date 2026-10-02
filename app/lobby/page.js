@@ -14,7 +14,7 @@ export default function Lobby(){
  const [regen,setRegen]=useState(5),[capacity,setCapacity]=useState(4),[maxPlayers,setMaxPlayers]=useState(20)
  const [privateGame,setPrivateGame]=useState(false),[password,setPassword]=useState('')
  const [inviteCode,setInviteCode]=useState(''),[joinPassword,setJoinPassword]=useState('')
- const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('0.01'),[treasureCount,setTreasureCount]=useState(1)
+ const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('0.01'),[treasureCount,setTreasureCount]=useState(1),[gimmickPercent,setGimmickPercent]=useState(1)
 
  useEffect(()=>{
    init()
@@ -40,13 +40,14 @@ export default function Lobby(){
    setWallet(data)
  }
  async function loadSettings(){
-   const {data}=await supabase.from('platform_settings').select('prize_share_bps,community_share_bps,platform_share_bps,multi_treasure_threshold_ug,max_treasures,test_grant_ug,game_inactivity_hours,closed_game_retention_hours,inactive_community_share_bps,inactive_platform_share_bps,min_game_fields,max_game_fields,max_game_players,min_cell_size_m,max_cell_size_m,min_regen_seconds,max_regen_seconds,max_stored_moves_limit,min_entry_gold_ug,max_entry_gold_ug,exploration_reward,default_regen_seconds').eq('id',1).maybeSingle()
+   const {data}=await supabase.from('platform_settings').select('prize_share_bps,community_share_bps,platform_share_bps,multi_treasure_threshold_ug,max_treasures,test_grant_ug,game_inactivity_hours,closed_game_retention_hours,inactive_community_share_bps,inactive_platform_share_bps,min_game_fields,max_game_fields,max_game_players,min_cell_size_m,max_cell_size_m,min_regen_seconds,max_regen_seconds,max_stored_moves_limit,min_entry_gold_ug,max_entry_gold_ug,exploration_reward,default_regen_seconds,min_gimmick_percent,max_gimmick_percent,default_gimmick_percent').eq('id',1).maybeSingle()
    setSettings(data)
    if(data){
      const min=Math.max(1,Number(data.min_regen_seconds||5))
      const max=Math.max(min,Number(data.max_regen_seconds||3600))
      const def=Math.min(max,Math.max(min,Number(data.default_regen_seconds||min)))
      setRegen(def)
+     setGimmickPercent(Number(data.default_gimmick_percent??1))
    }
  }
  async function loadGames(){
@@ -72,7 +73,7 @@ export default function Lobby(){
    const entryUg=gameType==='pay'?goldToUg(entryGold):0
    if(gameType==='pay' && entryUg<=0){setMsg('Bitte einen Goldstaub-Einsatz größer 0 wählen.');return}
 
-   const {data,error}=await supabase.rpc('create_game_v610',{
+   const {data,error}=await supabase.rpc('create_game_v611',{
     p_name:name,
     p_field_count:Number(fields),
     p_cell_size_m:Number(cellSize),
@@ -87,7 +88,8 @@ export default function Lobby(){
     p_password:privateGame && password.trim()?password:null,
     p_game_type:gameType,
     p_entry_gold_ug:entryUg,
-    p_treasure_count:Number(treasureCount)
+    p_treasure_count:Number(treasureCount),
+    p_gimmick_percent:Number(gimmickPercent)
    })
    if(error){setMsg(error.message);return}
    await loadWallet()
@@ -162,7 +164,7 @@ export default function Lobby(){
   </div>
 
   <div className="lobbyColumns">
-   <section className="panel">
+   <section className="panel createGamePanel">
     <h2>Neues Spiel</h2>
     <div className="gameTypeSwitch">
      <button type="button" className={'typeBtn '+(gameType==='standard'?'active':'')} onClick={()=>setGameType('standard')}>🆓 Standard</button>
@@ -200,6 +202,17 @@ export default function Lobby(){
        {Array.from({length:Math.max(1,Number(settings?.max_treasures||10))},(_,i)=>i+1).map(n=><option value={n} key={n}>{n===1?'1 ganzer Schatz':`${n} Teile · je ca. ${(1/n).toFixed(3)}`}</option>)}
       </select>
       <div className="small">Gesamtwert immer 1,000 Schatz. Bei mehreren Teilen gewinnt am Ende, wer den größten Anteil gefunden hat.</div>
+      <label>🎁 Gimmicks auf der Karte</label>
+      <div className="rangeRow">
+       <input type="range"
+        min={settings?.min_gimmick_percent??0}
+        max={settings?.max_gimmick_percent??5}
+        step="0.1"
+        value={gimmickPercent}
+        onChange={e=>setGimmickPercent(Number(e.target.value))}/>
+       <strong>{Number(gimmickPercent).toFixed(1)}%</strong>
+      </div>
+      <div className="small">Anteil der Felder mit Überraschungseffekt. Grenzen kommen aus der Schaltzentrale.</div>
 
       <label className="toggleRow">
        <input type="checkbox" checked={privateGame} onChange={e=>setPrivateGame(e.target.checked)}/>
