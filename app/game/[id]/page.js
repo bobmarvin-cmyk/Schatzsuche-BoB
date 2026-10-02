@@ -62,6 +62,7 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung')
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null)
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState('')
 
  useEffect(()=>{
   init()
@@ -79,12 +80,33 @@ export default function Game(){
   const {data:{user}}=await supabase.auth.getUser()
   if(!user){location.href='/login';return}
   setUser(user)
-  await supabase.rpc('join_game',{p_game_id:id})
+
+  const stored=sessionStorage.getItem('game_password_'+id)
+  const {error}=await supabase.rpc('join_game_v64',{p_game_id:id,p_password:stored||null})
+  if(error){
+    if(error.message?.toLowerCase().includes('passwort')){
+      setJoinState('password')
+      setMsg('Dieses Spiel ist passwortgeschützt.')
+      return
+    }
+    setJoinState('error');setMsg(error.message);return
+  }
+
+  setJoinState('joined')
   await refreshMoves()
   await load()
  }
 
+ async function submitGamePassword(){
+  const {error}=await supabase.rpc('join_game_v64',{p_game_id:id,p_password:joinPassword||null})
+  if(error){setMsg(error.message);return}
+  sessionStorage.setItem('game_password_'+id,joinPassword)
+  setJoinState('joined');setMsg('')
+  await refreshMoves();await load()
+ }
+
  async function refreshMoves(){
+  if(joinState==='password'||joinState==='error')return
   const {data}=await supabase.rpc('refresh_player_moves',{p_game_id:id})
   if(data){setRegenInfo(data);load(false)}
  }
@@ -128,11 +150,31 @@ export default function Game(){
  const cap=game?Number(game.max_stored_moves||4)+Number(me?.move_capacity_bonus||0):4
  const effectiveRegen=game?Math.max(5,Math.round(Number(game.regen_seconds||30)*(1-Number(me?.regen_reduction||0)))):30
 
+ if(joinState==='password'){
+  return <main className="container authGate">
+   <div className="panel compactPanel">
+    <h1>🔒 Privates Spiel</h1>
+    <p className="muted">Gib das vom Host festgelegte Passwort ein.</p>
+    <input className="input" type="password" value={joinPassword} onChange={e=>setJoinPassword(e.target.value)}
+      onKeyDown={e=>{if(e.key==='Enter')submitGamePassword()}} autoFocus/>
+    <button className="btn primary wideOnMobile" onClick={submitGamePassword}>Spiel betreten</button>
+    <p>{msg}</p>
+    <a className="textLink" href="/lobby">← Zur Lobby</a>
+   </div>
+  </main>
+ }
+ if(joinState==='error'){
+  return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
+ }
+
  return <main className="container">
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/profile">Profil</a></div>
 
   <div className="panel"><h1>{game?.name||'Spiel'}</h1>
-   <div className="worldMeta">📍 {game?.center_label||'Kartenmittelpunkt'} · {game?.cell_size_m||100} m pro Feld · echte Weltkarte</div>
+   <div className="worldMeta">
+    <span>📍 {game?.center_label||'Kartenmittelpunkt'} · {game?.cell_size_m||100} m pro Feld · echte Weltkarte</span>
+    {game?.invite_code&&<span className="inviteChip">Einladungscode: <strong>{game.invite_code}</strong>{game.is_private?' · 🔒 privat':''}</span>}
+   </div>
    <div className="grid">
     {[
      [Number(me?.coins||0).toFixed(2),'Taler'],

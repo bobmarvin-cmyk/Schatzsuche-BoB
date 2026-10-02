@@ -1,31 +1,34 @@
-SCHATZSUCHE ONLINE V6.3
+SCHATZSUCHE ONLINE V6.4
 
 NEU
-- echte, zoombare Weltkarte unter dem Raster (MapLibre + OpenFreeMap)
-- Spiel kann an einem zufälligen echten Ort erstellt werden
-- alternativ eigene Koordinaten ("Zuhause spielen")
-- Ortsname kann für kartografische Hinweise angegeben werden
-- Feldgröße in realen Metern wählbar
-- bis ungefähr 50.000.000 Rasterfelder
-- Raster passt sich geografisch an die Feldgröße an
-- Spieler können laufenden Spielen jederzeit beitreten und starten ohne Technologien
-- gemeinsame Runden wurden durch individuelle Zugregeneration ersetzt
-- Spielersteller wählt Regenerationszeit und maximal speicherbare Züge
-- ungenutzte Züge sammeln sich nur bis zum Speicherlimit
-- Logistik-Techs erhöhen Speicher bzw. beschleunigen Regeneration
-- Analyse-Techs verwenden den Kartenort in ihren Hinweisen
-- Spielerfarben bleiben erhalten
+- Host bestimmt weiterhin die maximale Spielerzahl.
+- Spiele können öffentlich oder privat erstellt werden.
+- Private Spiele erscheinen nicht in der öffentlichen Lobby.
+- Jedes Spiel erhält einen Einladungscode.
+- Für private Spiele kann zusätzlich ein Passwort gesetzt werden.
+- Passwörter werden serverseitig gehasht gespeichert.
+- Beitritt zu privaten Spielen über Einladungscode + optionales Passwort.
+- Copyright-/Footerbereich auf allen Seiten.
+- Impressum, Datenschutz und Kontaktformular.
+- Kontaktanfragen werden in Supabase in contact_messages gespeichert.
+- deutlich verbesserte Handy-/Tablet-/Desktop-Darstellung.
+- V6.3.1 Map-Liveupdate-Fix und V6.3.2 Pagination-Fix sind enthalten.
 
-UPDATE VON V6.2
-1. Alle Dateien aus dieser ZIP in dein bestehendes GitHub-Repository hochladen und ersetzen.
-2. Supabase > SQL Editor öffnen.
-3. NUR supabase/v6_3_migration.sql einmal vollständig ausführen.
-4. Vercel deployt nach dem GitHub-Commit automatisch.
+INSTALLATION
+1. Den gesamten INHALT dieser V6.4 in dein bestehendes GitHub-Repository hochladen
+   und gleichnamige Dateien ersetzen.
+2. Supabase > SQL Editor.
+3. NUR supabase/v6_4_migration.sql EINMAL ausführen.
+4. Vercel deployed den neuen GitHub-Commit automatisch.
 
-WICHTIG
-- setup.sql / v6_migration.sql / V6.1 / V6.2 nicht noch einmal ausführen.
-- V6.3 setzt voraus, dass die bisherigen Migrationen bereits gelaufen sind.
-- Bestehende Spiele bleiben technisch erhalten; neue V6.3-Karten sollten für den vollen Funktionsumfang neu erstellt werden.
+WICHTIG VOR ÖFFENTLICHER VERÖFFENTLICHUNG
+Öffne lib/site-config.js und ersetze:
+- Betreibername
+- Straße/Hausnummer
+- PLZ/Ort
+- E-Mail
+- ggf. Telefon und Umsatzsteuer-ID
 
-KARTEN
-Die App verwendet MapLibre GL JS und den OpenFreeMap-Liberty-Stil.
+Die Rechtstexte sind eine technische Vorlage und keine individuelle Rechtsberatung.
+Vor einem geschäftlichen/öffentlichen Produktivbetrieb sollten sie an den tatsächlichen
+Betreiber, Hosting-/Kartendienste und Datenflüsse angepasst und rechtlich geprüft werden.

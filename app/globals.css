@@ -36,3 +36,62 @@ canvas{display:block;background:#07101c;border-radius:10px;image-rendering:pixel
 .statusLine{min-height:24px;color:#d8dfeb}
 .mapHeader{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
 @media(max-width:800px){.createGrid{grid-template-columns:1fr}.worldMap{height:60vh;min-height:420px}}
+
+/* V6.4: responsive shell, private games and legal pages */
+html{min-height:100%;background:var(--bg)}
+body{min-height:100vh;display:flex;flex-direction:column;overflow-x:hidden}
+.siteShell{flex:1;min-width:0}
+.siteFooter{border-top:1px solid #22324d;background:#080f1b;color:#aebbd0;margin-top:28px}
+.footerInner{max-width:1200px;margin:auto;padding:18px 24px;display:flex;justify-content:space-between;gap:18px;align-items:center;font-size:13px}
+.footerLinks{display:flex;gap:16px;flex-wrap:wrap}.footerLinks a:hover,.textLink{color:var(--gold)}
+.lobbyColumns{display:grid;grid-template-columns:minmax(0,2fr) minmax(280px,1fr);gap:16px;align-items:start}
+.privateJoinPanel{position:sticky;top:14px}
+.toggleRow{display:flex;align-items:flex-start;gap:10px;margin:6px 0 14px;padding:12px;border:1px solid #31415f;border-radius:10px;background:#0d1626;cursor:pointer}
+.toggleRow input{width:18px;height:18px;margin-top:2px}.toggleRow span{display:flex;flex-direction:column;gap:2px}.toggleRow small{color:var(--muted)}
+.codeInput{text-transform:uppercase;letter-spacing:.16em;font-weight:800}
+.capacityLine{display:flex;justify-content:space-between;gap:12px;margin:10px 0;color:#cbd5e1;font-size:12px}
+.noticeBar{max-width:1200px;margin:0 auto 16px;padding:11px 14px;border:1px solid #4b6387;background:#17243a;border-radius:10px}
+.inviteChip{display:inline-flex;margin-left:10px;padding:5px 8px;border-radius:999px;background:#263653;border:1px solid #3b506f;color:#e4eaf3;white-space:nowrap}
+.legalPage{max-width:900px}.legalPage h2{margin-top:28px}.legalPage p{line-height:1.65}.legalWarning{padding:12px 14px;border:1px solid #8a6d2c;background:#352a13;border-radius:10px;margin:12px 0 20px}
+.contactPanel{max-width:720px;margin:20px auto}.textarea{min-height:180px;resize:vertical}
+.authGate{max-width:620px}.compactPanel{margin:50px auto;max-width:520px}
+button:disabled{cursor:not-allowed;opacity:.45}
+.maplibregl-ctrl-top-right{z-index:3}
+
+@media(max-width:1000px){
+ .container{padding:16px}
+ .lobbyColumns{grid-template-columns:1fr}
+ .privateJoinPanel{position:static}
+ .gameLayout{grid-template-columns:1fr}
+ .techList{max-height:none}
+}
+
+@media(max-width:700px){
+ .container{padding:10px}
+ .panel{padding:13px;border-radius:13px;margin-bottom:10px}
+ h1{font-size:1.55rem} h2{font-size:1.18rem}
+ .topnav{position:sticky;top:0;z-index:20;background:#08101dee;padding:8px 0;margin-bottom:10px;backdrop-filter:blur(10px)}
+ .topnav .btn{flex:1;text-align:center;min-width:110px}
+ .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .card{padding:10px;min-width:0}.stat{font-size:20px;overflow-wrap:anywhere}
+ .createGrid{grid-template-columns:1fr;gap:4px}
+ .worldMap{height:58vh;min-height:390px;border-radius:9px}
+ .mapHeader{display:block}.mapLegend{justify-content:flex-start;margin:8px 0}
+ .branchTabs{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+ .branchTab{font-size:12px;padding:8px 4px}
+ .techCard{padding:10px}
+ .techBottom{gap:5px}.techBottom .btn{font-size:12px}
+ .worldMeta{display:flex;flex-direction:column;gap:6px}
+ .inviteChip{margin-left:0;width:max-content;max-width:100%;white-space:normal}
+ .footerInner{padding:16px 12px;flex-direction:column;align-items:flex-start}
+ .wideOnMobile{width:100%}
+ .gameCards{grid-template-columns:1fr}
+}
+
+@media(max-width:420px){
+ .grid{grid-template-columns:1fr 1fr}
+ .stat{font-size:18px}
+ .small{font-size:11px}
+ .branchTabs{grid-template-columns:repeat(2,1fr)}
+ .worldMap{height:54vh;min-height:340px}
+}
