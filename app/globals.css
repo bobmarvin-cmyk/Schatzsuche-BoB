@@ -274,3 +274,11 @@ button:disabled{cursor:not-allowed;opacity:.45}
  margin-top:10px;padding:9px 11px;border-radius:9px;
  background:#15271f;border:1px solid #315c47;color:#b8e8d0;font-size:12px;line-height:1.45
 }
+
+/* V6.10 – Teil-Schätze & echte Kartenmerkmale */
+.treasureGamePanel{border-color:#405678}
+.analysisActions{margin:10px 0}
+.mapFeatureBox{margin:10px 0;padding:10px;border-radius:10px;background:#111e31;border:1px solid #30445f}
+.mapFeatureTags{display:flex;gap:7px;flex-wrap:wrap;margin-top:7px}
+.mapFeatureTags>span{display:flex;flex-direction:column;gap:1px;padding:6px 9px;border-radius:9px;background:#1a2a41;border:1px solid #3b506e}
+.mapFeatureTags small{font-size:9px;color:#93a6bf}

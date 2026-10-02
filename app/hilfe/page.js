@@ -122,6 +122,28 @@ export default function Hilfe(){
         automatischer Felder werden zentral von der Spielleitung eingestellt.
       </p>
 
+
+      <h2>Schatzteile und Siegerwertung</h2>
+      <p>
+        Jedes Spiel besitzt insgesamt genau 1,000 Schatz. Der Host kann diesen Gesamtwert auf mehrere
+        Fundstellen verteilen. Bei drei Teilen sind das zum Beispiel ungefähr 0,333 + 0,333 + 0,334.
+        Das Spiel endet erst, wenn alle Schatzteile gefunden wurden. Gewinner ist der Spieler, der
+        insgesamt den größten Anteil des Schatzes gefunden hat.
+      </p>
+      <p>
+        Im Paygame wird auch der Test-Gold-Schatzpool auf diese Fundstellen verteilt. Der Gesamtpool
+        wird dadurch nicht größer – er wird lediglich auf mehrere Funde aufgeteilt.
+      </p>
+
+      <h2>Die echte Karte als Spielhinweis</h2>
+      <p>
+        Analyse-Technologien markieren ein ungefähres Gebiet auf der realen Karte. Über
+        „Hinweisgebiet fokussieren“ kannst du direkt dorthin springen. Wenn der Kartenstil passende
+        Daten liefert, zeigt das Spiel zusätzlich benannte Straßen, Orte, Gewässer oder andere
+        Kartenmerkmale aus diesem Gebiet. Diese Merkmale sollen zur Orientierung genutzt werden,
+        statt nur Rasterkoordinaten abzuzählen.
+      </p>
+
       <h2>Tipps</h2>
       <p>
         Nutze deine Züge nicht nur zufällig. Beobachte bereits erkundete Bereiche, kombiniere Hinweise mit der

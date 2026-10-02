@@ -40,7 +40,7 @@ export default function ArchivedGame(){
    {archive.winner_name&&<div className="archiveWinnerBadge">
     <span>🏆 Sieger</span>
     <strong>{archive.winner_name}</strong>
-    {archive.winner_moves_used!=null&&<small>{Number(archive.winner_moves_used).toLocaleString('de-DE')} Züge</small>}
+    {archive.winner_moves_used!=null&&<small>{Number(archive.winner_moves_used).toLocaleString('de-DE')} Züge · {(Number(archive.winner_share_bps||0)/100).toFixed(2)}% Schatz</small>}
    </div>}
   </div>
 
@@ -67,7 +67,7 @@ export default function ArchivedGame(){
        <strong><a className="profileLink" href={'/spieler/'+p.user_id}>{p.display_name||'Spieler'}</a></strong>
        {p.user_id===archive.winner_user_id&&<span>🏆</span>}
       </div>
-      <div className="small">{Number(p.moves_used||0).toLocaleString('de-DE')} Züge · {Number(p.fields||0).toLocaleString('de-DE')} Felder · {Number(p.coins||0).toFixed(2)} Taler</div>
+      <div className="small">{Number(p.moves_used||0).toLocaleString('de-DE')} Züge · ⚙️ {Number(p.machine_ticks_used||0).toLocaleString('de-DE')} Maschinentakte · {Number(p.fields||0).toLocaleString('de-DE')} Felder · 🧩 {(Number(p.treasure_share_bps||0)/100).toFixed(2)}% Schatz · {Number(p.coins||0).toFixed(2)} Taler</div>
     </div>)}
    </div>
   </section>

@@ -72,7 +72,7 @@ function analysisCollection(h){
   return {type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[coords]}}]}
 }
 
-export default function GameMap({game,fields,players,onReveal,analysisHint,onViewportChange}){
+export default function GameMap({game,fields,players,onReveal,analysisHint,onViewportChange,analysisFocusToken,onAnalysisFeatures}){
   const holder=useRef(null)
   const mapRef=useRef(null)
   const gameRef=useRef(game)
@@ -81,6 +81,7 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
   const onRevealRef=useRef(onReveal)
   const analysisRef=useRef(analysisHint)
   const viewportRef=useRef(onViewportChange)
+  const analysisFeaturesRef=useRef(onAnalysisFeatures)
   const [status,setStatus]=useState('Karte wird geladen…')
 
   gameRef.current=game
@@ -89,6 +90,7 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
   onRevealRef.current=onReveal
   analysisRef.current=analysisHint
   viewportRef.current=onViewportChange
+  analysisFeaturesRef.current=onAnalysisFeatures
 
   useEffect(()=>{
     if(!game||!holder.current||mapRef.current)return
@@ -162,6 +164,37 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
           if(x>=0&&y>=0&&x<cg.width&&y<cg.height)onRevealRef.current?.(x,y)
         })
 
+        function collectAnalysisFeatures(){
+          const h=analysisRef.current
+          if(!h?.lat||!h?.lon||!map.isStyleLoaded?.())return
+          try{
+            const center=map.project([Number(h.lon),Number(h.lat)])
+            const metersLon=Math.max(1000,METERS_PER_DEG_LAT*Math.cos(Number(h.lat)*Math.PI/180))
+            const east=map.project([Number(h.lon)+Number(h.radius_m||500)/metersLon,Number(h.lat)])
+            const px=Math.max(35,Math.min(220,Math.abs(east.x-center.x)))
+            const features=map.queryRenderedFeatures([
+              [center.x-px,center.y-px],
+              [center.x+px,center.y+px]
+            ])||[]
+            const seen=new Set(),items=[]
+            for(const f of features){
+              if(['explored-fill','explored-outline','grid-lines','analysis-zone-fill','analysis-zone-line'].includes(f.layer?.id))continue
+              const p=f.properties||{}
+              const name=p.name_de||p.name||p['name:de']||p.ref
+              if(!name)continue
+              const kind=p.class||p.type||p.subclass||f.sourceLayer||'Kartenmerkmal'
+              const key=String(name).toLowerCase()
+              if(seen.has(key))continue
+              seen.add(key)
+              items.push({name:String(name),kind:String(kind)})
+              if(items.length>=10)break
+            }
+            analysisFeaturesRef.current?.(items)
+          }catch{
+            analysisFeaturesRef.current?.([])
+          }
+        }
+
         function updateGridAndViewport(){
           if(!map.getSource('grid'))return
           const cg=geometry(gameRef.current)
@@ -232,6 +265,43 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
     }
     if(map.loaded())apply();else map.once('load',apply)
   },[analysisHint])
+
+  useEffect(()=>{
+    const map=mapRef.current
+    const h=analysisHint
+    if(!map||!h?.lat||!h?.lon||!analysisFocusToken)return
+    const focus=()=>{
+      try{
+        const lat=Number(h.lat),lon=Number(h.lon),radius=Math.max(100,Number(h.radius_m||500))
+        const metersLon=Math.max(1000,METERS_PER_DEG_LAT*Math.cos(lat*Math.PI/180))
+        const dLat=radius/METERS_PER_DEG_LAT
+        const dLon=radius/metersLon
+        map.fitBounds([[lon-dLon,lat-dLat],[lon+dLon,lat+dLat]],{padding:55,duration:650,maxZoom:17})
+        map.once('idle',()=>{
+          try{
+            const center=map.project([lon,lat])
+            const east=map.project([lon+dLon,lat])
+            const px=Math.max(35,Math.min(220,Math.abs(east.x-center.x)))
+            const features=map.queryRenderedFeatures([[center.x-px,center.y-px],[center.x+px,center.y+px]])||[]
+            const seen=new Set(),items=[]
+            for(const f of features){
+              if(['explored-fill','explored-outline','grid-lines','analysis-zone-fill','analysis-zone-line'].includes(f.layer?.id))continue
+              const p=f.properties||{}
+              const name=p.name_de||p.name||p['name:de']||p.ref
+              if(!name)continue
+              const key=String(name).toLowerCase()
+              if(seen.has(key))continue
+              seen.add(key)
+              items.push({name:String(name),kind:String(p.class||p.type||p.subclass||f.sourceLayer||'Kartenmerkmal')})
+              if(items.length>=10)break
+            }
+            analysisFeaturesRef.current?.(items)
+          }catch{analysisFeaturesRef.current?.([])}
+        })
+      }catch{}
+    }
+    if(map.loaded())focus();else map.once('load',focus)
+  },[analysisFocusToken])
 
   return <div className="worldMapShell">
     <div ref={holder} className="worldMap"/>

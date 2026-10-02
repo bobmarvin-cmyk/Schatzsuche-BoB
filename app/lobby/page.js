@@ -14,7 +14,7 @@ export default function Lobby(){
  const [regen,setRegen]=useState(5),[capacity,setCapacity]=useState(4),[maxPlayers,setMaxPlayers]=useState(20)
  const [privateGame,setPrivateGame]=useState(false),[password,setPassword]=useState('')
  const [inviteCode,setInviteCode]=useState(''),[joinPassword,setJoinPassword]=useState('')
- const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('0.01'),[treasureMode,setTreasureMode]=useState('auto')
+ const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('0.01'),[treasureCount,setTreasureCount]=useState(1)
 
  useEffect(()=>{
    init()
@@ -72,7 +72,7 @@ export default function Lobby(){
    const entryUg=gameType==='pay'?goldToUg(entryGold):0
    if(gameType==='pay' && entryUg<=0){setMsg('Bitte einen Goldstaub-Einsatz größer 0 wählen.');return}
 
-   const {data,error}=await supabase.rpc('create_game_v67',{
+   const {data,error}=await supabase.rpc('create_game_v610',{
     p_name:name,
     p_field_count:Number(fields),
     p_cell_size_m:Number(cellSize),
@@ -87,7 +87,7 @@ export default function Lobby(){
     p_password:privateGame && password.trim()?password:null,
     p_game_type:gameType,
     p_entry_gold_ug:entryUg,
-    p_treasure_mode:gameType==='pay'?treasureMode:'1'
+    p_treasure_count:Number(treasureCount)
    })
    if(error){setMsg(error.message);return}
    await loadWallet()
@@ -192,12 +192,14 @@ export default function Lobby(){
       {gameType==='pay'&&<>
        <label>Schürfrechte / Teilnahme pro Spieler</label>
        <div className="goldInputRow"><input className="input" type="number" min="0.001" step="0.001" value={entryGold} onChange={e=>setEntryGold(e.target.value)}/><span>g Test-Gold</span></div>
-       <label>Goldschätze</label>
-       <select className="input" value={treasureMode} onChange={e=>setTreasureMode(e.target.value)}>
-        <option value="auto">Automatisch nach Serverregel</option><option value="1">1 Schatz</option><option value="3">3 Schätze</option><option value="5">5 Schätze</option>
-       </select>
        <div className="small">Auch der Host zahlt beim Erstellen denselben Einsatz.</div>
       </>}
+
+      <label>Schatzteile</label>
+      <select className="input" value={treasureCount} onChange={e=>setTreasureCount(Number(e.target.value))}>
+       {Array.from({length:Math.max(1,Number(settings?.max_treasures||10))},(_,i)=>i+1).map(n=><option value={n} key={n}>{n===1?'1 ganzer Schatz':`${n} Teile · je ca. ${(1/n).toFixed(3)}`}</option>)}
+      </select>
+      <div className="small">Gesamtwert immer 1,000 Schatz. Bei mehreren Teilen gewinnt am Ende, wer den größten Anteil gefunden hat.</div>
 
       <label className="toggleRow">
        <input type="checkbox" checked={privateGame} onChange={e=>setPrivateGame(e.target.checked)}/>
@@ -250,7 +252,7 @@ export default function Lobby(){
       return <div className={'card '+(isPay?'payGameCard':'')} key={g.id}>
        <div className="gameCardTop"><h3>{g.name}</h3><span className={'gameBadge '+(isPay?'gold':'')}>{isPay?'✨ PAY TEST':'🆓 GRATIS'}</span></div>
        <div className="small">{g.center_label||'Weltkarte'} · {(g.width*g.height).toLocaleString('de-DE')} Felder</div>
-       <div className="small">{g.cell_size_m||100} m/Feld · Zug alle {g.regen_seconds||30}s</div>
+       <div className="small">{g.cell_size_m||100} m/Feld · Zug alle {g.regen_seconds||30}s · 🧩 {g.treasure_count||1} Schatzteil{Number(g.treasure_count||1)===1?'':'e'}</div>
        {isPay&&<div className="payFacts">
         <span>Einsatz: <b>{formatGold(g.entry_gold_ug)}</b></span><span>Schätze: <b>{g.treasure_count}</b></span><span>Aktueller Pool: <b>{formatGold(g.gold_prize_pool_ug)}</b></span>
        </div>}

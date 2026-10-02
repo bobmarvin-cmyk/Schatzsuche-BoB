@@ -11,7 +11,7 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null)
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null)
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null)
 
  useEffect(()=>{
@@ -67,7 +67,7 @@ export default function Game(){
  }
 
  async function loadPlayersOnly(){
-  const {data}=await supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at')
+  const {data}=await supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at')
   if(data)setPlayers(data)
  }
  async function loadGameOnly(){
@@ -83,7 +83,7 @@ export default function Game(){
   const {data:{user}}=await supabase.auth.getUser(); if(!user)return
   const [w,gt]=await Promise.all([
    supabase.from('gold_wallets').select('balance_ug').eq('user_id',user.id).maybeSingle(),
-   supabase.rpc('get_gold_treasure_status_v65',{p_game_id:id})
+   supabase.rpc('get_treasure_status_v610',{p_game_id:id})
   ])
   setWallet(w.data);setGoldTreasures(gt.data||[])
  }
@@ -92,10 +92,10 @@ export default function Game(){
   try{
     const [g,p,t,w,gt,tech]=await Promise.all([
       supabase.from('games').select('*').eq('id',id).single(),
-      supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
+      supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
-      supabase.rpc('get_gold_treasure_status_v65',{p_game_id:id}),
+      supabase.rpc('get_treasure_status_v610',{p_game_id:id}),
       supabase.from('technologies').select('id,name,branch,cost,reveal_power_bonus,reward_bonus,analysis_level,capacity_bonus,regen_reduction,machine_auto_fields,requires,description,sort_order,is_active').eq('is_active',true).order('sort_order',{ascending:true}).order('id',{ascending:true})
     ])
 
@@ -140,15 +140,17 @@ export default function Game(){
   setMsg('Suche läuft…')
   try{
     await supabase.rpc('set_machine_focus_v690',{p_game_id:id,p_x:x,p_y:y})
-    const {data,error}=await supabase.rpc('reveal_area_v683',{p_game_id:id,p_x:x,p_y:y})
+    const {data,error}=await supabase.rpc('reveal_area_v610',{p_game_id:id,p_x:x,p_y:y})
     if(error){setMsg(error.message);return}
 
     setMsg(data?.message||'Gebiet untersucht')
-    if(data?.won){
+    if(data?.game_over){
       setWinnerCelebration({
-        name:data.winner_name||'Du',
+        won:!!data.won,
+        name:data.winner_name||'Spieler',
         moves:Number(data.winner_moves_used||0),
-        opened:Number(data.opened||0)
+        opened:Number(data.opened||0),
+        share:Number(data.winner_share_bps||0)
       })
     }
     // Der Server schickt nicht mehr tausende Feldobjekte zurück.
@@ -156,7 +158,7 @@ export default function Game(){
     if(currentViewport.current)await loadVisibleFields(currentViewport.current)
 
     const {data:hint}=await supabase.rpc('get_analysis_hint_v68',{p_game_id:id,p_x:x,p_y:y})
-    if(hint)setAnalysisHint(hint)
+    if(hint){setAnalysisHint(hint);setAnalysisFeatures([])}
 
     // Nur kleine Statusdaten nachladen. Die komplette Feldliste bleibt unangetastet.
     await Promise.all([loadPlayersOnly(),loadGameOnly(),loadGoldOnly()])
@@ -169,21 +171,22 @@ export default function Game(){
   if(machineBusy.current||machinePower<=0||document.visibilityState!=='visible'||!document.hasFocus())return
   machineBusy.current=true
   try{
-    const {data,error}=await supabase.rpc('run_machines_v690',{p_game_id:id})
+    await supabase.rpc('machine_presence_v690',{p_game_id:id})
+    const {data,error}=await supabase.rpc('run_machines_v610',{p_game_id:id})
     if(error){
       if(!error.message?.includes('Noch nicht fällig'))setMsg('Maschinen: '+error.message)
       return
     }
-    if(data?.opened>0){
-      setMsg(data?.message||`⚙️ Maschinen haben ${data.opened} Felder aufgedeckt.`)
-      if(currentViewport.current)await loadVisibleFields(currentViewport.current)
-      await Promise.all([loadPlayersOnly(),loadGameOnly(),loadGoldOnly()])
-    }
-    if(data?.won){
+    if(data?.message)setMsg(data.message)
+    if(data?.opened>0&&currentViewport.current)await loadVisibleFields(currentViewport.current)
+    await Promise.all([loadPlayersOnly(),loadGameOnly(),loadGoldOnly()])
+    if(data?.game_over){
       setWinnerCelebration({
-        name:data.winner_name||'Du',
+        won:!!data.won,
+        name:data.winner_name||'Spieler',
         moves:Number(data.winner_moves_used||0),
-        opened:Number(data.opened||0)
+        opened:Number(data.opened||0),
+        share:Number(data.winner_share_bps||0)
       })
     }
   }finally{
@@ -292,20 +295,26 @@ export default function Game(){
    {machinePower>0&&<div className="machineStatus">⚙️ Deine Maschinen arbeiten nur, solange dieses Spiel sichtbar geöffnet ist. Zielbereich: dein letzter manueller Kartenklick.</div>}
   </div>
 
-  {game?.game_type==='pay'&&<div className="panel goldGamePanel">
+  {game&&<div className={'panel '+(game.game_type==='pay'?'goldGamePanel':'treasureGamePanel')}>
    <div className="goldGameHeader">
-    <div><div className="small">PAYGAME · TESTMODUS</div><h2>✨ Goldstaub-Schatzsuche</h2></div>
-    <div className="goldBalance">Wallet: {formatGold(wallet?.balance_ug||0)}</div>
+    <div><div className="small">{game.game_type==='pay'?'PAYGAME · TESTMODUS':'SCHATZWERTUNG'}</div><h2>🧩 Schatzteile</h2></div>
+    {game.game_type==='pay'&&<div className="goldBalance">Wallet: {formatGold(wallet?.balance_ug||0)}</div>}
    </div>
    <div className="grid goldStats">
-    <div className="card"><div className="small">Einsatz pro Spieler</div><div className="stat">{formatGold(game.entry_gold_ug)}</div></div>
-    <div className="card"><div className="small">Schatzpool aktuell</div><div className="stat">{formatGold(game.gold_prize_pool_ug)}</div></div>
-    <div className="card"><div className="small">Goldschätze offen</div><div className="stat">{goldTreasures.filter(t=>!t.found_by).length} / {goldTreasures.length}</div></div>
+    <div className="card"><div className="small">Gesamtschatz</div><div className="stat">1,000</div></div>
+    <div className="card"><div className="small">Teile offen</div><div className="stat">{goldTreasures.filter(t=>!t.found_by).length} / {goldTreasures.length||game.treasure_count||1}</div></div>
+    <div className="card"><div className="small">Dein Anteil</div><div className="stat">{(Number(me?.treasure_share_bps||0)/100).toFixed(2)}%</div></div>
+    {game.game_type==='pay'&&<div className="card"><div className="small">Schatzpool aktuell</div><div className="stat">{formatGold(game.gold_prize_pool_ug)}</div></div>}
    </div>
-   <div className="treasurePills">{goldTreasures.map((t,i)=><span key={t.id} className={'treasurePill '+(t.found_by?'found':'')}>
-    {t.found_by?'✅':'✨'} Schatz {i+1}: {formatGold(t.amount_ug)}
-   </span>)}</div>
-   <div className="small">Test-Goldstaub hat in V6.5 keinen Echtgeldwert und kann weder gekauft noch ausgezahlt werden.</div>
+   <div className="treasurePills">{goldTreasures.map((t,i)=>{
+    const finder=players.find(p=>p.user_id===t.found_by)
+    return <span key={t.id} className={'treasurePill '+(t.found_by?'found':'')}>
+      {t.found_by?'✅':'🧩'} Teil {i+1}: {(Number(t.share_bps||0)/10000).toFixed(3)}
+      {game.game_type==='pay'&&<> · {formatGold(t.amount_ug)}</>}
+      {t.found_by&&<> · {finder?.profiles?.display_name||'gefunden'}</>}
+    </span>
+   })}</div>
+   <div className="small">Das Spiel endet erst, wenn alle Teile gefunden wurden. Sieger ist der Spieler mit dem größten Gesamtanteil.</div>
   </div>}
 
   <div className="gameLayout">
@@ -313,8 +322,17 @@ export default function Game(){
     <div className="mapHeader"><div><h2>Weltkarte</h2><div className="small">Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.</div></div>
      <div className="mapLegend">{players.map(p=><div className="legendItem" key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.profiles?.display_name||'Spieler'}</div>)}</div>
     </div>
-    {game&&<GameMap game={game} fields={fields} players={players} onReveal={reveal} analysisHint={analysisHint} onViewportChange={handleViewport}/>}
-    {analysisHint&&<div className="analysisHintBox"><strong>🧭 Kartenanalyse Stufe {analysisHint.level}</strong><div>{analysisHint.text}</div><div className="small">Der gelb markierte Bereich auf der Karte ist der aktuelle Analysebereich.</div></div>}
+    {game&&<GameMap game={game} fields={fields} players={players} onReveal={reveal} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={setAnalysisFeatures}/>}
+    {analysisHint&&<div className="analysisHintBox">
+      <strong>🧭 Kartenanalyse Stufe {analysisHint.level}</strong>
+      <div>{analysisHint.text}</div>
+      <div className="analysisActions"><button className="btn" onClick={()=>setAnalysisFocusToken(v=>v+1)}>🗺️ Hinweisgebiet fokussieren</button></div>
+      {analysisFeatures.length>0&&<div className="mapFeatureBox">
+        <div className="small">Sichtbare Kartenmerkmale im Hinweisgebiet:</div>
+        <div className="mapFeatureTags">{analysisFeatures.map((f,i)=><span key={i}><b>{f.name}</b>{f.kind&&<small>{f.kind}</small>}</span>)}</div>
+      </div>}
+      <div className="small">Der gelb markierte Bereich ist absichtlich ungenau. Nutze echte Straßen, Orte, Gewässer und andere Kartenmerkmale zur Orientierung.</div>
+    </div>}
     <p className="statusLine">{msg}</p>
    </section>
 
@@ -335,19 +353,21 @@ export default function Game(){
 
   <div className="panel"><h2>Spieler</h2><div className="grid">{players.map(p=><div className="card" key={p.user_id}>
    <div className="playerNameLine"><span className="colorDot large" style={{background:p.player_color||'#35516d'}}></span><strong><a className="profileLink" href={'/spieler/'+p.user_id}>{p.profiles?.display_name||'Spieler'}</a></strong></div>
-   <div className="small">{Number(p.coins).toFixed(2)} T · {p.moves_left} gespeicherte Züge · {p.reveal_power} Felder/Zug</div>
+   <div className="small">{Number(p.coins).toFixed(2)} T · {p.moves_left} gespeicherte Züge · {p.reveal_power} Felder/Zug · 🧩 {(Number(p.treasure_share_bps||0)/100).toFixed(2)}%</div>
   </div>)}</div></div>
   {game&&user&&<GameChat gameId={id} userId={user.id}/>}
 
   {winnerCelebration&&<div className="winnerOverlay" role="dialog" aria-modal="true">
    <div className="winnerModal">
-    <div className="winnerBurst">🏆</div>
-    <div className="small">SCHATZ GEFUNDEN</div>
-    <h1>Du hast gewonnen!</h1>
-    <p className="winnerLead">Glückwunsch {winnerCelebration.name}! Du hast den Schatz vor allen anderen gefunden.</p>
+    <div className="winnerBurst">{winnerCelebration.won?'🏆':'🏁'}</div>
+    <div className="small">ALLE SCHATZTEILE GEFUNDEN</div>
+    <h1>{winnerCelebration.won?'Du hast gewonnen!':'Spiel beendet'}</h1>
+    <p className="winnerLead">{winnerCelebration.won
+      ? `Glückwunsch! Du hast mit ${(winnerCelebration.share/100).toFixed(2)}% den größten Anteil des Schatzes gefunden.`
+      : `${winnerCelebration.name} gewinnt mit ${(winnerCelebration.share/100).toFixed(2)}% des Gesamtschatzes.`}</p>
     <div className="winnerStats">
-      <div><span>🎯</span><strong>{winnerCelebration.moves.toLocaleString('de-DE')}</strong><small>eigene Züge</small></div>
-      <div><span>🗺️</span><strong>{winnerCelebration.opened.toLocaleString('de-DE')}</strong><small>Felder im Gewinnzug</small></div>
+      <div><span>🧩</span><strong>{(winnerCelebration.share/100).toFixed(2)}%</strong><small>Siegeranteil</small></div>
+      <div><span>🎯</span><strong>{winnerCelebration.moves.toLocaleString('de-DE')}</strong><small>Züge des Siegers</small></div>
     </div>
     <div className="winnerActions">
       <a className="btn primary" href={'/archiv/'+id}>🏛️ Endstand ansehen</a>
