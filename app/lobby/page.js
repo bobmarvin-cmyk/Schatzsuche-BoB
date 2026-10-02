@@ -126,13 +126,14 @@ export default function Lobby(){
   <div className="topnav">
    <a className="btn" href="/profile">Profil</a>
    <a className="btn" href="/legenden">🏆 Legenden</a>
+   <a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a>
    {isAdmin&&<a className="btn adminNavBtn" href="/admin">🎛️ Schaltzentrale</a>}
    <button className="btn" onClick={logout}>Abmelden</button>
   </div>
 
   <div className="panel heroPanel">
    <div className="heroSplit">
-    <div><h1>Lobby</h1><p className="muted">Standardspiele sind kostenlos. Paygames laufen ausschließlich mit <strong>Test-Goldstaub ohne Echtgeldwert</strong>.</p><p className="small">Spiele ohne Zug werden nach {inactivityHours} Stunden automatisch geschlossen. Geschlossene Spiele werden nach {Math.round(retentionHours/24)} Tagen gelöscht.</p></div>
+    <div><h1>Lobby</h1><p className="muted">Standardspiele sind kostenlos. Paygames laufen ausschließlich mit <strong>Test-Goldstaub ohne Echtgeldwert</strong>.</p><p className="small">Spiele ohne Zug werden nach {inactivityHours} Stunden automatisch geschlossen. Die großen Live-Daten geschlossener Spiele werden nach {Math.round(retentionHours/24)} Tagen bereinigt; der Endstand bleibt dauerhaft in der Hall of Fame.</p></div>
     <div className="goldWalletCard">
      <div className="small">Test-Goldstaub</div>
      <div className="goldBalance">✨ {formatGold(wallet?.balance_ug||0)}</div>
@@ -245,7 +246,7 @@ export default function Lobby(){
 
   <section className="panel closedGamesPanel">
    <h2>Geschlossene Spiele</h2>
-   <p className="small">Diese Einträge werden automatisch nach {Math.round(retentionHours/24)} Tagen gelöscht.</p>
+   <p className="small">Die Live-Einträge werden nach {Math.round(retentionHours/24)} Tagen bereinigt. Endkarte und Endstand bleiben dauerhaft in der Hall of Fame erhalten.</p>
    <div className="grid gameCards">
     {closedGames.length===0&&<div className="muted">Keine kürzlich geschlossenen Spiele.</div>}
     {closedGames.map(g=><div className="card closedGameCard" key={g.id}>
@@ -253,6 +254,7 @@ export default function Lobby(){
       <div className="small">{g.close_reason==='inactive'?`${inactivityHours} Stunden ohne Zug`:g.status==='finished'?'Regulär beendet':'Beendet'}</div>
       <div className="small">{g.closed_at?new Date(g.closed_at).toLocaleString('de-DE'):'–'}</div>
       {g.game_type==='pay'&&<div className="small">Rest-Schatzpool wurde nach Serverregel verteilt.</div>}
+      <a className="btn wideOnMobile" href={'/archiv/'+g.id}>Endstand ansehen</a>
     </div>)}
    </div>
   </section>

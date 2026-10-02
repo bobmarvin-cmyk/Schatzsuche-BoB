@@ -11,7 +11,7 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[tick,setTick]=useState(0)
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null)
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null)
 
  useEffect(()=>{
@@ -139,10 +139,17 @@ export default function Game(){
   revealBusy.current=true
   setMsg('Suche läuft…')
   try{
-    const {data,error}=await supabase.rpc('reveal_area_v682',{p_game_id:id,p_x:x,p_y:y})
+    const {data,error}=await supabase.rpc('reveal_area_v683',{p_game_id:id,p_x:x,p_y:y})
     if(error){setMsg(error.message);return}
 
     setMsg(data?.message||'Gebiet untersucht')
+    if(data?.won){
+      setWinnerCelebration({
+        name:data.winner_name||'Du',
+        moves:Number(data.winner_moves_used||0),
+        opened:Number(data.opened||0)
+      })
+    }
     // Der Server schickt nicht mehr tausende Feldobjekte zurück.
     // Nur der sichtbare Ausschnitt wird einmal kompakt neu geladen.
     if(currentViewport.current)await loadVisibleFields(currentViewport.current)
@@ -211,7 +218,7 @@ export default function Game(){
  }
 
  return <main className="container">
-  <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a></div>
+  <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel"><h1>{game?.name||'Spiel'}</h1>
    <div className="worldMeta">
@@ -278,5 +285,22 @@ export default function Game(){
    <div className="small">{Number(p.coins).toFixed(2)} T · {p.moves_left} gespeicherte Züge · {p.reveal_power} Felder/Zug</div>
   </div>)}</div></div>
   {game&&user&&<GameChat gameId={id} userId={user.id}/>}
+
+  {winnerCelebration&&<div className="winnerOverlay" role="dialog" aria-modal="true">
+   <div className="winnerModal">
+    <div className="winnerBurst">🏆</div>
+    <div className="small">SCHATZ GEFUNDEN</div>
+    <h1>Du hast gewonnen!</h1>
+    <p className="winnerLead">Glückwunsch {winnerCelebration.name}! Du hast den Schatz vor allen anderen gefunden.</p>
+    <div className="winnerStats">
+      <div><span>🎯</span><strong>{winnerCelebration.moves.toLocaleString('de-DE')}</strong><small>eigene Züge</small></div>
+      <div><span>🗺️</span><strong>{winnerCelebration.opened.toLocaleString('de-DE')}</strong><small>Felder im Gewinnzug</small></div>
+    </div>
+    <div className="winnerActions">
+      <a className="btn primary" href={'/archiv/'+id}>🏛️ Endstand ansehen</a>
+      <button className="btn" onClick={()=>setWinnerCelebration(null)}>Noch kurz hier bleiben</button>
+    </div>
+   </div>
+  </div>}
  </main>
 }

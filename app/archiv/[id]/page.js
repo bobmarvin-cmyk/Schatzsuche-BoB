@@ -1,0 +1,75 @@
+'use client'
+import {useEffect,useState} from 'react'
+import {useParams} from 'next/navigation'
+import {supabase} from '../../../lib/supabase-browser'
+import ArchiveMap from '../../../components/ArchiveMap'
+
+export default function ArchivedGame(){
+ const {id}=useParams()
+ const [archive,setArchive]=useState(null),[fields,setFields]=useState([]),[msg,setMsg]=useState('')
+
+ useEffect(()=>{load()},[id])
+
+ async function load(){
+  const {data:{user}}=await supabase.auth.getUser()
+  if(!user){location.replace('/login');return}
+
+  const {data,error}=await supabase.rpc('get_game_archive_v683',{p_game_id:id})
+  if(error){setMsg(error.message);return}
+  setArchive(data?.archive||null)
+  setFields(data?.fields||[])
+ }
+
+ if(msg)return <main className="container"><div className="panel"><h1>Spielarchiv</h1><p>{msg}</p><a className="btn" href="/hall-of-fame">← Hall of Fame</a></div></main>
+ if(!archive)return <main className="container"><div className="panel">Lade Endstand…</div></main>
+
+ const players=archive.players||[]
+
+ return <main className="container">
+  <div className="topnav">
+   <a className="btn" href="/hall-of-fame">← Hall of Fame</a>
+   <a className="btn" href="/lobby">Lobby</a>
+  </div>
+
+  <div className="panel archiveHero">
+   <div>
+    <div className="small">BEENDETES SPIEL</div>
+    <h1>{archive.name}</h1>
+    <p className="muted">📍 {archive.center_label||'Weltkarte'} · beendet {archive.closed_at?new Date(archive.closed_at).toLocaleString('de-DE'):''}</p>
+   </div>
+   {archive.winner_name&&<div className="archiveWinnerBadge">
+    <span>🏆 Sieger</span>
+    <strong>{archive.winner_name}</strong>
+    {archive.winner_moves_used!=null&&<small>{Number(archive.winner_moves_used).toLocaleString('de-DE')} Züge</small>}
+   </div>}
+  </div>
+
+  <div className="grid archiveStats">
+   <div className="card"><div className="small">Spieler</div><div className="stat">{archive.player_count}</div></div>
+   <div className="card"><div className="small">Züge insgesamt</div><div className="stat">{Number(archive.total_moves||0).toLocaleString('de-DE')}</div></div>
+   <div className="card"><div className="small">Erkundete Felder</div><div className="stat">{Number(archive.total_fields||0).toLocaleString('de-DE')}</div></div>
+  </div>
+
+  <section className="panel">
+   <div className="mapHeader">
+    <div><h2>🗺️ Endkarte</h2><div className="small">Die Farben zeigen, welcher Spieler die jeweiligen Bereiche erkundet hat. Gold markiert einen Schatzbereich.</div></div>
+    <div className="mapLegend">{players.map(p=><div className="legendItem" key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.display_name||'Spieler'}</div>)}</div>
+   </div>
+   <ArchiveMap archive={archive} fields={fields}/>
+  </section>
+
+  <section className="panel">
+   <h2>Endstand</h2>
+   <div className="archivePlayerList">
+    {players.map((p,i)=><div className={'card archivePlayer '+(p.user_id===archive.winner_user_id?'winner':'')} key={p.user_id}>
+      <div className="playerNameLine">
+       <span className="colorDot large" style={{background:p.player_color||'#35516d'}}></span>
+       <strong><a className="profileLink" href={'/spieler/'+p.user_id}>{p.display_name||'Spieler'}</a></strong>
+       {p.user_id===archive.winner_user_id&&<span>🏆</span>}
+      </div>
+      <div className="small">{Number(p.moves_used||0).toLocaleString('de-DE')} Züge · {Number(p.fields||0).toLocaleString('de-DE')} Felder · {Number(p.coins||0).toFixed(2)} Taler</div>
+    </div>)}
+   </div>
+  </section>
+ </main>
+}

@@ -223,3 +223,48 @@ button:disabled{cursor:not-allowed;opacity:.45}
 /* V6.8.2 – stabile viewportbasierte Karte */
 .worldMapShell{position:relative;min-width:0}
 .mapLoadingOverlay{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);z-index:5;background:rgba(9,17,30,.9);border:1px solid #31445f;border-radius:10px;padding:10px 14px;color:#c9d6e8;font-size:12px;text-align:center;max-width:80%;pointer-events:none}
+
+/* V6.8.3 – Siegerfeedback + Hall of Fame */
+.winnerOverlay{
+ position:fixed;inset:0;z-index:10050;background:rgba(2,7,15,.88);
+ backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:18px
+}
+.winnerModal{
+ width:min(560px,100%);text-align:center;background:#101b2c;border:1px solid #49688f;
+ border-radius:22px;padding:28px;box-shadow:0 28px 100px rgba(0,0,0,.62)
+}
+.winnerBurst{font-size:74px;line-height:1;margin-bottom:8px;animation:winnerPop .55s ease-out}
+.winnerModal h1{font-size:36px;margin:6px 0 10px}
+.winnerLead{font-size:17px;color:#c7d4e5;line-height:1.55}
+.winnerStats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:20px 0}
+.winnerStats>div{background:#17263c;border:1px solid #314866;border-radius:14px;padding:14px}
+.winnerStats span{display:block;font-size:24px}.winnerStats strong{display:block;font-size:28px}.winnerStats small{color:#9fb0c8}
+.winnerActions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+@keyframes winnerPop{0%{transform:scale(.35) rotate(-14deg);opacity:0}75%{transform:scale(1.1) rotate(4deg)}100%{transform:scale(1);opacity:1}}
+
+.hallHero{background:linear-gradient(135deg,#14233a,#171f30)}
+.hofGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.hofCard{display:block;color:inherit;text-decoration:none;transition:transform .16s ease,border-color .16s ease}
+.hofCard:hover{transform:translateY(-2px);border-color:#526d93}
+.hofTop{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hofNumber{font-size:12px;color:#8fa2bb}
+.hofWinner{display:flex;gap:8px;align-items:center;font-size:18px;margin:12px 0}
+.hofFacts{display:flex;gap:12px;flex-wrap:wrap;color:#bcc9da;font-size:13px;margin-bottom:8px}
+
+.archiveHero{display:flex;justify-content:space-between;align-items:center;gap:18px}
+.archiveWinnerBadge{min-width:180px;text-align:center;background:#2b230e;border:1px solid #705b26;border-radius:14px;padding:12px;color:#f3d983}
+.archiveWinnerBadge span,.archiveWinnerBadge small{display:block}.archiveWinnerBadge strong{display:block;font-size:22px;margin:3px 0}
+.archiveStats{margin-bottom:16px}
+.archiveMapShell .worldMap{min-height:520px}
+.archivePlayerList{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.archivePlayer.winner{border-color:#8b742f;background:#2a230f}
+
+@media(max-width:700px){
+ .winnerModal{padding:20px}.winnerModal h1{font-size:30px}
+ .winnerStats{grid-template-columns:1fr 1fr}
+ .winnerActions .btn{width:100%}
+ .hofGrid,.archivePlayerList{grid-template-columns:1fr}
+ .archiveHero{align-items:flex-start;flex-direction:column}
+ .archiveWinnerBadge{width:100%}
+ .archiveMapShell .worldMap{min-height:430px}
+}

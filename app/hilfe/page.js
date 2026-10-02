@@ -101,6 +101,14 @@ export default function Hilfe(){
         Profilbilder dürfen maximal 2 MB groß sein und als JPG, PNG oder WebP hochgeladen werden.
       </p>
 
+
+      <h2>Hall of Fame</h2>
+      <p>
+        Beendete Spiele werden dauerhaft im Spielarchiv festgehalten. Dort kannst du später
+        die Endkarte, den Sieger, die Zahl der verwendeten Züge und den Endstand der Mitspieler ansehen.
+        Die großen Live-Spieldaten können nach der Aufbewahrungsfrist gelöscht werden, ohne dass der Rückblick verloren geht.
+      </p>
+
       <h2>Tipps</h2>
       <p>
         Nutze deine Züge nicht nur zufällig. Beobachte bereits erkundete Bereiche, kombiniere Hinweise mit der

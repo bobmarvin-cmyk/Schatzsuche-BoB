@@ -28,7 +28,7 @@ export default function Legenden(){
  }
 
  return <main className="container">
-  <div className="topnav"><a className="btn" href="/lobby">← Lobby</a></div>
+  <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
   <div className="panel">
    <h1>🏆 Legenden</h1>
    <p className="muted">Bestenlisten nach unterschiedlichen Errungenschaften. Goldwerte beziehen sich in V6.5 ausschließlich auf Test-Goldstaub.</p>
