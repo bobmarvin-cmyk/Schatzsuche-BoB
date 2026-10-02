@@ -1,7 +1,9 @@
+import {siteConfig} from '../lib/site-config'
+
 export default function SiteFooter(){
   return <footer className="siteFooter">
     <div className="footerInner">
-      <div>© {new Date().getFullYear()} Schatzsuche Online · Alle Rechte vorbehalten.</div>
+      <div>© {new Date().getFullYear()} {siteConfig.brandName} · Alle Rechte vorbehalten.</div>
       <nav className="footerLinks" aria-label="Rechtliche Informationen">
         <a href="/impressum">Impressum</a>
         <a href="/datenschutz">Datenschutz</a>

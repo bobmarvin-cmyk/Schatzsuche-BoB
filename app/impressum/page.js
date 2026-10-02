@@ -3,7 +3,7 @@ import {siteConfig} from '../../lib/site-config'
 export default function Impressum(){
  return <main className="container legalPage">
   <div className="panel">
-   <h1>Impressum</h1>
+   <h1>Impressum – {siteConfig.brandName}</h1>
    <div className="legalWarning">Vor dem öffentlichen Betrieb bitte die Platzhalter in <code>lib/site-config.js</code> vollständig ersetzen.</div>
    <h2>Angaben zum Anbieter</h2>
    <p><strong>{siteConfig.operatorName}</strong><br/>{siteConfig.street}<br/>{siteConfig.city}<br/>{siteConfig.country}</p>

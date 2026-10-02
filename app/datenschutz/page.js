@@ -3,7 +3,7 @@ import {siteConfig} from '../../lib/site-config'
 export default function Datenschutz(){
  return <main className="container legalPage">
   <div className="panel">
-   <h1>Datenschutzerklärung</h1>
+   <h1>Datenschutzerklärung – {siteConfig.brandName}</h1>
    <div className="legalWarning">Vor dem öffentlichen Betrieb Betreiberangaben prüfen und die Erklärung an die tatsächlich eingesetzten Dienste und Einstellungen anpassen.</div>
 
    <h2>1. Verantwortlicher</h2>
