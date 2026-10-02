@@ -34,6 +34,28 @@ const TECHS=[
  ['h2','Satelliten-KI',55.00,'Hybrid','+350 Felder/Zug + KI-Analyse',['e10','a6']]
 ]
 const BR=['Basis','Erkundung','Analyse','Logistik','Wirtschaft','Hybrid']
+const PAGE_SIZE=1000
+
+async function loadAllFields(gameId){
+  const all=[]
+  let from=0
+  while(true){
+    const {data,error}=await supabase
+      .from('explored_fields')
+      .select('x,y,discovered_by,is_treasure,discovered_at')
+      .eq('game_id',gameId)
+      .order('discovered_at',{ascending:true})
+      .range(from,from+PAGE_SIZE-1)
+
+    if(error)throw error
+    const batch=data||[]
+    all.push(...batch)
+
+    if(batch.length<PAGE_SIZE)break
+    from+=PAGE_SIZE
+  }
+  return all
+}
 
 export default function Game(){
  const {id}=useParams()
@@ -61,29 +83,43 @@ export default function Game(){
   await refreshMoves()
   await load()
  }
+
  async function refreshMoves(){
   const {data}=await supabase.rpc('refresh_player_moves',{p_game_id:id})
   if(data){setRegenInfo(data);load(false)}
  }
- async function load(refresh=true){
+
+ async function load(){
   const {data:{user}}=await supabase.auth.getUser()
-  const [g,p,f,t]=await Promise.all([
-   supabase.from('games').select('*').eq('id',id).single(),
-   supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,profiles(display_name)').eq('game_id',id).order('joined_at'),
-   supabase.from('explored_fields').select('x,y,discovered_by,is_treasure').eq('game_id',id),
-   supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000')
-  ])
-  setGame(g.data);setPlayers(p.data||[]);setFields(f.data||[]);setOwned((t.data||[]).map(x=>x.technology_id))
+  try{
+    const [g,p,t,f]=await Promise.all([
+      supabase.from('games').select('*').eq('id',id).single(),
+      supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,profiles(display_name)').eq('game_id',id).order('joined_at'),
+      supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
+      loadAllFields(id)
+    ])
+
+    setGame(g.data)
+    setPlayers(p.data||[])
+    setOwned((t.data||[]).map(x=>x.technology_id))
+    setFields(f)
+  }catch(err){
+    setMsg('Fehler beim Laden der Karte: '+(err?.message||String(err)))
+  }
  }
+
  async function reveal(x,y){
   const {data,error}=await supabase.rpc('reveal_area_v63',{p_game_id:id,p_x:x,p_y:y})
   setMsg(error?error.message:(data?.message||'Gebiet untersucht'))
-  await refreshMoves();await load()
+  await refreshMoves()
+  await load()
  }
+
  async function buy(t){
   const {data,error}=await supabase.rpc('buy_technology',{p_game_id:id,p_technology_id:t[0]})
   setMsg(error?error.message:(data?.message||'Erforscht'))
-  await refreshMoves();await load()
+  await refreshMoves()
+  await load()
  }
 
  const me=players.find(p=>p.user_id===user?.id)
