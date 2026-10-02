@@ -3,6 +3,7 @@ import {useEffect,useState} from 'react'
 import {useParams} from 'next/navigation'
 import {supabase} from '../../../lib/supabase-browser'
 import GameMap from '../../../components/GameMap'
+import {formatGold} from '../../../lib/gold'
 
 const TECHS=[
  ['root','Grundlagen',0.05,'Basis','+1 Feld pro Zug',[]],
@@ -61,7 +62,7 @@ export default function Game(){
  const {id}=useParams()
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung')
- const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null)
+ const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState('')
 
  useEffect(()=>{
@@ -82,7 +83,7 @@ export default function Game(){
   setUser(user)
 
   const stored=sessionStorage.getItem('game_password_'+id)
-  const {error}=await supabase.rpc('join_game_v64',{p_game_id:id,p_password:stored||null})
+  const {error}=await supabase.rpc('join_game_v65',{p_game_id:id,p_password:stored||null})
   if(error){
     if(error.message?.toLowerCase().includes('passwort')){
       setJoinState('password')
@@ -98,7 +99,7 @@ export default function Game(){
  }
 
  async function submitGamePassword(){
-  const {error}=await supabase.rpc('join_game_v64',{p_game_id:id,p_password:joinPassword||null})
+  const {error}=await supabase.rpc('join_game_v65',{p_game_id:id,p_password:joinPassword||null})
   if(error){setMsg(error.message);return}
   sessionStorage.setItem('game_password_'+id,joinPassword)
   setJoinState('joined');setMsg('')
@@ -114,24 +115,28 @@ export default function Game(){
  async function load(){
   const {data:{user}}=await supabase.auth.getUser()
   try{
-    const [g,p,t,f]=await Promise.all([
+    const [g,p,t,f,w,gt]=await Promise.all([
       supabase.from('games').select('*').eq('id',id).single(),
       supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,profiles(display_name)').eq('game_id',id).order('joined_at'),
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
-      loadAllFields(id)
+      loadAllFields(id),
+      supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
+      supabase.rpc('get_gold_treasure_status_v65',{p_game_id:id})
     ])
 
     setGame(g.data)
     setPlayers(p.data||[])
     setOwned((t.data||[]).map(x=>x.technology_id))
     setFields(f)
+    setWallet(w.data)
+    setGoldTreasures(gt.data||[])
   }catch(err){
     setMsg('Fehler beim Laden der Karte: '+(err?.message||String(err)))
   }
  }
 
  async function reveal(x,y){
-  const {data,error}=await supabase.rpc('reveal_area_v63',{p_game_id:id,p_x:x,p_y:y})
+  const {data,error}=await supabase.rpc('reveal_area_v65',{p_game_id:id,p_x:x,p_y:y})
   setMsg(error?error.message:(data?.message||'Gebiet untersucht'))
   await refreshMoves()
   await load()
@@ -168,7 +173,7 @@ export default function Game(){
  }
 
  return <main className="container">
-  <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/profile">Profil</a></div>
+  <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a></div>
 
   <div className="panel"><h1>{game?.name||'Spiel'}</h1>
    <div className="worldMeta">
@@ -188,6 +193,22 @@ export default function Game(){
    </div>
    <div className="regenBarText">Ungenutzte Züge werden bis zum Speicherlimit gesammelt; darüber hinaus verfallen sie.</div>
   </div>
+
+  {game?.game_type==='pay'&&<div className="panel goldGamePanel">
+   <div className="goldGameHeader">
+    <div><div className="small">PAYGAME · TESTMODUS</div><h2>✨ Goldstaub-Schatzsuche</h2></div>
+    <div className="goldBalance">Wallet: {formatGold(wallet?.balance_ug||0)}</div>
+   </div>
+   <div className="grid goldStats">
+    <div className="card"><div className="small">Einsatz pro Spieler</div><div className="stat">{formatGold(game.entry_gold_ug)}</div></div>
+    <div className="card"><div className="small">Schatzpool aktuell</div><div className="stat">{formatGold(game.gold_prize_pool_ug)}</div></div>
+    <div className="card"><div className="small">Goldschätze offen</div><div className="stat">{goldTreasures.filter(t=>!t.found_by).length} / {goldTreasures.length}</div></div>
+   </div>
+   <div className="treasurePills">{goldTreasures.map((t,i)=><span key={t.id} className={'treasurePill '+(t.found_by?'found':'')}>
+    {t.found_by?'✅':'✨'} Schatz {i+1}: {formatGold(t.amount_ug)}
+   </span>)}</div>
+   <div className="small">Test-Goldstaub hat in V6.5 keinen Echtgeldwert und kann weder gekauft noch ausgezahlt werden.</div>
+  </div>}
 
   <div className="gameLayout">
    <section className="panel">

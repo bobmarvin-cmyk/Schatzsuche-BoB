@@ -1,9 +1,11 @@
 'use client'
 import {useEffect,useState} from 'react'
 import {supabase} from '../../lib/supabase-browser'
+import {formatGold,goldToUg} from '../../lib/gold'
 
 export default function Lobby(){
  const [games,setGames]=useState([])
+ const [wallet,setWallet]=useState(null),[settings,setSettings]=useState(null)
  const [name,setName]=useState('Mein Spiel'),[msg,setMsg]=useState('')
  const [mode,setMode]=useState('random')
  const [lat,setLat]=useState('49.52'),[lon,setLon]=useState('7.14'),[label,setLabel]=useState('Zuhause')
@@ -11,6 +13,7 @@ export default function Lobby(){
  const [regen,setRegen]=useState(30),[capacity,setCapacity]=useState(4),[maxPlayers,setMaxPlayers]=useState(20)
  const [privateGame,setPrivateGame]=useState(false),[password,setPassword]=useState('')
  const [inviteCode,setInviteCode]=useState(''),[joinPassword,setJoinPassword]=useState('')
+ const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('0.01'),[treasureMode,setTreasureMode]=useState('auto')
 
  useEffect(()=>{
    init()
@@ -22,16 +25,32 @@ export default function Lobby(){
  async function init(){
    const {data:{user}}=await supabase.auth.getUser()
    if(!user){location.href='/login';return}
-   loadGames()
+   await Promise.all([loadGames(),loadWallet(),loadSettings()])
  }
 
+ async function loadWallet(){
+   const {data:{user}}=await supabase.auth.getUser()
+   if(!user)return
+   const {data}=await supabase.from('gold_wallets').select('balance_ug,test_grant_claimed').eq('user_id',user.id).maybeSingle()
+   setWallet(data)
+ }
+ async function loadSettings(){
+   const {data}=await supabase.from('platform_settings').select('prize_share_bps,community_share_bps,platform_share_bps,multi_treasure_threshold_ug,max_treasures,test_grant_ug').eq('id',1).maybeSingle()
+   setSettings(data)
+ }
  async function loadGames(){
    const {data,error}=await supabase.from('games')
-    .select('id,name,status,max_players,created_at,width,height,center_label,cell_size_m,regen_seconds,max_stored_moves,is_private,game_players(count)')
-    .eq('is_private',false)
-    .order('created_at',{ascending:false})
+    .select('id,name,status,max_players,created_at,width,height,center_label,cell_size_m,regen_seconds,max_stored_moves,is_private,game_type,entry_gold_ug,treasure_count,gold_prize_pool_ug,game_players(count)')
+    .eq('is_private',false).order('created_at',{ascending:false})
    if(error){setMsg(error.message);return}
    setGames(data||[])
+ }
+
+ async function claimTestGold(){
+   const {data,error}=await supabase.rpc('claim_test_gold_v65')
+   if(error){setMsg(error.message);return}
+   setMsg(data?.message||'Test-Goldstaub gutgeschrieben.')
+   await loadWallet()
  }
 
  async function createGame(){
@@ -39,8 +58,10 @@ export default function Lobby(){
    if(privateGame && password.trim().length>0 && password.trim().length<4){
      setMsg('Das Passwort muss mindestens 4 Zeichen haben.');return
    }
+   const entryUg=gameType==='pay'?goldToUg(entryGold):0
+   if(gameType==='pay' && entryUg<=0){setMsg('Bitte einen Goldstaub-Einsatz größer 0 wählen.');return}
 
-   const {data,error}=await supabase.rpc('create_game_v64',{
+   const {data,error}=await supabase.rpc('create_game_v65',{
     p_name:name,
     p_field_count:Number(fields),
     p_cell_size_m:Number(cellSize),
@@ -52,119 +73,132 @@ export default function Lobby(){
     p_regen_seconds:Number(regen),
     p_max_stored_moves:Number(capacity),
     p_is_private:privateGame,
-    p_password:privateGame && password.trim()?password:null
+    p_password:privateGame && password.trim()?password:null,
+    p_game_type:gameType,
+    p_entry_gold_ug:entryUg,
+    p_treasure_mode:gameType==='pay'?treasureMode:'1'
    })
    if(error){setMsg(error.message);return}
+   await loadWallet()
    location.href='/game/'+data
  }
 
- async function joinPublic(id){
-   const {error}=await supabase.rpc('join_game_v64',{p_game_id:id,p_password:null})
+ async function joinPublic(g){
+   const fn=g.game_type==='pay'?'join_paygame_v65':'join_game_v64'
+   const {error}=await supabase.rpc(fn,{p_game_id:g.id,p_password:null})
    if(error){setMsg(error.message);return}
-   location.href='/game/'+id
+   await loadWallet()
+   location.href='/game/'+g.id
  }
 
  async function joinPrivate(){
    setMsg('Privates Spiel wird gesucht…')
    const code=inviteCode.trim().toUpperCase()
    if(!code){setMsg('Bitte Einladungscode eingeben.');return}
-   const {data,error}=await supabase.rpc('join_game_by_code_v64',{
-     p_invite_code:code,
-     p_password:joinPassword||null
-   })
+   const {data,error}=await supabase.rpc('join_game_by_code_v65',{p_invite_code:code,p_password:joinPassword||null})
    if(error){setMsg(error.message);return}
    if(joinPassword)sessionStorage.setItem('game_password_'+data,joinPassword)
+   await loadWallet()
    location.href='/game/'+data
  }
 
  async function logout(){await supabase.auth.signOut();location.href='/'}
 
+ const prizePct=settings?settings.prize_share_bps/100:90
+ const communityPct=settings?settings.community_share_bps/100:5
+ const platformPct=settings?settings.platform_share_bps/100:5
+
  return <main className="container lobbyPage">
   <div className="topnav">
    <a className="btn" href="/profile">Profil</a>
+   <a className="btn" href="/legenden">🏆 Legenden</a>
    <button className="btn" onClick={logout}>Abmelden</button>
   </div>
 
   <div className="panel heroPanel">
-   <h1>Lobby</h1>
-   <p className="muted">Öffentliche Spiele sind für alle sichtbar. Private Spiele funktionieren über Einladungscode und optionales Passwort.</p>
+   <div className="heroSplit">
+    <div><h1>Lobby</h1><p className="muted">Standardspiele sind kostenlos. Paygames laufen in V6.5 ausschließlich mit <strong>Test-Goldstaub ohne Echtgeldwert</strong>.</p></div>
+    <div className="goldWalletCard">
+     <div className="small">Test-Goldstaub</div>
+     <div className="goldBalance">✨ {formatGold(wallet?.balance_ug||0)}</div>
+     {!wallet?.test_grant_claimed&&<button className="btn goldBtn" onClick={claimTestGold}>0,25 g Test-Gold holen</button>}
+    </div>
+   </div>
   </div>
 
   <div className="lobbyColumns">
    <section className="panel">
     <h2>Neues Spiel</h2>
+    <div className="gameTypeSwitch">
+     <button type="button" className={'typeBtn '+(gameType==='standard'?'active':'')} onClick={()=>setGameType('standard')}>🆓 Standard</button>
+     <button type="button" className={'typeBtn gold '+(gameType==='pay'?'active':'')} onClick={()=>setGameType('pay')}>✨ Paygame (Test)</button>
+    </div>
+
+    {gameType==='pay'&&<div className="goldRulesBox">
+     <strong>Test-Goldstaub-Verteilung</strong>
+     <div>{prizePct}% Schatzpool · {communityPct}% Community-Ausschüttung · {platformPct}% Plattformanteil</div>
+     <div className="small">Diese Quoten kann nur die Spielleitung serverseitig ändern.</div>
+    </div>}
+
     <div className="createGrid">
      <div>
-      <label>Spielname</label>
-      <input className="input" value={name} onChange={e=>setName(e.target.value)}/>
-
+      <label>Spielname</label><input className="input" value={name} onChange={e=>setName(e.target.value)}/>
       <label>Kartenquelle</label>
       <select className="input" value={mode} onChange={e=>setMode(e.target.value)}>
-       <option value="random">🌍 Zufälliger echter Ort</option>
-       <option value="coords">📍 Eigene Koordinaten</option>
+       <option value="random">🌍 Zufälliger echter Ort</option><option value="coords">📍 Eigene Koordinaten</option>
       </select>
-
       {mode==='coords'&&<>
-       <label>Breitengrad</label>
-       <input className="input" type="number" step="0.000001" value={lat} onChange={e=>setLat(e.target.value)}/>
-       <label>Längengrad</label>
-       <input className="input" type="number" step="0.000001" value={lon} onChange={e=>setLon(e.target.value)}/>
-       <label>Ortsname für Hinweise</label>
-       <input className="input" value={label} onChange={e=>setLabel(e.target.value)} placeholder="z. B. Zuhause"/>
+       <label>Breitengrad</label><input className="input" type="number" step="0.000001" value={lat} onChange={e=>setLat(e.target.value)}/>
+       <label>Längengrad</label><input className="input" type="number" step="0.000001" value={lon} onChange={e=>setLon(e.target.value)}/>
+       <label>Ortsname für Hinweise</label><input className="input" value={label} onChange={e=>setLabel(e.target.value)}/>
       </>}
+      <label>Maximale Spielerzahl</label><input className="input" type="number" min="2" max="100" value={maxPlayers} onChange={e=>setMaxPlayers(e.target.value)}/>
 
-      <label>Maximale Spielerzahl</label>
-      <input className="input" type="number" min="2" max="100" value={maxPlayers} onChange={e=>setMaxPlayers(e.target.value)}/>
+      {gameType==='pay'&&<>
+       <label>Schürfrechte / Teilnahme pro Spieler</label>
+       <div className="goldInputRow"><input className="input" type="number" min="0.001" step="0.001" value={entryGold} onChange={e=>setEntryGold(e.target.value)}/><span>g Test-Gold</span></div>
+       <label>Goldschätze</label>
+       <select className="input" value={treasureMode} onChange={e=>setTreasureMode(e.target.value)}>
+        <option value="auto">Automatisch nach Serverregel</option><option value="1">1 Schatz</option><option value="3">3 Schätze</option><option value="5">5 Schätze</option>
+       </select>
+       <div className="small">Auch der Host zahlt beim Erstellen denselben Einsatz.</div>
+      </>}
 
       <label className="toggleRow">
        <input type="checkbox" checked={privateGame} onChange={e=>setPrivateGame(e.target.checked)}/>
-       <span><strong>Privates Spiel</strong><small>Nicht in der öffentlichen Lobby sichtbar.</small></span>
+       <span><strong>Privates Spiel</strong><small>Nicht öffentlich sichtbar.</small></span>
       </label>
-
       {privateGame&&<>
        <label>Spielpasswort <span className="muted">(optional)</span></label>
-       <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)}
-        placeholder="Leer lassen = nur Einladungscode"/>
+       <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)}/>
       </>}
      </div>
 
      <div>
       <label>Ungefähre Anzahl Felder</label>
       <input className="input" type="number" min="100" max="50000000" value={fields} onChange={e=>setFields(e.target.value)}/>
-      <div className="quickButtons">
-       {[10000,100000,1000000,10000000,50000000].map(n=><button type="button" className="miniBtn" key={n} onClick={()=>setFields(n)}>{n.toLocaleString('de-DE')}</button>)}
-      </div>
-
+      <div className="quickButtons">{[10000,100000,1000000,10000000,50000000].map(n=><button type="button" className="miniBtn" key={n} onClick={()=>setFields(n)}>{n.toLocaleString('de-DE')}</button>)}</div>
       <label>Reale Feldkante</label>
       <select className="input" value={cellSize} onChange={e=>setCellSize(e.target.value)}>
-       <option value="10">10 m × 10 m</option><option value="25">25 m × 25 m</option>
-       <option value="50">50 m × 50 m</option><option value="100">100 m × 100 m</option>
-       <option value="250">250 m × 250 m</option><option value="500">500 m × 500 m</option>
+       <option value="10">10 m × 10 m</option><option value="25">25 m × 25 m</option><option value="50">50 m × 50 m</option>
+       <option value="100">100 m × 100 m</option><option value="250">250 m × 250 m</option><option value="500">500 m × 500 m</option>
       </select>
-
       <label>Zugregeneration</label>
       <select className="input" value={regen} onChange={e=>setRegen(e.target.value)}>
-       <option value="5">1 Zug / 5 Sekunden</option><option value="10">1 Zug / 10 Sekunden</option>
-       <option value="30">1 Zug / 30 Sekunden</option><option value="60">1 Zug / Minute</option>
-       <option value="300">1 Zug / 5 Minuten</option><option value="3600">1 Zug / Stunde</option>
+       <option value="5">1 Zug / 5 Sekunden</option><option value="10">1 Zug / 10 Sekunden</option><option value="30">1 Zug / 30 Sekunden</option>
+       <option value="60">1 Zug / Minute</option><option value="300">1 Zug / 5 Minuten</option><option value="3600">1 Zug / Stunde</option>
       </select>
-
       <label>Maximal speicherbare Züge</label>
-      <select className="input" value={capacity} onChange={e=>setCapacity(e.target.value)}>
-       {[3,4,5,6,8,10].map(n=><option value={n} key={n}>{n}</option>)}
-      </select>
+      <select className="input" value={capacity} onChange={e=>setCapacity(e.target.value)}>{[3,4,5,6,8,10].map(n=><option value={n} key={n}>{n}</option>)}</select>
      </div>
     </div>
-    <button className="btn primary wideOnMobile" onClick={createGame}>Spiel erstellen</button>
+    <button className="btn primary wideOnMobile" onClick={createGame}>{gameType==='pay'?'Paygame erstellen & Einsatz zahlen':'Spiel erstellen'}</button>
    </section>
 
    <section className="panel privateJoinPanel">
     <h2>Privatem Spiel beitreten</h2>
-    <p className="small">Den Einladungscode erhältst du vom Host.</p>
-    <label>Einladungscode</label>
-    <input className="input codeInput" value={inviteCode} onChange={e=>setInviteCode(e.target.value.toUpperCase())} placeholder="ABC123" maxLength={8}/>
-    <label>Passwort <span className="muted">(falls gesetzt)</span></label>
-    <input className="input" type="password" value={joinPassword} onChange={e=>setJoinPassword(e.target.value)}/>
+    <label>Einladungscode</label><input className="input codeInput" value={inviteCode} onChange={e=>setInviteCode(e.target.value.toUpperCase())} maxLength={8}/>
+    <label>Passwort <span className="muted">(falls gesetzt)</span></label><input className="input" type="password" value={joinPassword} onChange={e=>setJoinPassword(e.target.value)}/>
     <button className="btn primary wideOnMobile" onClick={joinPrivate}>Beitreten</button>
    </section>
   </div>
@@ -174,16 +208,19 @@ export default function Lobby(){
   <section className="panel">
    <h2>Öffentliche Spiele</h2>
    <div className="grid gameCards">
-    {games.length===0&&<div className="muted">Momentan sind keine öffentlichen Spiele verfügbar.</div>}
     {games.map(g=>{
       const count=g.game_players?.[0]?.count||0
-      return <div className="card" key={g.id}>
-       <h3>{g.name}</h3>
+      const isPay=g.game_type==='pay'
+      return <div className={'card '+(isPay?'payGameCard':'')} key={g.id}>
+       <div className="gameCardTop"><h3>{g.name}</h3><span className={'gameBadge '+(isPay?'gold':'')}>{isPay?'✨ PAY TEST':'🆓 GRATIS'}</span></div>
        <div className="small">{g.center_label||'Weltkarte'} · {(g.width*g.height).toLocaleString('de-DE')} Felder</div>
        <div className="small">{g.cell_size_m||100} m/Feld · Zug alle {g.regen_seconds||30}s</div>
+       {isPay&&<div className="payFacts">
+        <span>Einsatz: <b>{formatGold(g.entry_gold_ug)}</b></span><span>Schätze: <b>{g.treasure_count}</b></span><span>Aktueller Pool: <b>{formatGold(g.gold_prize_pool_ug)}</b></span>
+       </div>}
        <div className="capacityLine"><span>👥 {count} / {g.max_players}</span><span>{g.status==='active'?'🟢 aktiv':'⚫ beendet'}</span></div>
-       <button className="btn primary wideOnMobile" disabled={g.status!=='active'||count>=g.max_players} onClick={()=>joinPublic(g.id)}>
-        {count>=g.max_players?'Voll':g.status==='active'?'Beitreten':'Beendet'}
+       <button className={'btn '+(isPay?'goldBtn':'primary')+' wideOnMobile'} disabled={g.status!=='active'||count>=g.max_players} onClick={()=>joinPublic(g)}>
+        {count>=g.max_players?'Voll':isPay?`Beitreten · ${formatGold(g.entry_gold_ug)}`:'Beitreten'}
        </button>
       </div>
     })}

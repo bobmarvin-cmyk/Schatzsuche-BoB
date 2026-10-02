@@ -95,3 +95,28 @@ button:disabled{cursor:not-allowed;opacity:.45}
  .branchTabs{grid-template-columns:repeat(2,1fr)}
  .worldMap{height:54vh;min-height:340px}
 }
+
+/* V6.5 Goldstaub-Testökonomie + Legenden */
+.heroSplit{display:flex;justify-content:space-between;gap:20px;align-items:center}
+.goldWalletCard,.goldGamePanel{border-color:#7b6428;background:linear-gradient(135deg,#201b0d,#151c2f)}
+.goldWalletCard{min-width:230px;border:1px solid #7b6428;border-radius:12px;padding:12px 14px}
+.goldBalance{font-size:20px;font-weight:900;color:#f5c451;margin:3px 0 8px}
+.goldBtn{background:#d7a72e;color:#201707;border:0}.goldBtn:hover{filter:brightness(1.07)}
+.gameTypeSwitch{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0 14px}
+.typeBtn{padding:12px;border-radius:10px;border:1px solid #34445e;background:#17243a;color:#e2e8f0;font-weight:800;cursor:pointer}
+.typeBtn.active{outline:2px solid #4f8bd8}.typeBtn.gold{border-color:#755f27}.typeBtn.gold.active{background:#33270c;outline:2px solid #d7a72e;color:#ffd86a}
+.goldRulesBox{padding:12px 14px;border:1px solid #705b26;background:#2b230e;border-radius:10px;margin:10px 0 16px;color:#f0d98e}
+.goldInputRow{display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px}.goldInputRow .input{margin-bottom:12px}
+.gameCardTop{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.gameBadge{font-size:10px;font-weight:900;padding:4px 7px;border-radius:999px;background:#2b3c56;white-space:nowrap}.gameBadge.gold{background:#4a390d;color:#ffd766;border:1px solid #806724}
+.payGameCard{border-color:#665421}.payFacts{display:grid;gap:3px;margin:9px 0;padding:8px;background:#231d0c;border-radius:8px;color:#ead797;font-size:12px}
+.goldGameHeader{display:flex;justify-content:space-between;gap:14px;align-items:center}.goldGameHeader h2{margin:2px 0}.goldStats{margin:10px 0}.treasurePills{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0}.treasurePill{padding:5px 8px;border-radius:999px;background:#4a390d;border:1px solid #79611f;color:#f6d870;font-size:12px}.treasurePill.found{background:#173b30;border-color:#3dbb83;color:#b7f2da}
+.goldMiniCard{border-color:#6e5924}
+.legendTabs{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}.leaderTable{display:grid;gap:6px}.leaderRow{display:grid;grid-template-columns:80px minmax(0,1fr) 160px;gap:12px;align-items:center;padding:11px 12px;background:#17243a;border-radius:9px}.leaderRow.header{background:transparent;color:#9fb0c8;font-size:12px;font-weight:800}.leaderRow.top1{border:1px solid #c99d2b;background:#2b240e}.leaderRow.top2{border:1px solid #7b8798}.leaderRow.top3{border:1px solid #8b572d}.rank{font-weight:900}
+
+@media(max-width:700px){
+ .heroSplit{flex-direction:column;align-items:stretch}.goldWalletCard{min-width:0}
+ .gameTypeSwitch{grid-template-columns:1fr}
+ .goldGameHeader{align-items:flex-start;flex-direction:column}
+ .leaderRow{grid-template-columns:58px minmax(0,1fr) 90px;font-size:13px;padding:9px 8px}
+ .leaderRow.header{font-size:10px}
+}
