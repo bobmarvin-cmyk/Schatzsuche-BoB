@@ -5,13 +5,13 @@ import {formatGold,goldToUg} from '../../lib/gold'
 import FirstLoginHelp from '../../components/FirstLoginHelp'
 
 export default function Lobby(){
- const [games,setGames]=useState([]),[isAdmin,setIsAdmin]=useState(false)
+ const [games,setGames]=useState([]),[isAdmin,setIsAdmin]=useState(false),[authReady,setAuthReady]=useState(false)
  const [wallet,setWallet]=useState(null),[settings,setSettings]=useState(null)
  const [name,setName]=useState('Mein Spiel'),[msg,setMsg]=useState('')
  const [mode,setMode]=useState('random')
  const [lat,setLat]=useState('49.52'),[lon,setLon]=useState('7.14'),[label,setLabel]=useState('Zuhause')
  const [fields,setFields]=useState(100000),[cellSize,setCellSize]=useState(100)
- const [regen,setRegen]=useState(30),[capacity,setCapacity]=useState(4),[maxPlayers,setMaxPlayers]=useState(20)
+ const [regen,setRegen]=useState(5),[capacity,setCapacity]=useState(4),[maxPlayers,setMaxPlayers]=useState(20)
  const [privateGame,setPrivateGame]=useState(false),[password,setPassword]=useState('')
  const [inviteCode,setInviteCode]=useState(''),[joinPassword,setJoinPassword]=useState('')
  const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('0.01'),[treasureMode,setTreasureMode]=useState('auto')
@@ -25,11 +25,12 @@ export default function Lobby(){
 
  async function init(){
    const {data:{user}}=await supabase.auth.getUser()
-   if(!user){location.href='/login';return}
+   if(!user){location.replace('/login');return}
    await supabase.rpc('run_game_maintenance_v66')
    const {data:adminFlag}=await supabase.rpc('is_admin_v67')
    setIsAdmin(!!adminFlag)
    await Promise.all([loadGames(),loadWallet(),loadSettings()])
+   setAuthReady(true)
  }
 
  async function loadWallet(){
@@ -39,8 +40,9 @@ export default function Lobby(){
    setWallet(data)
  }
  async function loadSettings(){
-   const {data}=await supabase.from('platform_settings').select('prize_share_bps,community_share_bps,platform_share_bps,multi_treasure_threshold_ug,max_treasures,test_grant_ug,game_inactivity_hours,closed_game_retention_hours,inactive_community_share_bps,inactive_platform_share_bps,min_game_fields,max_game_fields,max_game_players,min_cell_size_m,max_cell_size_m,min_regen_seconds,max_regen_seconds,max_stored_moves_limit,min_entry_gold_ug,max_entry_gold_ug,exploration_reward').eq('id',1).maybeSingle()
+   const {data}=await supabase.from('platform_settings').select('prize_share_bps,community_share_bps,platform_share_bps,multi_treasure_threshold_ug,max_treasures,test_grant_ug,game_inactivity_hours,closed_game_retention_hours,inactive_community_share_bps,inactive_platform_share_bps,min_game_fields,max_game_fields,max_game_players,min_cell_size_m,max_cell_size_m,min_regen_seconds,max_regen_seconds,max_stored_moves_limit,min_entry_gold_ug,max_entry_gold_ug,exploration_reward,default_regen_seconds').eq('id',1).maybeSingle()
    setSettings(data)
+   if(data?.default_regen_seconds)setRegen(Number(data.default_regen_seconds))
  }
  async function loadGames(){
    const {data,error}=await supabase.from('games')
@@ -115,6 +117,8 @@ export default function Lobby(){
  const closedGames=games.filter(g=>g.status!=='active')
  const inactivityHours=settings?.game_inactivity_hours||24
  const retentionHours=settings?.closed_game_retention_hours||72
+
+ if(!authReady)return <main className="container"><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>

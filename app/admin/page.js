@@ -67,6 +67,7 @@ export default function Admin(){
    max_entry_gold_ug:NUM(settings.max_entry_gold_ug)
   }
   const {data,error}=await supabase.rpc('admin_update_settings_v67',{p_settings:payload})
+  if(!error)await supabase.rpc('admin_set_default_regen_v68',{p_seconds:NUM(settings.default_regen_seconds)})
   setSaving(false)
   setMsg(error?error.message:(data?.message||'Globale Einstellungen gespeichert.'))
   if(!error)await load()
@@ -119,6 +120,7 @@ export default function Admin(){
     <Field label="Max. Spieler pro Spiel" value={settings.max_game_players} onChange={v=>setSetting('max_game_players',v)}/>
     <Field label="Min. Feldkante (m)" value={settings.min_cell_size_m} onChange={v=>setSetting('min_cell_size_m',v)}/>
     <Field label="Max. Feldkante (m)" value={settings.max_cell_size_m} onChange={v=>setSetting('max_cell_size_m',v)}/>
+    <Field label="Standard-Zugregeneration neue Spiele (s)" value={settings.default_regen_seconds} onChange={v=>setSetting('default_regen_seconds',v)}/>
     <Field label="Min. Zugregeneration (s)" value={settings.min_regen_seconds} onChange={v=>setSetting('min_regen_seconds',v)}/>
     <Field label="Max. Zugregeneration (s)" value={settings.max_regen_seconds} onChange={v=>setSetting('max_regen_seconds',v)}/>
     <Field label="Max. Zugspeicher" value={settings.max_stored_moves_limit} onChange={v=>setSetting('max_stored_moves_limit',v)}/>

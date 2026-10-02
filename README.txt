@@ -1,75 +1,40 @@
-SCHATZSUCHE ONLINE V6.7 – MASTER-SCHALTZENTRALE
+SCHATZSUCHE ONLINE V6.8
 
 NEU
-- Geschützte Admin-Seite: /admin
-- Admin-Link erscheint in der Lobby nur für eingetragene Administratoren.
-- Globale Spielwerte können direkt im Browser geändert werden.
-- Technologiebaum ist nicht mehr hart im Frontend hinterlegt.
-- Das Spiel lädt Technologie-Namen, Preise, Voraussetzungen und Wirkungen direkt aus Supabase.
-- Änderungen am Technologiebaum benötigen danach KEINEN GitHub-/Vercel-Deploy mehr.
-- Bereits gekaufte Technologien werden bei geänderten Bonuswerten serverseitig neu berechnet.
-
-IN DER SCHALTZENTRALE EINSTELLBAR
-
-SPIELGRENZEN
-- minimale / maximale Feldanzahl
-- maximale Spielerzahl
-- minimale / maximale reale Feldgröße
-- minimale / maximale Zugregeneration
-- maximales Zugspeicherlimit
-- Taler-Belohnung pro leerem Feld
-
-GOLDSTAUB-TESTÖKONOMIE
-- Schatzpool-Quote
-- Community-Quote
-- Plattform-Quote
-- Test-Startguthaben
-- Mehrschatz-Schwelle
-- maximale Schatzanzahl
-- minimaler / maximaler Paygame-Einsatz
-- Referenzpreis
-- Community-Reserve und Plattform-Testanteil werden angezeigt
-
-SPIEL-LEBENSZYKLUS
-- Stunden bis Inaktivitätsschließung
-- Stunden bis Löschung geschlossener Spiele
-- Verteilung offenen Restgoldes bei Inaktivität
-
-TECHNOLOGIEBAUM
-Für jede Technologie:
-- Name
-- Kategorie
-- Beschreibung
-- Preis
-- Felder-pro-Zug-Bonus
-- Talerbonus
-- Analyse-Level
-- Zugspeicher-Bonus
-- Regenerationsbonus
-- Voraussetzungen
-- Sortierung
-- aktiv / deaktiviert
+- Performance-Optimierung im laufenden Spiel:
+  * kein kompletter Spiel-Reload mehr jede Sekunde
+  * Countdown läuft lokal im Browser
+  * Serverzug-Abgleich erst wenn ein neuer Zug fällig ist
+  * Realtime-Ereignisse laden nur den betroffenen Teil nach
+  * Feldänderungen werden gebündelt/debounced
+- Standard-Zugregeneration bei neuen Spielen: 5 Sekunden
+- Die Standard-Zugzeit ist zusätzlich in der Admin-Schaltzentrale einstellbar.
+- Spielerprofile sind anklickbar in Legendenliste und aktivem Spiel.
+- Neue öffentliche Profilansicht /spieler/[id] mit Bio, Profilbild und Spielstatistiken.
+- Spielchat mit Realtime-Nachrichten, nur für Teilnehmer des jeweiligen Spiels.
+- Lobby zeigt Inhalte erst nach erfolgreicher Auth-Prüfung. Nicht eingeloggte Besucher werden zu /login geleitet.
+- Neue ausführliche öffentliche Startseite.
+- Loginseite optisch als Einstieg ins Spiel ausgebaut.
+- E-Mail-Bestätigungslink wird bei neuen Registrierungen auf die Startseite zurückgeführt.
+- Analyse-Technologien arbeiten stärker geografisch:
+  * Richtung in Himmelsrichtungen
+  * echte Meter/Kilometer statt nur Rasterfelder
+  * gelber ungefährer Analysebereich direkt auf der Weltkarte
+  * der Bereich wird mit höheren Analyseleveln kleiner
+  * die exakte Schatzposition wird nicht an den Client ausgegeben
 
 INSTALLATION
-1. Gesamten Inhalt dieser ZIP in dein bestehendes GitHub-Repository hochladen und vorhandene Dateien ersetzen.
-2. Supabase > SQL Editor öffnen.
-3. NUR supabase/v6_7_migration.sql EINMAL vollständig ausführen.
-4. Danach musst du deinem eigenen Benutzer EINMAL Adminrechte geben:
-   - Datei supabase/v6_7_grant_admin_TEMPLATE.sql öffnen
-   - DEINE_LOGIN_EMAIL durch deine echte Login-E-Mail ersetzen
-   - SQL im Supabase SQL Editor ausführen
-5. Vercel deployt nach dem GitHub-Commit automatisch.
-6. Neu in die Lobby gehen. Dort erscheint für dich „🎛️ Schaltzentrale“.
+1. Gesamten Inhalt der ZIP in GitHub hochladen und vorhandene Dateien ersetzen.
+2. Supabase > SQL Editor.
+3. NUR supabase/v6_8_migration.sql EINMAL ausführen.
+4. Vercel deployt automatisch.
 
-SICHERHEIT
-- Normale Spieler können die Schaltzentrale nicht verwenden.
-- Schreibzugriffe laufen über SECURITY-DEFINER-Funktionen mit zusätzlicher Adminprüfung.
-- Die Tabelle admin_users hat keine Client-Schreibpolicy.
-- Spielstatistiken und Technologie-Käufe bleiben serverseitig autoritativ.
+E-MAIL-BESTÄTIGUNG
+Die App setzt emailRedirectTo auf die jeweilige Startseite der laufenden Domain.
+In Supabase muss deine Vercel-Adresse zusätzlich unter Authentication > URL Configuration als erlaubte Redirect URL eingetragen sein, z. B.:
+https://schatzsuchebobi.vercel.app/**
 
-WICHTIG
-Die Schaltzentrale betrifft die Spielregeln global. Eine Änderung wirkt grundsätzlich
-auf alle Spiele, die den betreffenden Wert danach verwenden. Technologie-Boni bereits
-gekaufter Technologien werden nach einer Änderung neu berechnet.
+PERFORMANCE
+Mit 2-3 Spielern sollte die Seite deutlich reaktionsschneller sein. Bei sehr großen Mengen bereits erkundeter Felder bleibt die vollständige Karten-Geometrie später ein eigener Skalierungspunkt; dafür wäre als nächste Stufe ein serverseitiges Viewport-/Kachel-Laden sinnvoll.
 
 Goldstaub bleibt weiterhin ausschließlich TEST-GOLD ohne Echtgeldwert, Kauf oder Auszahlung.

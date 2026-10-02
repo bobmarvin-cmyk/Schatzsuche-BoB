@@ -38,7 +38,7 @@ export default function Legenden(){
     {loading&&<div className="muted">Lade Bestenliste…</div>}
     {!loading&&rows.map((r,i)=><div className={'leaderRow '+(i<3?'top top'+(i+1):'')} key={r.user_id}>
      <span className="rank">{i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</span>
-     <strong>{r.display_name||'Spieler'}</strong>
+     <strong><a className="profileLink" href={'/spieler/'+r.user_id}>{r.display_name||'Spieler'}</a></strong>
      <span>{value(r)}</span>
     </div>)}
    </div>

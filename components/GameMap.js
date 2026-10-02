@@ -49,18 +49,20 @@ function featureCollection(game,fields,players){
   }
 }
 
-export default function GameMap({game,fields,players,onReveal}){
+export default function GameMap({game,fields,players,onReveal,analysisHint}){
   const holder=useRef(null)
   const mapRef=useRef(null)
   const gameRef=useRef(game)
   const fieldsRef=useRef(fields)
   const playersRef=useRef(players)
   const onRevealRef=useRef(onReveal)
+  const analysisRef=useRef(analysisHint)
 
   gameRef.current=game
   fieldsRef.current=fields
   playersRef.current=players
   onRevealRef.current=onReveal
+  analysisRef.current=analysisHint
 
   useEffect(()=>{
     if(!game||!holder.current||mapRef.current)return
@@ -132,6 +134,10 @@ export default function GameMap({game,fields,players,onReveal}){
           }
         })
 
+        map.addSource('analysis-zone',{type:'geojson',data:{type:'FeatureCollection',features:[]}})
+        map.addLayer({id:'analysis-zone-fill',type:'fill',source:'analysis-zone',paint:{'fill-color':'#f3c54b','fill-opacity':0.12}})
+        map.addLayer({id:'analysis-zone-line',type:'line',source:'analysis-zone',paint:{'line-color':'#f3c54b','line-opacity':0.9,'line-width':2,'line-dasharray':[2,2]}})
+        updateAnalysis()
         updateGrid()
       })
 
@@ -147,6 +153,21 @@ export default function GameMap({game,fields,players,onReveal}){
           onRevealRef.current?.(x,y)
         }
       })
+
+      function updateAnalysis(){
+        const src=map.getSource('analysis-zone')
+        const h=analysisRef.current
+        if(!src)return
+        if(!h?.lat||!h?.lon||!h?.radius_m){src.setData({type:'FeatureCollection',features:[]});return}
+        const steps=48, coords=[]
+        const lat=Number(h.lat),lon=Number(h.lon),radius=Number(h.radius_m)
+        const metersLon=Math.max(1000,METERS_PER_DEG_LAT*Math.cos(lat*Math.PI/180))
+        for(let i=0;i<=steps;i++){
+          const a=(i/steps)*Math.PI*2
+          coords.push([lon+Math.cos(a)*radius/metersLon,lat+Math.sin(a)*radius/METERS_PER_DEG_LAT])
+        }
+        src.setData({type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[coords]}}]})
+      }
 
       function updateGrid(){
         if(!map.getSource('grid'))return
@@ -221,6 +242,26 @@ export default function GameMap({game,fields,players,onReveal}){
     if(map.loaded())apply()
     else map.once('load',apply)
   },[fields,players,game])
+
+  useEffect(()=>{
+    const map=mapRef.current
+    if(!map)return
+    const apply=()=>{
+      const src=map.getSource('analysis-zone')
+      const h=analysisRef.current
+      if(!src)return
+      if(!h?.lat||!h?.lon||!h?.radius_m){src.setData({type:'FeatureCollection',features:[]});return}
+      const steps=48,coords=[]
+      const lat=Number(h.lat),lon=Number(h.lon),radius=Number(h.radius_m)
+      const metersLon=Math.max(1000,METERS_PER_DEG_LAT*Math.cos(lat*Math.PI/180))
+      for(let i=0;i<=steps;i++){
+        const a=(i/steps)*Math.PI*2
+        coords.push([lon+Math.cos(a)*radius/metersLon,lat+Math.sin(a)*radius/METERS_PER_DEG_LAT])
+      }
+      src.setData({type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[coords]}}]})
+    }
+    if(map.loaded())apply();else map.once('load',apply)
+  },[analysisHint])
 
   return <div ref={holder} className="worldMap"/>
 }

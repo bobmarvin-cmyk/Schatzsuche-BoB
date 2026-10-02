@@ -1,9 +1,10 @@
 'use client'
-import {useEffect,useState} from 'react'
+import {useEffect,useRef,useState} from 'react'
 import {useParams} from 'next/navigation'
 import {supabase} from '../../../lib/supabase-browser'
 import GameMap from '../../../components/GameMap'
 import {formatGold} from '../../../lib/gold'
+import GameChat from '../../../components/GameChat'
 
 const PAGE_SIZE=1000
 
@@ -33,18 +34,22 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState('')
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[tick,setTick]=useState(0)
+ const fieldReloadTimer=useRef(null),moveRefreshBusy=useRef(false)
 
  useEffect(()=>{
   init()
   const ch=supabase.channel('game-'+id)
-   .on('postgres_changes',{event:'*',schema:'public',table:'explored_fields',filter:`game_id=eq.${id}`},load)
-   .on('postgres_changes',{event:'*',schema:'public',table:'game_players',filter:`game_id=eq.${id}`},load)
-   .on('postgres_changes',{event:'*',schema:'public',table:'games',filter:`id=eq.${id}`},load)
-   .on('postgres_changes',{event:'*',schema:'public',table:'player_technologies',filter:`game_id=eq.${id}`},load)
+   .on('postgres_changes',{event:'*',schema:'public',table:'explored_fields',filter:`game_id=eq.${id}`},()=>{
+     clearTimeout(fieldReloadTimer.current)
+     fieldReloadTimer.current=setTimeout(()=>loadFieldsOnly(),220)
+   })
+   .on('postgres_changes',{event:'*',schema:'public',table:'game_players',filter:`game_id=eq.${id}`},()=>loadPlayersOnly())
+   .on('postgres_changes',{event:'*',schema:'public',table:'games',filter:`id=eq.${id}`},()=>loadGameOnly())
+   .on('postgres_changes',{event:'*',schema:'public',table:'player_technologies',filter:`game_id=eq.${id}`},()=>loadOwnedOnly())
    .subscribe()
-  const timer=setInterval(()=>refreshMoves(),1000)
-  return()=>{supabase.removeChannel(ch);clearInterval(timer)}
+  const timer=setInterval(()=>setTick(t=>t+1),1000)
+  return()=>{supabase.removeChannel(ch);clearInterval(timer);clearTimeout(fieldReloadTimer.current)}
  },[id])
 
  async function init(){
@@ -80,15 +85,39 @@ export default function Game(){
  async function refreshMoves(){
   if(joinState==='password'||joinState==='error')return
   const {data}=await supabase.rpc('refresh_player_moves',{p_game_id:id})
-  if(data){setRegenInfo(data);load(false)}
+  if(data){setRegenInfo(data);await loadPlayersOnly()}
  }
 
+ async function loadPlayersOnly(){
+  const {data}=await supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at')
+  if(data)setPlayers(data)
+ }
+ async function loadGameOnly(){
+  const {data}=await supabase.from('games').select('*').eq('id',id).single()
+  if(data)setGame(data)
+ }
+ async function loadOwnedOnly(){
+  const {data:{user}}=await supabase.auth.getUser(); if(!user)return
+  const {data}=await supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user.id)
+  if(data)setOwned(data.map(x=>x.technology_id))
+ }
+ async function loadFieldsOnly(){
+  try{setFields(await loadAllFields(id))}catch(err){setMsg('Fehler beim Laden der Felder: '+err.message)}
+ }
+ async function loadGoldOnly(){
+  const {data:{user}}=await supabase.auth.getUser(); if(!user)return
+  const [w,gt]=await Promise.all([
+   supabase.from('gold_wallets').select('balance_ug').eq('user_id',user.id).maybeSingle(),
+   supabase.rpc('get_gold_treasure_status_v65',{p_game_id:id})
+  ])
+  setWallet(w.data);setGoldTreasures(gt.data||[])
+ }
  async function load(){
   const {data:{user}}=await supabase.auth.getUser()
   try{
     const [g,p,t,f,w,gt,tech]=await Promise.all([
       supabase.from('games').select('*').eq('id',id).single(),
-      supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,profiles(display_name)').eq('game_id',id).order('joined_at'),
+      supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
       loadAllFields(id),
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
@@ -110,16 +139,18 @@ export default function Game(){
 
  async function reveal(x,y){
   const {data,error}=await supabase.rpc('reveal_area_v66',{p_game_id:id,p_x:x,p_y:y})
-  setMsg(error?error.message:(data?.message||'Gebiet untersucht'))
-  await refreshMoves()
-  await load()
+  if(error){setMsg(error.message);return}
+  setMsg(data?.message||'Gebiet untersucht')
+  const {data:hint}=await supabase.rpc('get_analysis_hint_v68',{p_game_id:id,p_x:x,p_y:y})
+  if(hint)setAnalysisHint(hint)
+  await Promise.all([loadPlayersOnly(),loadGameOnly(),loadGoldOnly()])
+  clearTimeout(fieldReloadTimer.current);fieldReloadTimer.current=setTimeout(()=>loadFieldsOnly(),120)
  }
 
  async function buy(t){
   const {data,error}=await supabase.rpc('buy_technology',{p_game_id:id,p_technology_id:t.id})
   setMsg(error?error.message:(data?.message||'Erforscht'))
-  await refreshMoves()
-  await load()
+  await Promise.all([loadPlayersOnly(),loadOwnedOnly()])
  }
 
  const me=players.find(p=>p.user_id===user?.id)
@@ -129,6 +160,17 @@ export default function Game(){
  const effectiveRegen=game?Math.max(5,Math.round(Number(game.regen_seconds||30)*(1-Number(me?.regen_reduction||0)))):30
  const branches=[...new Set(technologies.map(t=>t.branch))]
  const activeBranch=branches.includes(branch)?branch:(branches[0]||'Erkundung')
+ const secondsUntilMove=(()=>{
+  if(!me||!game||Number(me.moves_left)>=cap)return null
+  const last=new Date(me.last_regen_at||Date.now()).getTime()
+  const due=last+effectiveRegen*1000
+  return Math.max(0,Math.ceil((due-Date.now())/1000))
+ })()
+ useEffect(()=>{
+  if(joinState!=='joined'||secondsUntilMove!==0||moveRefreshBusy.current)return
+  moveRefreshBusy.current=true
+  refreshMoves().finally(()=>{moveRefreshBusy.current=false})
+ },[tick,joinState,secondsUntilMove])
 
  function techEffect(t){
   if(t.description)return t.description
@@ -170,7 +212,7 @@ export default function Game(){
     {[
      [Number(me?.coins||0).toFixed(2),'Taler'],
      [`${me?.moves_left??0} / ${cap}`,'Züge'],
-     [`${effectiveRegen}s`,'Regeneration'],
+     [secondsUntilMove===null?`${effectiveRegen}s`: `${secondsUntilMove}s`,'Nächster Zug'],
      [me?.reveal_power??1,'Felder/Zug'],
      [(me?.reward_multiplier??1)+'×','Bonus'],
      ['Stufe '+(me?.analysis_level??0),'Analyse'],
@@ -201,7 +243,8 @@ export default function Game(){
     <div className="mapHeader"><div><h2>Weltkarte</h2><div className="small">Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.</div></div>
      <div className="mapLegend">{players.map(p=><div className="legendItem" key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.profiles?.display_name||'Spieler'}</div>)}</div>
     </div>
-    {game&&<GameMap game={game} fields={fields} players={players} onReveal={reveal}/>}
+    {game&&<GameMap game={game} fields={fields} players={players} onReveal={reveal} analysisHint={analysisHint}/>}
+    {analysisHint&&<div className="analysisHintBox"><strong>🧭 Kartenanalyse Stufe {analysisHint.level}</strong><div>{analysisHint.text}</div><div className="small">Der gelb markierte Bereich auf der Karte ist der aktuelle Analysebereich.</div></div>}
     <p className="statusLine">{msg}</p>
    </section>
 
@@ -221,8 +264,9 @@ export default function Game(){
   </div>
 
   <div className="panel"><h2>Spieler</h2><div className="grid">{players.map(p=><div className="card" key={p.user_id}>
-   <div className="playerNameLine"><span className="colorDot large" style={{background:p.player_color||'#35516d'}}></span><strong>{p.profiles?.display_name||'Spieler'}</strong></div>
+   <div className="playerNameLine"><span className="colorDot large" style={{background:p.player_color||'#35516d'}}></span><strong><a className="profileLink" href={'/spieler/'+p.user_id}>{p.profiles?.display_name||'Spieler'}</a></strong></div>
    <div className="small">{Number(p.coins).toFixed(2)} T · {p.moves_left} gespeicherte Züge · {p.reveal_power} Felder/Zug</div>
   </div>)}</div></div>
+  {game&&user&&<GameChat gameId={id} userId={user.id}/>}
  </main>
 }
