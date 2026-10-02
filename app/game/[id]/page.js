@@ -4,6 +4,13 @@ import {useParams} from 'next/navigation'
 import {supabase} from '../../../lib/supabase-browser'
 
 const CELL=10
+const COLORS=[
+ '#3b82f6','#22c55e','#a855f7','#ef4444','#f59e0b',
+ '#06b6d4','#ec4899','#84cc16','#f97316','#8b5cf6',
+ '#14b8a6','#eab308','#64748b','#10b981','#0ea5e9',
+ '#d946ef','#e11d48','#65a30d','#c2410c','#7c3aed'
+]
+
 const TECHS=[
  ['root','Grundlagen',0.05,'Basis','+1 Feld/Zug',[]],
  ['e1','Fernglas I',0.15,'Erkundung','+2 Felder/Zug',['root']],
@@ -69,21 +76,29 @@ export default function Game(){
    const {data:{user}}=await supabase.auth.getUser()
    const [g,p,f,t]=await Promise.all([
      supabase.from('games').select('*').eq('id',id).single(),
-     supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,profiles(display_name)').eq('game_id',id),
+     supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,profiles(display_name)').eq('game_id',id).order('joined_at'),
      supabase.from('explored_fields').select('x,y,discovered_by,is_treasure').eq('game_id',id),
      supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000')
    ])
    setGame(g.data);setPlayers(p.data||[]);setFields(f.data||[]);setOwned((t.data||[]).map(x=>x.technology_id))
  }
 
- useEffect(()=>{draw()},[game,fields])
+ useEffect(()=>{draw()},[game,fields,players])
 
  function draw(){
    if(!game||!canvas.current)return
    const c=canvas.current,ctx=c.getContext('2d')
    c.width=game.width*CELL;c.height=game.height*CELL
    ctx.fillStyle='#09111d';ctx.fillRect(0,0,c.width,c.height)
-   for(const f of fields){ctx.fillStyle=f.is_treasure?'#efb94f':'#35516d';ctx.fillRect(f.x*CELL,f.y*CELL,CELL,CELL)}
+
+   const colorMap={}
+   for(const p of players) colorMap[p.user_id]=p.player_color||'#35516d'
+
+   for(const f of fields){
+     ctx.fillStyle=f.is_treasure?'#efb94f':(colorMap[f.discovered_by]||'#35516d')
+     ctx.fillRect(f.x*CELL,f.y*CELL,CELL,CELL)
+   }
+
    ctx.strokeStyle='#1d2a40';ctx.lineWidth=.6
    for(let i=0;i<=game.width;i++){ctx.beginPath();ctx.moveTo(i*CELL,0);ctx.lineTo(i*CELL,c.height);ctx.stroke()}
    for(let i=0;i<=game.height;i++){ctx.beginPath();ctx.moveTo(0,i*CELL);ctx.lineTo(c.width,i*CELL);ctx.stroke()}
@@ -110,24 +125,42 @@ export default function Game(){
 
  return <main className="container">
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/profile">Profil</a></div>
-  <div className="panel"><h1>{game?.name||'Spiel'}</h1><div className="grid">
-   {[
-    [game?.round_no||'-','Runde'],
-    [Number(me?.coins||0).toFixed(2),'Taler'],
-    [me?.moves_left??0,'Züge'],
-    [me?.reveal_power??1,'Felder/Zug'],
-    [(me?.reward_multiplier??1)+'×','Bonus'],
-    ['Stufe '+(me?.analysis_level??0),'Analyse'],
-    [left.toLocaleString('de-DE'),'Felder übrig']
-   ].map((v,i)=><div className="card" key={i}><div className="small">{v[1]}</div><div className="stat">{v[0]}</div></div>)}
-  </div></div>
+
+  <div className="panel">
+   <h1>{game?.name||'Spiel'}</h1>
+   <div className="grid">
+    {[
+     [game?.round_no||'-','Runde'],
+     [Number(me?.coins||0).toFixed(2),'Taler'],
+     [me?.moves_left??0,'Züge'],
+     [me?.reveal_power??1,'Felder/Zug'],
+     [(me?.reward_multiplier??1)+'×','Bonus'],
+     ['Stufe '+(me?.analysis_level??0),'Analyse'],
+     [left.toLocaleString('de-DE'),'Felder übrig']
+    ].map((v,i)=><div className="card" key={i}><div className="small">{v[1]}</div><div className="stat">{v[0]}</div></div>)}
+   </div>
+  </div>
 
   <div className="gameLayout">
-   <section className="panel"><h2>Spielfeld</h2><div className="mapwrap"><canvas ref={canvas} onClick={reveal}/></div><p>{msg}</p></section>
-   <aside className="panel"><h2>Technologiebaum</h2>
+   <section className="panel">
+    <div className="mapHeader">
+     <h2>Spielfeld</h2>
+     <div className="mapLegend">
+      {players.map(p=><div className="legendItem" key={p.user_id}>
+       <span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>
+       <span>{p.profiles?.display_name||'Spieler'}</span>
+      </div>)}
+     </div>
+    </div>
+    <div className="mapwrap"><canvas ref={canvas} onClick={reveal}/></div>
+    <p>{msg}</p>
+   </section>
+
+   <aside className="panel">
+    <h2>Technologiebaum</h2>
     <div className="branchTabs">{BR.map(b=><button key={b} className={'branchTab '+(branch===b?'active':'')} onClick={()=>setBranch(b)}>{b}</button>)}</div>
     <div className="techList">{TECHS.filter(t=>t[3]===branch).map(t=>{
-      const bought=has(t[0]), unlocked=t[5].every(has), enough=Number(me?.coins||0)>=t[2]
+      const bought=has(t[0]),unlocked=t[5].every(has),enough=Number(me?.coins||0)>=t[2]
       return <div key={t[0]} className={'techCard '+(bought?'bought':unlocked?'available':'locked')}>
        <strong>{bought?'✅ ':''}{t[1]}</strong>
        <div className="small">{t[4]}</div>
@@ -138,9 +171,14 @@ export default function Game(){
    </aside>
   </div>
 
-  <div className="panel"><h2>Spieler</h2><div className="grid">{players.map(p=><div className="card" key={p.user_id}>
-   <strong>{p.profiles?.display_name||'Spieler'}</strong>
-   <div className="small">{Number(p.coins).toFixed(2)} T · {p.moves_left} Züge · {p.reveal_power} Felder/Zug</div>
-  </div>)}</div></div>
+  <div className="panel">
+   <h2>Spieler</h2>
+   <div className="grid">
+    {players.map(p=><div className="card playerCard" key={p.user_id}>
+     <div className="playerNameLine"><span className="colorDot large" style={{background:p.player_color||'#35516d'}}></span><strong>{p.profiles?.display_name||'Spieler'}</strong></div>
+     <div className="small">{Number(p.coins).toFixed(2)} T · {p.moves_left} Züge · {p.reveal_power} Felder/Zug</div>
+    </div>)}
+   </div>
+  </div>
  </main>
 }
