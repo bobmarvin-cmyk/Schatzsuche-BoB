@@ -109,6 +109,19 @@ export default function Hilfe(){
         Die großen Live-Spieldaten können nach der Aufbewahrungsfrist gelöscht werden, ohne dass der Rückblick verloren geht.
       </p>
 
+
+      <h2>Maschinen und Automatisierung</h2>
+      <p>
+        Im Technologiezweig „Automatisierung“ kannst du Maschinen kaufen, die zusätzlich zu deinen
+        manuellen Zügen automatisch Felder aufdecken. Die Maschinen arbeiten im Bereich deines letzten
+        manuellen Kartenklicks und laufen nur, solange das jeweilige Spiel sichtbar geöffnet ist.
+        Wechselst du den Tab oder verlässt das Spiel, stoppt die Automatisierung automatisch.
+      </p>
+      <p>
+        Maschinen verbrauchen keine gespeicherten manuellen Züge. Ihre Leistung und der Talerertrag
+        automatischer Felder werden zentral von der Spielleitung eingestellt.
+      </p>
+
       <h2>Tipps</h2>
       <p>
         Nutze deine Züge nicht nur zufällig. Beobachte bereits erkundete Bereiche, kombiniere Hinweise mit der

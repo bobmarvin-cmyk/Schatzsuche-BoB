@@ -42,7 +42,12 @@ export default function Lobby(){
  async function loadSettings(){
    const {data}=await supabase.from('platform_settings').select('prize_share_bps,community_share_bps,platform_share_bps,multi_treasure_threshold_ug,max_treasures,test_grant_ug,game_inactivity_hours,closed_game_retention_hours,inactive_community_share_bps,inactive_platform_share_bps,min_game_fields,max_game_fields,max_game_players,min_cell_size_m,max_cell_size_m,min_regen_seconds,max_regen_seconds,max_stored_moves_limit,min_entry_gold_ug,max_entry_gold_ug,exploration_reward,default_regen_seconds').eq('id',1).maybeSingle()
    setSettings(data)
-   if(data?.default_regen_seconds)setRegen(Number(data.default_regen_seconds))
+   if(data){
+     const min=Math.max(1,Number(data.min_regen_seconds||5))
+     const max=Math.max(min,Number(data.max_regen_seconds||3600))
+     const def=Math.min(max,Math.max(min,Number(data.default_regen_seconds||min)))
+     setRegen(def)
+   }
  }
  async function loadGames(){
    const {data,error}=await supabase.from('games')
@@ -117,6 +122,20 @@ export default function Lobby(){
  const closedGames=games.filter(g=>g.status!=='active')
  const inactivityHours=settings?.game_inactivity_hours||24
  const retentionHours=settings?.closed_game_retention_hours||72
+ const regenOptions=(()=>{
+   const min=Math.max(1,Number(settings?.min_regen_seconds||5))
+   const max=Math.max(min,Number(settings?.max_regen_seconds||3600))
+   const def=Math.min(max,Math.max(min,Number(settings?.default_regen_seconds||min)))
+   return [...new Set([min,def,5,10,15,20,30,45,60,120,300,600,1800,3600,max]
+     .map(Number).filter(n=>Number.isFinite(n)&&n>=min&&n<=max))]
+     .sort((a,b)=>a-b)
+ })()
+ function regenLabel(n){
+   if(n<60)return `1 Zug / ${n} Sekunden`
+   if(n%3600===0)return `1 Zug / ${n/3600} Stunde${n===3600?'':'n'}`
+   if(n%60===0)return `1 Zug / ${n/60} Minuten`
+   return `1 Zug / ${n} Sekunden`
+ }
 
  if(!authReady)return <main className="container"><div className="panel">Anmeldung wird geprüft…</div></main>
 
@@ -201,9 +220,9 @@ export default function Lobby(){
       </select>
       <label>Zugregeneration</label>
       <select className="input" value={regen} onChange={e=>setRegen(e.target.value)}>
-       <option value="5">1 Zug / 5 Sekunden</option><option value="10">1 Zug / 10 Sekunden</option><option value="30">1 Zug / 30 Sekunden</option>
-       <option value="60">1 Zug / Minute</option><option value="300">1 Zug / 5 Minuten</option><option value="3600">1 Zug / Stunde</option>
+       {regenOptions.map(n=><option value={n} key={n}>{regenLabel(n)}</option>)}
       </select>
+      <div className="small">Erlaubt durch die Schaltzentrale: {settings?.min_regen_seconds||5}s bis {settings?.max_regen_seconds||3600}s.</div>
       <label>Maximal speicherbare Züge</label>
       <select className="input" value={capacity} onChange={e=>setCapacity(e.target.value)}>{[3,4,5,6,8,10].map(n=><option value={n} key={n}>{n}</option>)}</select>
      </div>

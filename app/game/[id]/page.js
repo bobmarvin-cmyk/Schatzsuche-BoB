@@ -12,7 +12,7 @@ export default function Game(){
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null)
- const moveRefreshBusy=useRef(false),revealBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null)
+ const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null)
 
  useEffect(()=>{
   init()
@@ -67,7 +67,7 @@ export default function Game(){
  }
 
  async function loadPlayersOnly(){
-  const {data}=await supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at')
+  const {data}=await supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at')
   if(data)setPlayers(data)
  }
  async function loadGameOnly(){
@@ -92,11 +92,11 @@ export default function Game(){
   try{
     const [g,p,t,w,gt,tech]=await Promise.all([
       supabase.from('games').select('*').eq('id',id).single(),
-      supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
+      supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
       supabase.rpc('get_gold_treasure_status_v65',{p_game_id:id}),
-      supabase.from('technologies').select('id,name,branch,cost,reveal_power_bonus,reward_bonus,analysis_level,capacity_bonus,regen_reduction,requires,description,sort_order,is_active').eq('is_active',true).order('sort_order',{ascending:true}).order('id',{ascending:true})
+      supabase.from('technologies').select('id,name,branch,cost,reveal_power_bonus,reward_bonus,analysis_level,capacity_bonus,regen_reduction,machine_auto_fields,requires,description,sort_order,is_active').eq('is_active',true).order('sort_order',{ascending:true}).order('id',{ascending:true})
     ])
 
     setGame(g.data)
@@ -139,6 +139,7 @@ export default function Game(){
   revealBusy.current=true
   setMsg('Suche läuft…')
   try{
+    await supabase.rpc('set_machine_focus_v690',{p_game_id:id,p_x:x,p_y:y})
     const {data,error}=await supabase.rpc('reveal_area_v683',{p_game_id:id,p_x:x,p_y:y})
     if(error){setMsg(error.message);return}
 
@@ -164,6 +165,32 @@ export default function Game(){
   }
  }
 
+ async function runMachines(){
+  if(machineBusy.current||machinePower<=0||document.visibilityState!=='visible'||!document.hasFocus())return
+  machineBusy.current=true
+  try{
+    const {data,error}=await supabase.rpc('run_machines_v690',{p_game_id:id})
+    if(error){
+      if(!error.message?.includes('Noch nicht fällig'))setMsg('Maschinen: '+error.message)
+      return
+    }
+    if(data?.opened>0){
+      setMsg(data?.message||`⚙️ Maschinen haben ${data.opened} Felder aufgedeckt.`)
+      if(currentViewport.current)await loadVisibleFields(currentViewport.current)
+      await Promise.all([loadPlayersOnly(),loadGameOnly(),loadGoldOnly()])
+    }
+    if(data?.won){
+      setWinnerCelebration({
+        name:data.winner_name||'Du',
+        moves:Number(data.winner_moves_used||0),
+        opened:Number(data.opened||0)
+      })
+    }
+  }finally{
+    machineBusy.current=false
+  }
+ }
+
  async function buy(t){
   const {data,error}=await supabase.rpc('buy_technology',{p_game_id:id,p_technology_id:t.id})
   setMsg(error?error.message:(data?.message||'Erforscht'))
@@ -174,9 +201,19 @@ export default function Game(){
  const left=game?Math.max(0,Number(game.width)*Number(game.height)-Number(game.explored_count||0)):0
  const has=x=>owned.includes(x)
  const cap=game?Number(game.max_stored_moves||4)+Number(me?.move_capacity_bonus||0):4
- const effectiveRegen=game?Math.max(5,Math.round(Number(game.regen_seconds||30)*(1-Number(me?.regen_reduction||0)))):30
+ const effectiveRegen=Number(regenInfo?.interval_seconds||game?.regen_seconds||30)
  const branches=[...new Set(technologies.map(t=>t.branch))]
  const activeBranch=branches.includes(branch)?branch:(branches[0]||'Erkundung')
+ const machinePower=technologies
+   .filter(t=>owned.includes(t.id))
+   .reduce((sum,t)=>sum+Number(t.machine_auto_fields||0),0)
+ const secondsUntilMachine=(()=>{
+   if(!me||!game||machinePower<=0||me.auto_focus_x==null||me.auto_focus_y==null)return null
+   const last=new Date(me.machine_last_run_at||Date.now()).getTime()
+   const due=last+effectiveRegen*1000
+   return Math.max(0,Math.ceil((due-Date.now())/1000))
+ })()
+
  const secondsUntilMove=(()=>{
   if(!me||!game||Number(me.moves_left)>=cap)return null
   const last=new Date(me.last_regen_at||Date.now()).getTime()
@@ -189,14 +226,28 @@ export default function Game(){
   refreshMoves().finally(()=>{moveRefreshBusy.current=false})
  },[tick,joinState,secondsUntilMove])
 
+ useEffect(()=>{
+  if(joinState!=='joined'||machinePower<=0)return
+  if(tick%10!==0)return
+  if(document.visibilityState!=='visible'||!document.hasFocus())return
+  supabase.rpc('machine_presence_v690',{p_game_id:id})
+ },[tick,joinState,machinePower,id])
+
+ useEffect(()=>{
+  if(joinState!=='joined'||machinePower<=0||secondsUntilMachine!==0)return
+  if(document.visibilityState!=='visible'||!document.hasFocus())return
+  runMachines()
+ },[tick,joinState,secondsUntilMachine,machinePower])
+
  function techEffect(t){
-  if(t.description)return t.description
   const effects=[]
+  if(t.description)effects.push(t.description)
   if(Number(t.reveal_power_bonus))effects.push(`+${t.reveal_power_bonus} Felder/Zug`)
   if(Number(t.reward_bonus))effects.push(`+${Math.round(Number(t.reward_bonus)*100)}% Talerbonus`)
   if(Number(t.analysis_level))effects.push(`Analyse Stufe ${t.analysis_level}`)
   if(Number(t.capacity_bonus))effects.push(`+${t.capacity_bonus} Zugspeicher`)
   if(Number(t.regen_reduction))effects.push(`${Math.round(Number(t.regen_reduction)*100)}% schnellere Regeneration`)
+  if(Number(t.machine_auto_fields))effects.push(`${Number(t.machine_auto_fields).toLocaleString('de-DE')} automatische Felder/Takt`)
   return effects.join(' · ')||'Keine direkte Wirkung'
  }
 
@@ -233,10 +284,12 @@ export default function Game(){
      [me?.reveal_power??1,'Felder/Zug'],
      [(me?.reward_multiplier??1)+'×','Bonus'],
      ['Stufe '+(me?.analysis_level??0),'Analyse'],
+     [machinePower>0?`${machinePower.toLocaleString('de-DE')} / ${secondsUntilMachine===null?'–':secondsUntilMachine+'s'}`:'0','Maschinenfelder / nächster Takt'],
      [left.toLocaleString('de-DE'),'Felder übrig']
     ].map((v,i)=><div className="card" key={i}><div className="small">{v[1]}</div><div className="stat">{v[0]}</div></div>)}
    </div>
    <div className="regenBarText">Ungenutzte Züge werden bis zum Speicherlimit gesammelt; darüber hinaus verfallen sie.</div>
+   {machinePower>0&&<div className="machineStatus">⚙️ Deine Maschinen arbeiten nur, solange dieses Spiel sichtbar geöffnet ist. Zielbereich: dein letzter manueller Kartenklick.</div>}
   </div>
 
   {game?.game_type==='pay'&&<div className="panel goldGamePanel">

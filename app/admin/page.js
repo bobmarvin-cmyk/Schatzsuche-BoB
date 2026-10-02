@@ -64,10 +64,14 @@ export default function Admin(){
    max_stored_moves_limit:NUM(settings.max_stored_moves_limit),
    exploration_reward:NUM(settings.exploration_reward),
    min_entry_gold_ug:NUM(settings.min_entry_gold_ug),
-   max_entry_gold_ug:NUM(settings.max_entry_gold_ug)
+   max_entry_gold_ug:NUM(settings.max_entry_gold_ug),
+   machine_reward_factor:NUM(settings.machine_reward_factor)
   }
   const {data,error}=await supabase.rpc('admin_update_settings_v67',{p_settings:payload})
-  if(!error)await supabase.rpc('admin_set_default_regen_v68',{p_seconds:NUM(settings.default_regen_seconds)})
+  if(!error){
+    await supabase.rpc('admin_set_default_regen_v68',{p_seconds:NUM(settings.default_regen_seconds)})
+    await supabase.rpc('admin_set_machine_reward_v690',{p_factor:NUM(settings.machine_reward_factor)})
+  }
   setSaving(false)
   setMsg(error?error.message:(data?.message||'Globale Einstellungen gespeichert.'))
   if(!error)await load()
@@ -75,7 +79,7 @@ export default function Admin(){
 
  async function saveTech(t){
   setSaving(true);setMsg('')
-  const {data,error}=await supabase.rpc('admin_update_technology_v67',{
+  const {data,error}=await supabase.rpc('admin_update_technology_v690',{
     p_id:t.id,
     p_name:t.name,
     p_branch:t.branch,
@@ -86,6 +90,7 @@ export default function Admin(){
     p_analysis_level:NUM(t.analysis_level),
     p_capacity_bonus:NUM(t.capacity_bonus),
     p_regen_reduction:NUM(t.regen_reduction),
+    p_machine_auto_fields:NUM(t.machine_auto_fields),
     p_requires:t.requires||[],
     p_sort_order:NUM(t.sort_order),
     p_is_active:!!t.is_active
@@ -125,6 +130,7 @@ export default function Admin(){
     <Field label="Max. Zugregeneration (s)" value={settings.max_regen_seconds} onChange={v=>setSetting('max_regen_seconds',v)}/>
     <Field label="Max. Zugspeicher" value={settings.max_stored_moves_limit} onChange={v=>setSetting('max_stored_moves_limit',v)}/>
     <Field label="Taler pro leerem Feld" step="0.001" value={settings.exploration_reward} onChange={v=>setSetting('exploration_reward',v)}/>
+    <Field label="Maschinen-Talerfaktor (1 = 100%)" step="0.05" value={settings.machine_reward_factor} onChange={v=>setSetting('machine_reward_factor',v)}/>
    </div>
   </section>
 
@@ -181,6 +187,7 @@ export default function Admin(){
        <Field label="Analyse-Level" value={t.analysis_level} onChange={v=>setTech(t.id,'analysis_level',v)}/>
        <Field label="Zugspeicher-Bonus" value={t.capacity_bonus} onChange={v=>setTech(t.id,'capacity_bonus',v)}/>
        <Field label="Regeneration schneller (0,1 = 10%)" step="0.01" value={t.regen_reduction} onChange={v=>setTech(t.id,'regen_reduction',v)}/>
+       <Field label="Maschinenfelder pro Takt" value={t.machine_auto_fields||0} onChange={v=>setTech(t.id,'machine_auto_fields',v)}/>
        <Field label="Sortierung" value={t.sort_order} onChange={v=>setTech(t.id,'sort_order',v)}/>
        <div className="adminField span2"><label>Voraussetzungen (IDs mit Komma)</label><input className="input" value={(t.requires||[]).join(', ')} onChange={e=>setTech(t.id,'requires',e.target.value.split(',').map(x=>x.trim()).filter(Boolean))}/></div>
        <div className="adminField span2"><label>Beschreibung im Spiel</label><textarea className="input adminTextarea" value={t.description||''} onChange={e=>setTech(t.id,'description',e.target.value)} maxLength={250}/></div>
