@@ -26,6 +26,7 @@ export default function Lobby(){
  async function init(){
    const {data:{user}}=await supabase.auth.getUser()
    if(!user){location.href='/login';return}
+   await supabase.rpc('run_game_maintenance_v66')
    await Promise.all([loadGames(),loadWallet(),loadSettings()])
  }
 
@@ -36,12 +37,12 @@ export default function Lobby(){
    setWallet(data)
  }
  async function loadSettings(){
-   const {data}=await supabase.from('platform_settings').select('prize_share_bps,community_share_bps,platform_share_bps,multi_treasure_threshold_ug,max_treasures,test_grant_ug').eq('id',1).maybeSingle()
+   const {data}=await supabase.from('platform_settings').select('prize_share_bps,community_share_bps,platform_share_bps,multi_treasure_threshold_ug,max_treasures,test_grant_ug,game_inactivity_hours,closed_game_retention_hours,inactive_community_share_bps,inactive_platform_share_bps').eq('id',1).maybeSingle()
    setSettings(data)
  }
  async function loadGames(){
    const {data,error}=await supabase.from('games')
-    .select('id,name,status,max_players,created_at,width,height,center_label,cell_size_m,regen_seconds,max_stored_moves,is_private,game_type,entry_gold_ug,treasure_count,gold_prize_pool_ug,game_players(count)')
+    .select('id,name,status,max_players,created_at,closed_at,close_reason,last_activity_at,width,height,center_label,cell_size_m,regen_seconds,max_stored_moves,is_private,game_type,entry_gold_ug,treasure_count,gold_prize_pool_ug,game_players(count)')
     .eq('is_private',false).order('created_at',{ascending:false})
    if(error){setMsg(error.message);return}
    setGames(data||[])
@@ -108,6 +109,10 @@ export default function Lobby(){
  const prizePct=settings?settings.prize_share_bps/100:90
  const communityPct=settings?settings.community_share_bps/100:5
  const platformPct=settings?settings.platform_share_bps/100:5
+ const activeGames=games.filter(g=>g.status==='active')
+ const closedGames=games.filter(g=>g.status!=='active')
+ const inactivityHours=settings?.game_inactivity_hours||24
+ const retentionHours=settings?.closed_game_retention_hours||72
 
  return <>
   <FirstLoginHelp/>
@@ -120,7 +125,7 @@ export default function Lobby(){
 
   <div className="panel heroPanel">
    <div className="heroSplit">
-    <div><h1>Lobby</h1><p className="muted">Standardspiele sind kostenlos. Paygames laufen in V6.5 ausschließlich mit <strong>Test-Goldstaub ohne Echtgeldwert</strong>.</p></div>
+    <div><h1>Lobby</h1><p className="muted">Standardspiele sind kostenlos. Paygames laufen ausschließlich mit <strong>Test-Goldstaub ohne Echtgeldwert</strong>.</p><p className="small">Spiele ohne Zug werden nach {inactivityHours} Stunden automatisch geschlossen. Geschlossene Spiele werden nach {Math.round(retentionHours/24)} Tagen gelöscht.</p></div>
     <div className="goldWalletCard">
      <div className="small">Test-Goldstaub</div>
      <div className="goldBalance">✨ {formatGold(wallet?.balance_ug||0)}</div>
@@ -209,9 +214,10 @@ export default function Lobby(){
   {msg&&<div className="noticeBar">{msg}</div>}
 
   <section className="panel">
-   <h2>Öffentliche Spiele</h2>
+   <h2>Laufende öffentliche Spiele</h2>
    <div className="grid gameCards">
-    {games.map(g=>{
+    {activeGames.length===0&&<div className="muted">Momentan sind keine öffentlichen Spiele aktiv.</div>}
+    {activeGames.map(g=>{
       const count=g.game_players?.[0]?.count||0
       const isPay=g.game_type==='pay'
       return <div className={'card '+(isPay?'payGameCard':'')} key={g.id}>
@@ -221,12 +227,26 @@ export default function Lobby(){
        {isPay&&<div className="payFacts">
         <span>Einsatz: <b>{formatGold(g.entry_gold_ug)}</b></span><span>Schätze: <b>{g.treasure_count}</b></span><span>Aktueller Pool: <b>{formatGold(g.gold_prize_pool_ug)}</b></span>
        </div>}
-       <div className="capacityLine"><span>👥 {count} / {g.max_players}</span><span>{g.status==='active'?'🟢 aktiv':'⚫ beendet'}</span></div>
-       <button className={'btn '+(isPay?'goldBtn':'primary')+' wideOnMobile'} disabled={g.status!=='active'||count>=g.max_players} onClick={()=>joinPublic(g)}>
+       <div className="capacityLine"><span>👥 {count} / {g.max_players}</span><span>🟢 aktiv</span></div>
+       <button className={'btn '+(isPay?'goldBtn':'primary')+' wideOnMobile'} disabled={count>=g.max_players} onClick={()=>joinPublic(g)}>
         {count>=g.max_players?'Voll':isPay?`Beitreten · ${formatGold(g.entry_gold_ug)}`:'Beitreten'}
        </button>
       </div>
     })}
+   </div>
+  </section>
+
+  <section className="panel closedGamesPanel">
+   <h2>Geschlossene Spiele</h2>
+   <p className="small">Diese Einträge werden automatisch nach {Math.round(retentionHours/24)} Tagen gelöscht.</p>
+   <div className="grid gameCards">
+    {closedGames.length===0&&<div className="muted">Keine kürzlich geschlossenen Spiele.</div>}
+    {closedGames.map(g=><div className="card closedGameCard" key={g.id}>
+      <div className="gameCardTop"><h3>{g.name}</h3><span className="gameBadge">🔒 GESCHLOSSEN</span></div>
+      <div className="small">{g.close_reason==='inactive'?`${inactivityHours} Stunden ohne Zug`:g.status==='finished'?'Regulär beendet':'Beendet'}</div>
+      <div className="small">{g.closed_at?new Date(g.closed_at).toLocaleString('de-DE'):'–'}</div>
+      {g.game_type==='pay'&&<div className="small">Rest-Schatzpool wurde nach Serverregel verteilt.</div>}
+    </div>)}
    </div>
   </section>
  </main>

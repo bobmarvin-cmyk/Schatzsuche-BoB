@@ -87,6 +87,20 @@ export default function Hilfe(){
         erkundete Felder, gefundene Goldschätze und gespielte Partien.
       </p>
 
+
+      <h2>Inaktive Spiele</h2>
+      <p>
+        Wenn in einem Spiel über längere Zeit kein Zug mehr gemacht wird, kann es automatisch geschlossen werden.
+        Die Standardregel liegt bei 24 Stunden ohne Zug. Geschlossene Spiele bleiben noch kurz in der Lobby sichtbar
+        und werden anschließend automatisch gelöscht.
+      </p>
+
+      <h2>Dein Profil</h2>
+      <p>
+        Im Profil kannst du deinen Spielernamen, einen kurzen Infotext und ein Profilbild hinterlegen.
+        Profilbilder dürfen maximal 2 MB groß sein und als JPG, PNG oder WebP hochgeladen werden.
+      </p>
+
       <h2>Tipps</h2>
       <p>
         Nutze deine Züge nicht nur zufällig. Beobachte bereits erkundete Bereiche, kombiniere Hinweise mit der

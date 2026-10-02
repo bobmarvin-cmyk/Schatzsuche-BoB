@@ -28,13 +28,7 @@ export default function FirstLoginHelp(){
   }
 
   async function close(){
-    const {data:{user}}=await supabase.auth.getUser()
-    if(user){
-      await supabase
-        .from('profiles')
-        .update({help_intro_seen:true})
-        .eq('id',user.id)
-    }
+    await supabase.rpc('mark_help_intro_seen_v653')
     setOpen(false)
   }
 

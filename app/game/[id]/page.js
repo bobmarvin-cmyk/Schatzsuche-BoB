@@ -80,6 +80,7 @@ export default function Game(){
  async function init(){
   const {data:{user}}=await supabase.auth.getUser()
   if(!user){location.href='/login';return}
+  await supabase.rpc('run_game_maintenance_v66')
   setUser(user)
 
   const stored=sessionStorage.getItem('game_password_'+id)
@@ -136,7 +137,7 @@ export default function Game(){
  }
 
  async function reveal(x,y){
-  const {data,error}=await supabase.rpc('reveal_area_v65',{p_game_id:id,p_x:x,p_y:y})
+  const {data,error}=await supabase.rpc('reveal_area_v66',{p_game_id:id,p_x:x,p_y:y})
   setMsg(error?error.message:(data?.message||'Gebiet untersucht'))
   await refreshMoves()
   await load()

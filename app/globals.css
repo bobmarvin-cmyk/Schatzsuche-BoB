@@ -159,3 +159,27 @@ button:disabled{cursor:not-allowed;opacity:.45}
  .introLead{font-size:15px}
  .introActions .btn{width:100%;text-align:center}
 }
+
+/* V6.6 – personalisierte Profile */
+.profileHero{display:flex;align-items:center;gap:20px}
+.avatarWrap{flex:0 0 auto}
+.profileAvatar{width:112px;height:112px;border-radius:50%;object-fit:cover;border:3px solid #405777;background:#101b2c}
+.avatarFallback{display:flex;align-items:center;justify-content:center;font-size:42px;font-weight:900;color:#d9e7fa;background:linear-gradient(135deg,#254f82,#18283f)}
+.profileIntro h1{margin:0 0 8px}
+.profileBioView{margin:0;color:#bdc9da;line-height:1.55;white-space:pre-wrap}
+.profileStats{margin-bottom:16px}
+.profileEditor{max-width:780px}
+.bioCounter{text-align:right;margin-top:-8px;margin-bottom:12px}
+.avatarControls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.avatarUploadBtn{cursor:pointer}
+.profileSaveRow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:18px}
+@media(max-width:600px){
+ .profileHero{align-items:flex-start}
+ .profileAvatar{width:82px;height:82px}
+ .profileStats{grid-template-columns:1fr 1fr}
+ .profileSaveRow .btn{width:100%}
+}
+
+/* V6.6 – Spiellebenszyklus */
+.closedGamesPanel{opacity:.96}
+.closedGameCard{border-style:dashed;background:#111a28}
