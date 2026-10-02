@@ -5,7 +5,7 @@ import {formatGold,goldToUg} from '../../lib/gold'
 import FirstLoginHelp from '../../components/FirstLoginHelp'
 
 export default function Lobby(){
- const [games,setGames]=useState([])
+ const [games,setGames]=useState([]),[isAdmin,setIsAdmin]=useState(false)
  const [wallet,setWallet]=useState(null),[settings,setSettings]=useState(null)
  const [name,setName]=useState('Mein Spiel'),[msg,setMsg]=useState('')
  const [mode,setMode]=useState('random')
@@ -27,6 +27,8 @@ export default function Lobby(){
    const {data:{user}}=await supabase.auth.getUser()
    if(!user){location.href='/login';return}
    await supabase.rpc('run_game_maintenance_v66')
+   const {data:adminFlag}=await supabase.rpc('is_admin_v67')
+   setIsAdmin(!!adminFlag)
    await Promise.all([loadGames(),loadWallet(),loadSettings()])
  }
 
@@ -37,7 +39,7 @@ export default function Lobby(){
    setWallet(data)
  }
  async function loadSettings(){
-   const {data}=await supabase.from('platform_settings').select('prize_share_bps,community_share_bps,platform_share_bps,multi_treasure_threshold_ug,max_treasures,test_grant_ug,game_inactivity_hours,closed_game_retention_hours,inactive_community_share_bps,inactive_platform_share_bps').eq('id',1).maybeSingle()
+   const {data}=await supabase.from('platform_settings').select('prize_share_bps,community_share_bps,platform_share_bps,multi_treasure_threshold_ug,max_treasures,test_grant_ug,game_inactivity_hours,closed_game_retention_hours,inactive_community_share_bps,inactive_platform_share_bps,min_game_fields,max_game_fields,max_game_players,min_cell_size_m,max_cell_size_m,min_regen_seconds,max_regen_seconds,max_stored_moves_limit,min_entry_gold_ug,max_entry_gold_ug,exploration_reward').eq('id',1).maybeSingle()
    setSettings(data)
  }
  async function loadGames(){
@@ -63,7 +65,7 @@ export default function Lobby(){
    const entryUg=gameType==='pay'?goldToUg(entryGold):0
    if(gameType==='pay' && entryUg<=0){setMsg('Bitte einen Goldstaub-Einsatz größer 0 wählen.');return}
 
-   const {data,error}=await supabase.rpc('create_game_v65',{
+   const {data,error}=await supabase.rpc('create_game_v67',{
     p_name:name,
     p_field_count:Number(fields),
     p_cell_size_m:Number(cellSize),
@@ -120,6 +122,7 @@ export default function Lobby(){
   <div className="topnav">
    <a className="btn" href="/profile">Profil</a>
    <a className="btn" href="/legenden">🏆 Legenden</a>
+   {isAdmin&&<a className="btn adminNavBtn" href="/admin">🎛️ Schaltzentrale</a>}
    <button className="btn" onClick={logout}>Abmelden</button>
   </div>
 
@@ -160,7 +163,7 @@ export default function Lobby(){
        <label>Längengrad</label><input className="input" type="number" step="0.000001" value={lon} onChange={e=>setLon(e.target.value)}/>
        <label>Ortsname für Hinweise</label><input className="input" value={label} onChange={e=>setLabel(e.target.value)}/>
       </>}
-      <label>Maximale Spielerzahl</label><input className="input" type="number" min="2" max="100" value={maxPlayers} onChange={e=>setMaxPlayers(e.target.value)}/>
+      <label>Maximale Spielerzahl</label><input className="input" type="number" min="2" max={settings?.max_game_players||100} value={maxPlayers} onChange={e=>setMaxPlayers(e.target.value)}/>
 
       {gameType==='pay'&&<>
        <label>Schürfrechte / Teilnahme pro Spieler</label>
@@ -184,7 +187,7 @@ export default function Lobby(){
 
      <div>
       <label>Ungefähre Anzahl Felder</label>
-      <input className="input" type="number" min="100" max="50000000" value={fields} onChange={e=>setFields(e.target.value)}/>
+      <input className="input" type="number" min={settings?.min_game_fields||100} max={settings?.max_game_fields||50000000} value={fields} onChange={e=>setFields(e.target.value)}/>
       <div className="quickButtons">{[10000,100000,1000000,10000000,50000000].map(n=><button type="button" className="miniBtn" key={n} onClick={()=>setFields(n)}>{n.toLocaleString('de-DE')}</button>)}</div>
       <label>Reale Feldkante</label>
       <select className="input" value={cellSize} onChange={e=>setCellSize(e.target.value)}>

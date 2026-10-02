@@ -183,3 +183,35 @@ button:disabled{cursor:not-allowed;opacity:.45}
 /* V6.6 – Spiellebenszyklus */
 .closedGamesPanel{opacity:.96}
 .closedGameCard{border-style:dashed;background:#111a28}
+
+/* V6.7 – Admin-Schaltzentrale */
+.adminHero{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.adminStatus{padding:7px 10px;border-radius:999px;border:1px solid #3a725a;background:#122d25;color:#8fe0b9;font-size:11px;font-weight:900;letter-spacing:.12em}
+.adminGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.adminField label{display:block;font-size:11px;color:#9fb0c8;margin-bottom:5px}
+.adminField .input{margin:0}
+.sumCheck{margin-top:12px;padding:8px 10px;border-radius:8px;font-size:12px}
+.sumCheck.ok{background:#133126;color:#a3ecc9}.sumCheck.bad{background:#3c1717;color:#ffb1b1}
+.adminReadOnly{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;color:#c8d3e2;font-size:13px}
+.adminSaveBar{position:sticky;bottom:10px;z-index:15;display:flex;justify-content:flex-end;margin:12px 0}
+.adminSaveBar .btn{box-shadow:0 8px 30px rgba(0,0,0,.35)}
+.adminTechList{display:grid;gap:12px}
+.adminTech{border:1px solid #33445e;border-radius:12px;padding:12px;background:#111c2d}
+.adminTech.disabledTech{opacity:.62}
+.adminTechHead{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}
+.techId{margin-left:8px;font-size:10px;color:#8798ae;background:#1b2a40;padding:3px 6px;border-radius:999px}
+.adminToggle{font-size:12px;display:flex;gap:6px;align-items:center}
+.adminTechFields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:10px}
+.adminField.span2{grid-column:span 2}
+.adminTextarea{min-height:72px;resize:vertical}
+@media(max-width:900px){
+ .adminGrid,.adminTechFields{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:600px){
+ .adminHero{align-items:flex-start;flex-direction:column}
+ .adminGrid,.adminTechFields{grid-template-columns:1fr}
+ .adminField.span2{grid-column:span 1}
+ .adminSaveBar .btn{width:100%}
+}
+
+.adminNavBtn{border-color:#386b57;color:#a9efd0}

@@ -1,60 +1,75 @@
-SCHATZSUCHE ONLINE V6.6
+SCHATZSUCHE ONLINE V6.7 – MASTER-SCHALTZENTRALE
 
 NEU
-- Spiele werden nach standardmäßig 24 Stunden ohne echten Zug automatisch geschlossen.
-- Nur eine tatsächliche Feld-Aufdeckung zählt als Aktivität.
-- Geschlossene/beendete Spiele werden standardmäßig nach 72 Stunden (= 3 Tagen) gelöscht.
-- Bei automatisch geschlossenen Paygames wird noch nicht gefundener Test-Goldstaub aufgeteilt:
-  Standard: 50 % Community / 50 % Plattform.
-- Diese Werte sind serverseitig einstellbar.
-- Laufende und geschlossene Spiele werden in der Lobby getrennt dargestellt.
-- Profile können personalisiert werden:
-  - Spielername
-  - Infotext bis 500 Zeichen
-  - Profilbild
-- Avatar-Upload über Supabase Storage:
-  JPG / PNG / WebP, maximal 2 MB.
-- Profiländerungen laufen über eine gezielte RPC, damit Statistiken nicht manipuliert werden können.
-- Hilfeseite um Inaktivitätsregeln und Profilinfos erweitert.
+- Geschützte Admin-Seite: /admin
+- Admin-Link erscheint in der Lobby nur für eingetragene Administratoren.
+- Globale Spielwerte können direkt im Browser geändert werden.
+- Technologiebaum ist nicht mehr hart im Frontend hinterlegt.
+- Das Spiel lädt Technologie-Namen, Preise, Voraussetzungen und Wirkungen direkt aus Supabase.
+- Änderungen am Technologiebaum benötigen danach KEINEN GitHub-/Vercel-Deploy mehr.
+- Bereits gekaufte Technologien werden bei geänderten Bonuswerten serverseitig neu berechnet.
+
+IN DER SCHALTZENTRALE EINSTELLBAR
+
+SPIELGRENZEN
+- minimale / maximale Feldanzahl
+- maximale Spielerzahl
+- minimale / maximale reale Feldgröße
+- minimale / maximale Zugregeneration
+- maximales Zugspeicherlimit
+- Taler-Belohnung pro leerem Feld
+
+GOLDSTAUB-TESTÖKONOMIE
+- Schatzpool-Quote
+- Community-Quote
+- Plattform-Quote
+- Test-Startguthaben
+- Mehrschatz-Schwelle
+- maximale Schatzanzahl
+- minimaler / maximaler Paygame-Einsatz
+- Referenzpreis
+- Community-Reserve und Plattform-Testanteil werden angezeigt
+
+SPIEL-LEBENSZYKLUS
+- Stunden bis Inaktivitätsschließung
+- Stunden bis Löschung geschlossener Spiele
+- Verteilung offenen Restgoldes bei Inaktivität
+
+TECHNOLOGIEBAUM
+Für jede Technologie:
+- Name
+- Kategorie
+- Beschreibung
+- Preis
+- Felder-pro-Zug-Bonus
+- Talerbonus
+- Analyse-Level
+- Zugspeicher-Bonus
+- Regenerationsbonus
+- Voraussetzungen
+- Sortierung
+- aktiv / deaktiviert
 
 INSTALLATION
-1. Gesamten Inhalt der ZIP in dein bestehendes GitHub-Repository hochladen und vorhandene Dateien ersetzen.
+1. Gesamten Inhalt dieser ZIP in dein bestehendes GitHub-Repository hochladen und vorhandene Dateien ersetzen.
 2. Supabase > SQL Editor öffnen.
-3. NUR supabase/v6_6_migration.sql EINMAL vollständig ausführen.
-4. Vercel deployt nach dem GitHub-Commit automatisch.
-5. Danach am besten Lobby, Profilbild-Upload und ein neues Testspiel prüfen.
+3. NUR supabase/v6_7_migration.sql EINMAL vollständig ausführen.
+4. Danach musst du deinem eigenen Benutzer EINMAL Adminrechte geben:
+   - Datei supabase/v6_7_grant_admin_TEMPLATE.sql öffnen
+   - DEINE_LOGIN_EMAIL durch deine echte Login-E-Mail ersetzen
+   - SQL im Supabase SQL Editor ausführen
+5. Vercel deployt nach dem GitHub-Commit automatisch.
+6. Neu in die Lobby gehen. Dort erscheint für dich „🎛️ Schaltzentrale“.
 
-SERVERSEITIGE EINSTELLUNGEN
-Tabelle: public.platform_settings, Zeile id=1
-
-game_inactivity_hours
-  Standard: 24
-  Nach wie vielen Stunden ohne Zug ein Spiel automatisch geschlossen wird.
-
-closed_game_retention_hours
-  Standard: 72
-  Wie lange geschlossene Spiele gespeichert bleiben.
-
-inactive_community_share_bps
-  Standard: 5000 = 50 %
-  Anteil des offenen Rest-Schatzes, der bei Inaktivität an die Gemeinschaft geht.
-
-inactive_platform_share_bps
-  Standard: 5000 = 50 %
-  Anteil des offenen Rest-Schatzes, der bei Inaktivität an die Plattform geht.
-
-Die beiden Inaktivitätsanteile müssen zusammen 10.000 Basispunkte (=100 %) ergeben.
-
-AUTOMATISCHE WARTUNG
-V6.6 ruft die Wartungsfunktion beim Öffnen der Lobby und beim Öffnen eines Spiels auf.
-Damit werden überfällige Spiele spätestens beim nächsten Website-Besuch geschlossen/gelöscht.
-
-Falls die Supabase-Erweiterung pg_cron bereits aktiviert ist, versucht die Migration zusätzlich,
-die Wartung stündlich einzuplanen.
-
-Wenn du pg_cron erst später aktivierst:
-  danach supabase/v6_6_optional_cron.sql einmal ausführen.
+SICHERHEIT
+- Normale Spieler können die Schaltzentrale nicht verwenden.
+- Schreibzugriffe laufen über SECURITY-DEFINER-Funktionen mit zusätzlicher Adminprüfung.
+- Die Tabelle admin_users hat keine Client-Schreibpolicy.
+- Spielstatistiken und Technologie-Käufe bleiben serverseitig autoritativ.
 
 WICHTIG
-Goldstaub bleibt in dieser Version weiterhin reines TEST-GOLD ohne Echtgeldwert,
-ohne Kaufmöglichkeit und ohne physische Auszahlung.
+Die Schaltzentrale betrifft die Spielregeln global. Eine Änderung wirkt grundsätzlich
+auf alle Spiele, die den betreffenden Wert danach verwenden. Technologie-Boni bereits
+gekaufter Technologien werden nach einer Änderung neu berechnet.
+
+Goldstaub bleibt weiterhin ausschließlich TEST-GOLD ohne Echtgeldwert, Kauf oder Auszahlung.

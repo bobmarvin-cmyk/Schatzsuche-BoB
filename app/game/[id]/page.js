@@ -5,36 +5,6 @@ import {supabase} from '../../../lib/supabase-browser'
 import GameMap from '../../../components/GameMap'
 import {formatGold} from '../../../lib/gold'
 
-const TECHS=[
- ['root','Grundlagen',0.05,'Basis','+1 Feld pro Zug',[]],
- ['e1','Fernglas I',0.15,'Erkundung','+2 Felder/Zug',['root']],
- ['e2','Fernglas II',0.45,'Erkundung','+5 Felder/Zug',['e1']],
- ['e3','Suchtrupp',0.60,'Erkundung','+8 Felder/Zug',['e1']],
- ['e4','Geländefahrzeuge',1.80,'Erkundung','+20 Felder/Zug',['e2']],
- ['e5','Expeditionsteam',2.20,'Erkundung','+25 Felder/Zug',['e3']],
- ['e6','Drohnen',5.50,'Erkundung','+50 Felder/Zug',['e4']],
- ['e7','Präzisionssuche',5.50,'Erkundung','+35 Felder/Zug · +15% Bonus',['e5']],
- ['e8','Luftaufklärung',14.00,'Erkundung','+100 Felder/Zug',['e6']],
- ['e9','Rasteroptimierung',14.00,'Erkundung','+75 Felder/Zug · +25% Bonus',['e7']],
- ['e10','Satellitenbilder',35.00,'Erkundung','+250 Felder/Zug',['e8']],
- ['end1','Planetare Suche',260.00,'Erkundung','+1.000 Felder/Zug',['e10']],
- ['a1','Kartografie',0.40,'Analyse','Lage relativ zum Kartenort',['root']],
- ['a2','Spurenanalyse',1.20,'Analyse','Grobe Entfernung zum Kartenort',['a1']],
- ['a3','Sektorscan',3.50,'Analyse','Kartenquadrant',['a2']],
- ['a4','Radar',8.00,'Analyse','Entfernung zur Suchposition ~10 Felder',['a3']],
- ['a5','Geodatenanalyse',20.00,'Analyse','Entfernung ~5 Felder',['a4']],
- ['a6','KI-Auswertung',55.00,'Analyse','Sehr präzise Kartenanalyse',['a5']],
- ['l1','Felddepot',0.20,'Logistik','+1 speicherbarer Zug',['root']],
- ['l2','Großes Depot',0.75,'Logistik','+2 speicherbare Züge',['l1']],
- ['l3','Schnelllogistik',2.50,'Logistik','Zugregeneration 10% schneller',['l2']],
- ['l4','Automatisierte Versorgung',7.50,'Logistik','+3 Speicher · weitere 10% schneller',['l3']],
- ['l5','Expeditionsnetz',25.00,'Logistik','weitere 20% schnellere Regeneration',['l4']],
- ['w1','Förderprogramm',5.00,'Wirtschaft','+50% Erkundungsbonus',['e7']],
- ['w2','Forschungsfonds',12.00,'Wirtschaft','+100% Erkundungsbonus',['a5']],
- ['h1','Drohnen + Radar',12.00,'Hybrid','+120 Felder/Zug + Analyse',['e8','a4']],
- ['h2','Satelliten-KI',55.00,'Hybrid','+350 Felder/Zug + KI-Analyse',['e10','a6']]
-]
-const BR=['Basis','Erkundung','Analyse','Logistik','Wirtschaft','Hybrid']
 const PAGE_SIZE=1000
 
 async function loadAllFields(gameId){
@@ -61,7 +31,7 @@ async function loadAllFields(gameId){
 export default function Game(){
  const {id}=useParams()
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
- const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung')
+ const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState('')
 
@@ -116,13 +86,14 @@ export default function Game(){
  async function load(){
   const {data:{user}}=await supabase.auth.getUser()
   try{
-    const [g,p,t,f,w,gt]=await Promise.all([
+    const [g,p,t,f,w,gt,tech]=await Promise.all([
       supabase.from('games').select('*').eq('id',id).single(),
       supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,profiles(display_name)').eq('game_id',id).order('joined_at'),
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
       loadAllFields(id),
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
-      supabase.rpc('get_gold_treasure_status_v65',{p_game_id:id})
+      supabase.rpc('get_gold_treasure_status_v65',{p_game_id:id}),
+      supabase.from('technologies').select('id,name,branch,cost,reveal_power_bonus,reward_bonus,analysis_level,capacity_bonus,regen_reduction,requires,description,sort_order,is_active').eq('is_active',true).order('sort_order',{ascending:true}).order('id',{ascending:true})
     ])
 
     setGame(g.data)
@@ -131,6 +102,7 @@ export default function Game(){
     setFields(f)
     setWallet(w.data)
     setGoldTreasures(gt.data||[])
+    setTechnologies(tech.data||[])
   }catch(err){
     setMsg('Fehler beim Laden der Karte: '+(err?.message||String(err)))
   }
@@ -144,7 +116,7 @@ export default function Game(){
  }
 
  async function buy(t){
-  const {data,error}=await supabase.rpc('buy_technology',{p_game_id:id,p_technology_id:t[0]})
+  const {data,error}=await supabase.rpc('buy_technology',{p_game_id:id,p_technology_id:t.id})
   setMsg(error?error.message:(data?.message||'Erforscht'))
   await refreshMoves()
   await load()
@@ -155,6 +127,19 @@ export default function Game(){
  const has=x=>owned.includes(x)
  const cap=game?Number(game.max_stored_moves||4)+Number(me?.move_capacity_bonus||0):4
  const effectiveRegen=game?Math.max(5,Math.round(Number(game.regen_seconds||30)*(1-Number(me?.regen_reduction||0)))):30
+ const branches=[...new Set(technologies.map(t=>t.branch))]
+ const activeBranch=branches.includes(branch)?branch:(branches[0]||'Erkundung')
+
+ function techEffect(t){
+  if(t.description)return t.description
+  const effects=[]
+  if(Number(t.reveal_power_bonus))effects.push(`+${t.reveal_power_bonus} Felder/Zug`)
+  if(Number(t.reward_bonus))effects.push(`+${Math.round(Number(t.reward_bonus)*100)}% Talerbonus`)
+  if(Number(t.analysis_level))effects.push(`Analyse Stufe ${t.analysis_level}`)
+  if(Number(t.capacity_bonus))effects.push(`+${t.capacity_bonus} Zugspeicher`)
+  if(Number(t.regen_reduction))effects.push(`${Math.round(Number(t.regen_reduction)*100)}% schnellere Regeneration`)
+  return effects.join(' · ')||'Keine direkte Wirkung'
+ }
 
  if(joinState==='password'){
   return <main className="container authGate">
@@ -222,13 +207,14 @@ export default function Game(){
 
    <aside className="panel">
     <h2>Technologiebaum</h2>
-    <div className="branchTabs">{BR.map(b=><button key={b} className={'branchTab '+(branch===b?'active':'')} onClick={()=>setBranch(b)}>{b}</button>)}</div>
-    <div className="techList">{TECHS.filter(t=>t[3]===branch).map(t=>{
-     const bought=has(t[0]),unlocked=t[5].every(has),enough=Number(me?.coins||0)>=t[2]
-     return <div key={t[0]} className={'techCard '+(bought?'bought':unlocked?'available':'locked')}>
-      <strong>{bought?'✅ ':''}{t[1]}</strong><div className="small">{t[4]}</div>
-      <div className="small">Benötigt: {t[5].length?t[5].join(', '):'–'}</div>
-      <div className="techBottom"><b>{t[2].toFixed(2)} T</b><button className="btn primary" disabled={bought||!unlocked||!enough} onClick={()=>buy(t)}>{bought?'Erforscht':'Erforschen'}</button></div>
+    <div className="branchTabs">{branches.map(b=><button key={b} className={'branchTab '+(activeBranch===b?'active':'')} onClick={()=>setBranch(b)}>{b}</button>)}</div>
+    <div className="techList">{technologies.filter(t=>t.branch===activeBranch).map(t=>{
+     const req=t.requires||[]
+     const bought=has(t.id),unlocked=req.every(has),enough=Number(me?.coins||0)>=Number(t.cost)
+     return <div key={t.id} className={'techCard '+(bought?'bought':unlocked?'available':'locked')}>
+      <strong>{bought?'✅ ':''}{t.name}</strong><div className="small">{techEffect(t)}</div>
+      <div className="small">Benötigt: {req.length?req.join(', '):'–'}</div>
+      <div className="techBottom"><b>{Number(t.cost).toFixed(2)} T</b><button className="btn primary" disabled={bought||!unlocked||!enough} onClick={()=>buy(t)}>{bought?'Erforscht':'Erforschen'}</button></div>
      </div>
     })}</div>
    </aside>
