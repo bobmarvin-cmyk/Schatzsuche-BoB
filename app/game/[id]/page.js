@@ -6,64 +6,28 @@ import GameMap from '../../../components/GameMap'
 import {formatGold} from '../../../lib/gold'
 import GameChat from '../../../components/GameChat'
 
-const PAGE_SIZE=1000
-
-async function loadAllFields(gameId){
-  const all=[]
-  let from=0
-  while(true){
-    const {data,error}=await supabase
-      .from('explored_fields')
-      .select('x,y,discovered_by,is_treasure,discovered_at')
-      .eq('game_id',gameId)
-      .order('discovered_at',{ascending:true})
-      .range(from,from+PAGE_SIZE-1)
-
-    if(error)throw error
-    const batch=data||[]
-    all.push(...batch)
-
-    if(batch.length<PAGE_SIZE)break
-    from+=PAGE_SIZE
-  }
-  return all
-}
-
-
-function mergeFields(current,incoming){
-  if(!incoming?.length)return current
-  const map=new Map(current.map(f=>[`${f.x}:${f.y}`,f]))
-  for(const f of incoming)map.set(`${f.x}:${f.y}`,f)
-  return [...map.values()]
-}
-
 export default function Game(){
  const {id}=useParams()
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[tick,setTick]=useState(0)
- const moveRefreshBusy=useRef(false),revealBusy=useRef(false),realtimeFieldBuffer=useRef([]),realtimeFlushTimer=useRef(null)
+ const moveRefreshBusy=useRef(false),revealBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null)
 
  useEffect(()=>{
   init()
   const ch=supabase.channel('game-'+id)
-   .on('postgres_changes',{event:'INSERT',schema:'public',table:'explored_fields',filter:`game_id=eq.${id}`},payload=>{
-     if(!payload?.new)return
-     realtimeFieldBuffer.current.push(payload.new)
-     if(realtimeFlushTimer.current)return
-     realtimeFlushTimer.current=setTimeout(()=>{
-       const batch=realtimeFieldBuffer.current.splice(0)
-       realtimeFlushTimer.current=null
-       if(batch.length)setFields(current=>mergeFields(current,batch))
-     },80)
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'explored_fields',filter:`game_id=eq.${id}`},()=>{
+     // Nie mehr Tausende Einzelereignisse in die Karte schreiben.
+     // Ein kurzer Debounce lädt nur den aktuell sichtbaren Kartenausschnitt neu.
+     scheduleVisibleReload(180)
    })
    .on('postgres_changes',{event:'*',schema:'public',table:'game_players',filter:`game_id=eq.${id}`},()=>loadPlayersOnly())
    .on('postgres_changes',{event:'*',schema:'public',table:'games',filter:`id=eq.${id}`},()=>loadGameOnly())
    .on('postgres_changes',{event:'*',schema:'public',table:'player_technologies',filter:`game_id=eq.${id}`},()=>loadOwnedOnly())
    .subscribe()
   const timer=setInterval(()=>setTick(t=>t+1),1000)
-  return()=>{supabase.removeChannel(ch);clearInterval(timer);clearTimeout(realtimeFlushTimer.current)}
+  return()=>{supabase.removeChannel(ch);clearInterval(timer);clearTimeout(viewportTimer.current)}
  },[id])
 
  async function init(){
@@ -115,9 +79,6 @@ export default function Game(){
   const {data}=await supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user.id)
   if(data)setOwned(data.map(x=>x.technology_id))
  }
- async function loadFieldsOnly(){
-  try{setFields(await loadAllFields(id))}catch(err){setMsg('Fehler beim Laden der Felder: '+err.message)}
- }
  async function loadGoldOnly(){
   const {data:{user}}=await supabase.auth.getUser(); if(!user)return
   const [w,gt]=await Promise.all([
@@ -129,11 +90,10 @@ export default function Game(){
  async function load(){
   const {data:{user}}=await supabase.auth.getUser()
   try{
-    const [g,p,t,f,w,gt,tech]=await Promise.all([
+    const [g,p,t,w,gt,tech]=await Promise.all([
       supabase.from('games').select('*').eq('id',id).single(),
       supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
-      loadAllFields(id),
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
       supabase.rpc('get_gold_treasure_status_v65',{p_game_id:id}),
       supabase.from('technologies').select('id,name,branch,cost,reveal_power_bonus,reward_bonus,analysis_level,capacity_bonus,regen_reduction,requires,description,sort_order,is_active').eq('is_active',true).order('sort_order',{ascending:true}).order('id',{ascending:true})
@@ -142,7 +102,6 @@ export default function Game(){
     setGame(g.data)
     setPlayers(p.data||[])
     setOwned((t.data||[]).map(x=>x.technology_id))
-    setFields(f)
     setWallet(w.data)
     setGoldTreasures(gt.data||[])
     setTechnologies(tech.data||[])
@@ -151,17 +110,42 @@ export default function Game(){
   }
  }
 
+ function scheduleVisibleReload(delay=120){
+  clearTimeout(viewportTimer.current)
+  viewportTimer.current=setTimeout(()=>{
+   const v=currentViewport.current
+   if(v)loadVisibleFields(v)
+  },delay)
+ }
+
+ async function loadVisibleFields(v){
+  currentViewport.current=v
+  const seq=++viewportSeq.current
+  const {data,error}=await supabase.rpc('get_visible_fields_v682',{
+   p_game_id:id,p_x0:v.x0,p_x1:v.x1,p_y0:v.y0,p_y1:v.y1,p_step:v.step||1
+  })
+  if(seq!==viewportSeq.current)return
+  if(error){setMsg('Kartenausschnitt konnte nicht geladen werden: '+error.message);return}
+  setFields(data?.fields||[])
+ }
+
+ function handleViewport(v){
+  currentViewport.current=v
+  scheduleVisibleReload(100)
+ }
+
  async function reveal(x,y){
   if(revealBusy.current)return
   revealBusy.current=true
   setMsg('Suche läuft…')
   try{
-    const {data,error}=await supabase.rpc('reveal_area_v681',{p_game_id:id,p_x:x,p_y:y})
+    const {data,error}=await supabase.rpc('reveal_area_v682',{p_game_id:id,p_x:x,p_y:y})
     if(error){setMsg(error.message);return}
 
-    const openedFields=data?.fields||[]
-    if(openedFields.length)setFields(current=>mergeFields(current,openedFields))
     setMsg(data?.message||'Gebiet untersucht')
+    // Der Server schickt nicht mehr tausende Feldobjekte zurück.
+    // Nur der sichtbare Ausschnitt wird einmal kompakt neu geladen.
+    if(currentViewport.current)await loadVisibleFields(currentViewport.current)
 
     const {data:hint}=await supabase.rpc('get_analysis_hint_v68',{p_game_id:id,p_x:x,p_y:y})
     if(hint)setAnalysisHint(hint)
@@ -180,7 +164,7 @@ export default function Game(){
  }
 
  const me=players.find(p=>p.user_id===user?.id)
- const left=game?Math.max(0,game.width*game.height-fields.length):0
+ const left=game?Math.max(0,Number(game.width)*Number(game.height)-Number(game.explored_count||0)):0
  const has=x=>owned.includes(x)
  const cap=game?Number(game.max_stored_moves||4)+Number(me?.move_capacity_bonus||0):4
  const effectiveRegen=game?Math.max(5,Math.round(Number(game.regen_seconds||30)*(1-Number(me?.regen_reduction||0)))):30
@@ -269,7 +253,7 @@ export default function Game(){
     <div className="mapHeader"><div><h2>Weltkarte</h2><div className="small">Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.</div></div>
      <div className="mapLegend">{players.map(p=><div className="legendItem" key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.profiles?.display_name||'Spieler'}</div>)}</div>
     </div>
-    {game&&<GameMap game={game} fields={fields} players={players} onReveal={reveal} analysisHint={analysisHint}/>}
+    {game&&<GameMap game={game} fields={fields} players={players} onReveal={reveal} analysisHint={analysisHint} onViewportChange={handleViewport}/>}
     {analysisHint&&<div className="analysisHintBox"><strong>🧭 Kartenanalyse Stufe {analysisHint.level}</strong><div>{analysisHint.text}</div><div className="small">Der gelb markierte Bereich auf der Karte ist der aktuelle Analysebereich.</div></div>}
     <p className="statusLine">{msg}</p>
    </section>

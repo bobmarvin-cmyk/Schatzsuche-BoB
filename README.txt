@@ -1,25 +1,36 @@
-SCHATZSUCHE ONLINE V6.8.1 – MULTIPLAYER PERFORMANCE
+SCHATZSUCHE ONLINE V6.8.2 – MOBILE/MULTIPLAYER MAP STABILITY
 
-Dieses Update beschleunigt besonders Spiele mit mehreren Spielern und hohen Felder-pro-Zug-Werten.
+WARUM DIE KARTE HING
+Bei hohen Technologie-Stufen werden inzwischen 1.000–2.000+ Felder pro Zug entdeckt.
+Bis V6.8.1 hielt jeder Browser die komplette Feldhistorie im Speicher und baute bei
+Änderungen daraus tausende einzelne GeoJSON-Polygone. Auf Smartphones kann das den
+JavaScript-Hauptthread stark blockieren. Dann wirken Karte UND andere UI-Bereiche leer.
 
-NEU / OPTIMIERT
-- Feldaufdeckung wird serverseitig als Batch berechnet statt Feld für Feld.
-- Taler werden nur noch einmal pro Zug aktualisiert statt einmal pro aufgedecktem Feld.
-- Verschiedene Spieler blockieren sich nicht mehr über einen globalen Game-Datenbank-Lock.
-- Bereits belegte Felder werden über den Primärschlüssel/Index effizient ausgeschlossen.
-- Die RPC gibt die neu geöffneten Felder direkt an den Browser zurück.
-- Eigene neue Felder erscheinen dadurch unmittelbar nach der Serverantwort auf der Karte.
-- Realtime-INSERTs anderer Spieler werden direkt in den lokalen Kartenstand gemischt.
-- Kein erneutes Laden der kompletten explored_fields-Tabelle bei jedem Realtime-Ereignis.
-- Zusätzliche Datenbankindexe für Multiplayer-Abfragen.
+NEU IN V6.8.2
+- Die Karte lädt NICHT mehr alle jemals entdeckten Felder.
+- Es wird nur der aktuell sichtbare Kartenausschnitt aus Supabase geladen.
+- Bei weitem Zoom fasst der Server viele Einzelzellen automatisch zu Anzeige-Blöcken zusammen.
+- Ziel: grob nur wenige tausend Kartenpolygone gleichzeitig, unabhängig von der Gesamtspielgröße.
+- Beim Hineinzoomen werden die Felder wieder genauer bis hin zu einzelnen Rasterzellen.
+- Realtime-INSERTs von Mitspielern lösen nur noch einen gebündelten Reload des sichtbaren Ausschnitts aus.
+- reveal_area_v682 gibt nicht mehr tausende Feldobjekte an den Browser zurück.
+- games.explored_count speichert serverseitig die Gesamtzahl entdeckter Felder.
+- Statement-Level-Trigger hält explored_count auch bei älteren Reveal-Funktionen aktuell.
+- "Felder übrig" benötigt deshalb keine komplette Feldliste mehr.
+- Karten-Ladeanzeige eingebaut.
+- Wenn der normale Kartenstil nach einigen Sekunden nicht lädt, versucht der Client automatisch
+  eine einfache OpenStreetMap-Rasterkarte als Fallback.
 
 INSTALLATION
-1. Inhalt der ZIP in dein bestehendes GitHub-Repository hochladen und Dateien ersetzen.
-2. Supabase > SQL Editor.
-3. NUR supabase/v6_8_1_migration.sql EINMAL vollständig ausführen.
+1. Inhalt dieser ZIP in das bestehende GitHub-Repository hochladen und vorhandene Dateien ersetzen.
+2. Supabase > SQL Editor öffnen.
+3. NUR supabase/v6_8_2_migration.sql EINMAL vollständig ausführen.
 4. Vercel deployt automatisch.
+5. Danach das laufende Testspiel auf dem iPhone neu öffnen.
 
-HINWEIS
-Beim ersten Öffnen eines Spiels wird die bestehende Feldhistorie weiterhin vollständig geladen.
-Während des laufenden Spiels werden danach aber nur noch neue Felder ergänzt. Das ist der entscheidende
-Performance-Unterschied für Multiplayer.
+WICHTIG
+- V6.8.2 baut auf V6.8.1 / V6.8.1a auf.
+- Die Migration führt einmalig eine Zählung vorhandener explored_fields durch, um explored_count
+  für bestehende Spiele korrekt zu initialisieren.
+- Bei weit herausgezoomter Karte ist die farbige Darstellung bewusst zusammengefasst. Beim
+  Hineinzoomen wird sie präziser. Das ist Absicht und verhindert Browser-Freezes.

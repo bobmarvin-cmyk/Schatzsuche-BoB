@@ -1,6 +1,6 @@
--- SCHATZSUCHE ONLINE V6.8.1
--- Multiplayer-/Feldaufdeckungs-Performance
--- Nach V6.8 EINMAL vollständig im Supabase SQL Editor ausführen.
+-- V6.8.1a HOTFIX
+-- Behebt: record "s" has no field "treasure_ord"
+-- Kann direkt nach V6.8.1 ausgeführt werden. Keine weiteren Änderungen nötig.
 
 create or replace function public.reveal_area_v681(
   p_game_id uuid,
@@ -237,17 +237,3 @@ begin
   );
 end;
 $$;
-
-revoke all on function public.reveal_area_v681(uuid,int,int) from public;
-grant execute on function public.reveal_area_v681(uuid,int,int) to authenticated;
-
--- Indexe für die häufigsten Multiplayer-Abfragen sicherstellen.
-create index if not exists explored_fields_game_discovered_idx
-  on public.explored_fields(game_id,discovered_at);
-
-create index if not exists game_players_game_user_idx
-  on public.game_players(game_id,user_id);
-
-create index if not exists gold_treasures_game_xy_open_idx
-  on public.gold_treasures(game_id,x,y)
-  where found_by is null and forfeited_at is null;
