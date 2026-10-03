@@ -594,3 +594,76 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .placeResult{text-align:left;border:1px solid #30445f;background:#17253a;color:#e7edf7;border-radius:8px;padding:7px 9px;cursor:pointer}
 .placeResult strong,.placeResult span{display:block}.placeResult span{font-size:10px;color:#93a6bf;margin-top:2px}
 @media(max-width:700px){.placeSearchRow{grid-template-columns:1fr}.placeSearchRow .btn{width:100%}}
+
+/* V6.15 – Ranking, Lobby, Admin cleanup */
+.ingameRanking{padding:0;overflow:hidden;margin-top:9px}
+.ingameRanking summary{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;
+ cursor:pointer;list-style:none;padding:9px 11px;font-weight:800
+}
+.ingameRanking summary::-webkit-details-marker{display:none}
+.rankingBody{padding:0 10px 10px}
+.rankingTabs{display:flex;gap:5px;overflow-x:auto;padding:2px 0 7px;scrollbar-width:none}
+.rankingTabs::-webkit-scrollbar{display:none}
+.rankingTabs .miniBtn{white-space:nowrap}
+.rankingList{display:grid;gap:4px}
+.rankingRow{
+ display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:7px;
+ padding:6px 8px;border-radius:8px;background:#152239;border:1px solid #2b3b55;font-size:12px
+}
+.rankingRow.me{border-color:#6e91c0;background:#1b304d}
+
+.privateJoinPanel{padding:0;overflow:hidden}
+.privateJoinPanel summary{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;
+ cursor:pointer;list-style:none;padding:10px 12px;font-weight:800
+}
+.privateJoinPanel summary::-webkit-details-marker{display:none}
+.privateJoinBody{padding:0 12px 12px}
+.closedResultBtn{margin-top:8px}
+
+.adminJumpNav{
+ position:sticky;top:6px;z-index:60;display:flex;gap:6px;overflow-x:auto;
+ padding:6px;margin:8px 0 12px;border-radius:11px;background:rgba(13,22,36,.92);
+ border:1px solid #2a3c57;backdrop-filter:blur(8px);scrollbar-width:none
+}
+.adminJumpNav::-webkit-scrollbar{display:none}
+.adminJumpNav a{
+ flex:0 0 auto;padding:6px 9px;border-radius:8px;background:#172740;border:1px solid #304866;
+ color:#e5edf8;text-decoration:none;font-size:11px;font-weight:800
+}
+.adminSectionHead{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.adminGameList{display:grid;gap:7px;margin-top:10px}
+.adminGameRow{
+ display:flex;align-items:center;justify-content:space-between;gap:10px;
+ padding:9px 10px;border-radius:9px;background:#142238;border:1px solid #2d405b
+}
+.adminGameMain{display:grid;gap:2px;min-width:0}
+.adminGameMain strong{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.adminGameActions{display:flex;gap:6px;flex:0 0 auto}
+.dangerBtn{border-color:#7f3b4a!important;color:#ffb5c3!important}
+.adminCollapsible{padding:0;overflow:hidden}
+.adminCollapsible>summary{
+ display:flex;align-items:center;justify-content:space-between;cursor:pointer;list-style:none;
+ padding:13px 14px;font-weight:850
+}
+.adminCollapsible>summary::-webkit-details-marker{display:none}
+.adminCollapsibleBody{padding:0 14px 14px}
+
+.legalCard{max-width:760px;margin:0 auto}
+.legalCard h2{margin-top:24px}
+
+@media(max-width:700px){
+ .closedResultBtn{
+   display:inline-flex!important;width:auto!important;padding:5px 8px!important;
+   font-size:10px!important;min-height:30px!important
+ }
+ .rankingRow{font-size:11px;padding:5px 7px}
+ .privateJoinPanel summary{padding:8px 10px;font-size:12px}
+ .adminGameRow{align-items:flex-start;flex-direction:column}
+ .adminGameActions{width:100%}
+ .adminGameActions .btn{flex:1}
+ .adminJumpNav{top:4px}
+}
+
+.selectedPlace{margin-top:7px;padding:6px 8px;border-radius:8px;background:#142a22;border:1px solid #315b49;font-size:11px}

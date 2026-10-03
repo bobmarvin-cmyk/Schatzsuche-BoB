@@ -14,7 +14,8 @@ export default function Lobby(){
  const [regen,setRegen]=useState(5),[capacity,setCapacity]=useState(4),[maxPlayers,setMaxPlayers]=useState(20)
  const [privateGame,setPrivateGame]=useState(false),[password,setPassword]=useState('')
  const [inviteCode,setInviteCode]=useState(''),[joinPassword,setJoinPassword]=useState('')
- const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('0.01'),[treasureCount,setTreasureCount]=useState(1),[gimmickPercent,setGimmickPercent]=useState(1),[gimmickWarn,setGimmickWarn]=useState(false)
+ const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('0.01'),[treasureCount,setTreasureCount]=useState(1),[gimmickPercent,setGimmickPercent]=useState(1),[gimmickWarn,setGimmickWarn]=useState(false),[privateJoinOpen,setPrivateJoinOpen]=useState(false)
+ const [placeQuery,setPlaceQuery]=useState(''),[placeResults,setPlaceResults]=useState([]),[placeSearching,setPlaceSearching]=useState(false),[selectedPlaceLabel,setSelectedPlaceLabel]=useState('')
 
  useEffect(()=>{
    init()
@@ -79,7 +80,7 @@ export default function Lobby(){
    finally{setPlaceSearching(false)}
  }
  function choosePlace(r){
-   setLat(String(r.lat));setLon(String(r.lon));setLabel(r.short_label||r.label)
+   setLat(String(r.lat));setLon(String(r.lon));setLabel(r.short_label||r.label);setSelectedPlaceLabel(r.label||r.short_label||'')
    setPlaceResults([]);setMsg('Ort gewählt: '+(r.short_label||r.label))
  }
 
@@ -100,9 +101,9 @@ export default function Lobby(){
     p_cell_size_m:Number(cellSize),
     p_max_players:Number(maxPlayers),
     p_location_mode:mode==='place'?'coords':mode,
-    p_center_lat:mode==='coords'?Number(lat):null,
-    p_center_lon:mode==='coords'?Number(lon):null,
-    p_center_label:mode==='coords'?(label||'Kartenmittelpunkt'):null,
+    p_center_lat:mode==='coords'||mode==='place'?Number(lat):null,
+    p_center_lon:mode==='coords'||mode==='place'?Number(lon):null,
+    p_center_label:mode==='coords'||mode==='place'?(label||'Kartenmittelpunkt'):null,
     p_regen_seconds:Number(regen),
     p_max_stored_moves:Number(capacity),
     p_is_private:privateGame,
@@ -175,7 +176,7 @@ export default function Lobby(){
 
   <div className="panel heroPanel">
    <div className="heroSplit">
-    <div><h1>Lobby</h1><p className="muted">Standardspiele sind kostenlos. Paygames laufen ausschließlich mit <strong>Test-Goldstaub ohne Echtgeldwert</strong>.</p><p className="small">Spiele ohne Zug werden nach {inactivityHours} Stunden automatisch geschlossen. Die großen Live-Daten geschlossener Spiele werden nach {Math.round(retentionHours/24)} Tagen bereinigt; der Endstand bleibt dauerhaft in der Hall of Fame.</p></div>
+    <div><h1>Lobby</h1><p className="muted">Schatzsuchen sind kostenlos. Goldgames laufen ausschließlich mit <strong>Test-Goldstaub ohne Echtgeldwert</strong>.</p><p className="small">Spiele ohne Zug werden nach {inactivityHours} Stunden automatisch geschlossen. Die großen Live-Daten geschlossener Spiele werden nach {Math.round(retentionHours/24)} Tagen bereinigt; der Endstand bleibt dauerhaft in der Hall of Fame.</p></div>
     <div className="goldWalletCard">
      <div className="small">Test-Goldstaub</div>
      <div className="goldBalance">✨ {formatGold(wallet?.balance_ug||0)}</div>
@@ -188,8 +189,8 @@ export default function Lobby(){
    <section className="panel createGamePanel">
     <h2>Neues Spiel</h2>
     <div className="gameTypeSwitch">
-     <button type="button" className={'typeBtn '+(gameType==='standard'?'active':'')} onClick={()=>setGameType('standard')}>🆓 Standard</button>
-     <button type="button" className={'typeBtn gold '+(gameType==='pay'?'active':'')} onClick={()=>setGameType('pay')}>✨ Paygame (Test)</button>
+     <button type="button" className={'typeBtn '+(gameType==='standard'?'active':'')} onClick={()=>setGameType('standard')}>🧭 Schatzsuche</button>
+     <button type="button" className={'typeBtn gold '+(gameType==='pay'?'active':'')} onClick={()=>setGameType('pay')}>✨ Goldsuche</button>
     </div>
 
     {gameType==='pay'&&<div className="goldRulesBox">
@@ -220,6 +221,7 @@ export default function Lobby(){
           <strong>{r.short_label||r.label}</strong><span>{r.label}</span>
         </button>)}
        </div>}
+       {mode==='place'&&selectedPlaceLabel&&<div className="selectedPlace">📍 Gewählt: <strong>{selectedPlaceLabel}</strong></div>}
       </div>}
 
       {mode==='coords'&&<>
@@ -280,15 +282,17 @@ export default function Lobby(){
       <select className="input" value={capacity} onChange={e=>setCapacity(e.target.value)}>{[3,4,5,6,8,10].map(n=><option value={n} key={n}>{n}</option>)}</select>
      </div>
     </div>
-    <button className="btn primary wideOnMobile" onClick={createGame}>{gameType==='pay'?'Paygame erstellen & Einsatz zahlen':'Spiel erstellen'}</button>
+    <button className="btn primary wideOnMobile" onClick={createGame}>{gameType==='pay'?'Goldsuche erstellen & Einsatz zahlen':'Spiel erstellen'}</button>
    </section>
 
-   <section className="panel privateJoinPanel">
-    <h2>Privatem Spiel beitreten</h2>
-    <label>Einladungscode</label><input className="input codeInput" value={inviteCode} onChange={e=>setInviteCode(e.target.value.toUpperCase())} maxLength={8}/>
-    <label>Passwort <span className="muted">(falls gesetzt)</span></label><input className="input" type="password" value={joinPassword} onChange={e=>setJoinPassword(e.target.value)}/>
-    <button className="btn primary wideOnMobile" onClick={joinPrivate}>Beitreten</button>
-   </section>
+   <details className="panel privateJoinPanel" open={privateJoinOpen} onToggle={e=>setPrivateJoinOpen(e.currentTarget.open)}>
+    <summary><span>🔒 Privatem Spiel beitreten</span><span className="small">{privateJoinOpen?'Schließen':'Code eingeben'}</span></summary>
+    {privateJoinOpen&&<div className="privateJoinBody">
+     <label>Einladungscode</label><input className="input codeInput" autoComplete="off" value={inviteCode} onChange={e=>setInviteCode(e.target.value.toUpperCase())} maxLength={8}/>
+     <label>Passwort <span className="muted">(falls gesetzt)</span></label><input className="input" type="password" autoComplete="new-password" value={joinPassword} onChange={e=>setJoinPassword(e.target.value)}/>
+     <button className="btn primary wideOnMobile" onClick={joinPrivate}>Beitreten</button>
+    </div>}
+   </details>
   </div>
 
   {msg&&<div className="noticeBar">{msg}</div>}
@@ -301,7 +305,7 @@ export default function Lobby(){
       const count=g.game_players?.[0]?.count||0
       const isPay=g.game_type==='pay'
       return <div className={'card '+(isPay?'payGameCard':'')} key={g.id}>
-       <div className="gameCardTop"><h3>{g.name}</h3><span className={'gameBadge '+(isPay?'gold':'')}>{isPay?'✨ PAY TEST':'🆓 GRATIS'}</span></div>
+       <div className="gameCardTop"><h3>{g.name}</h3><span className={'gameBadge '+(isPay?'gold':'')}>{isPay?'✨ GOLDGAME':'🧭 SCHATZSUCHE'}</span></div>
        <div className="small">{g.center_label||'Weltkarte'} · {(g.width*g.height).toLocaleString('de-DE')} Felder</div>
        <div className="small">{g.cell_size_m||100} m/Feld · Zug alle {g.regen_seconds||30}s · 🧩 {g.treasure_count||1} Schatzteil{Number(g.treasure_count||1)===1?'':'e'}</div>
        {isPay&&<div className="payFacts">
@@ -325,8 +329,8 @@ export default function Lobby(){
       <div className="gameCardTop"><h3>{g.name}</h3><span className="gameBadge">🔒 GESCHLOSSEN</span></div>
       <div className="small">{g.close_reason==='inactive'?`${inactivityHours} Stunden ohne Zug`:g.status==='finished'?'Regulär beendet':'Beendet'}</div>
       <div className="small">{g.closed_at?new Date(g.closed_at).toLocaleString('de-DE'):'–'}</div>
-      {g.game_type==='pay'&&<div className="small">Rest-Schatzpool wurde nach Serverregel verteilt.</div>}
-      <a className="btn wideOnMobile" href={'/archiv/'+g.id}>Endstand ansehen</a>
+      {g.game_type==='pay'&&<div className="small">Rest-Goldpool wurde nach Serverregel verteilt.</div>}
+      <a className="btn closedResultBtn" href={'/archiv/'+g.id}>🏁 Endstand</a>
     </div>)}
    </div>
   </section>

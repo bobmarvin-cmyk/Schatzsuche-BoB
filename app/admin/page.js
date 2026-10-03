@@ -11,6 +11,7 @@ export default function Admin(){
  const [techs,setTechs]=useState([])
  const [goldOverview,setGoldOverview]=useState(null)
  const [autoGame,setAutoGame]=useState(null)
+ const [adminGames,setAdminGames]=useState([])
  const [msg,setMsg]=useState('')
  const [saving,setSaving]=useState(false)
 
@@ -27,14 +28,15 @@ export default function Admin(){
  }
 
  async function load(){
-  const [{data:s,error:se},{data:t,error:te},{data:go,error:ge},{data:ag,error:ae}]=await Promise.all([
+  const [{data:s,error:se},{data:t,error:te},{data:go,error:ge},{data:ag,error:ae},{data:games,error:gameErr}]=await Promise.all([
     supabase.from('platform_settings').select('*').eq('id',1).single(),
     supabase.from('technologies').select('*').order('sort_order',{ascending:true}).order('id',{ascending:true}),
     supabase.rpc('admin_gold_overview_v613'),
-    supabase.rpc('admin_get_auto_game_config_v6141')
+    supabase.rpc('admin_get_auto_game_config_v6141'),
+    supabase.rpc('admin_list_games_v615',{p_limit:200})
   ])
-  if(se||te||ge||ae){setMsg(se?.message||te?.message||ge?.message||ae?.message||'Fehler beim Laden');return}
-  setSettings(s);setTechs(t||[]);setGoldOverview(go||null);setAutoGame(ag||null)
+  if(se||te||ge||ae||gameErr){setMsg(se?.message||te?.message||ge?.message||ae?.message||gameErr?.message||'Fehler beim Laden');return}
+  setSettings(s);setTechs(t||[]);setGoldOverview(go||null);setAutoGame(ag||null);setAdminGames(games||[])
  }
 
  function setSetting(key,value){
@@ -126,6 +128,21 @@ export default function Admin(){
   await load()
  }
 
+ async function endAdminGame(g){
+  if(!confirm(`Spiel „${g.name}“ wirklich beenden?`))return
+  setSaving(true)
+  const {data,error}=await supabase.rpc('admin_end_game_v615',{p_game_id:g.id})
+  setSaving(false);setMsg(error?error.message:(data?.message||'Spiel beendet'))
+  if(!error)await load()
+ }
+ async function deleteAdminGame(g){
+  if(!confirm(`Spiel „${g.name}“ wirklich löschen? Der Hall-of-Fame-Endstand bleibt erhalten.`))return
+  setSaving(true)
+  const {data,error}=await supabase.rpc('admin_delete_game_v615',{p_game_id:g.id})
+  setSaving(false);setMsg(error?error.message:(data?.message||'Spiel gelöscht'))
+  if(!error)await load()
+ }
+
  async function saveTech(t){
   setSaving(true);setMsg('')
   const {data,error}=await supabase.rpc('admin_update_technology_v614',{
@@ -169,8 +186,11 @@ export default function Admin(){
   </div>
 
   {msg&&<div className="noticeBar">{msg}</div>}
+  <nav className="adminJumpNav">
+   <a href="#admin-games">🎮 Spiele</a><a href="#admin-auto">🤖 Auto</a><a href="#admin-economy">✨ Gold</a><a href="#admin-rules">⚙️ Regeln</a><a href="#admin-tech">🧠 Technologien</a>
+  </nav>
 
-  <section className="panel">
+  <section className="panel" id="admin-rules">
    <h2>🎮 Spielgrenzen</h2>
    <div className="adminGrid">
     <Field label="Min. Kartenfelder" value={settings.min_game_fields} onChange={v=>setSetting('min_game_fields',v)}/>
@@ -187,7 +207,7 @@ export default function Admin(){
    </div>
   </section>
 
-  <section className="panel">
+  <section className="panel" id="admin-economy">
    <h2>✨ Goldstaub-Testökonomie</h2>
    <div className="adminGrid">
     <Field label="Schatzpool (Basispunkte)" value={settings.prize_share_bps} onChange={v=>setSetting('prize_share_bps',v)}/>
@@ -196,8 +216,8 @@ export default function Admin(){
     <Field label="Testguthaben (µg)" value={settings.test_grant_ug} onChange={v=>setSetting('test_grant_ug',v)}/>
     <Field label="Mehrschatz-Schwelle (µg)" value={settings.multi_treasure_threshold_ug} onChange={v=>setSetting('multi_treasure_threshold_ug',v)}/>
     <Field label="Max. Schätze" value={settings.max_treasures} onChange={v=>setSetting('max_treasures',v)}/>
-    <Field label="Min. Paygame-Einsatz (µg)" value={settings.min_entry_gold_ug} onChange={v=>setSetting('min_entry_gold_ug',v)}/>
-    <Field label="Max. Paygame-Einsatz (µg)" value={settings.max_entry_gold_ug} onChange={v=>setSetting('max_entry_gold_ug',v)}/>
+    <Field label="Min. Goldgame-Einsatz (µg)" value={settings.min_entry_gold_ug} onChange={v=>setSetting('min_entry_gold_ug',v)}/>
+    <Field label="Max. Goldgame-Einsatz (µg)" value={settings.max_entry_gold_ug} onChange={v=>setSetting('max_entry_gold_ug',v)}/>
     <Field label="Referenzpreis Cent / 0,01 g" value={settings.gold_price_cents_per_001g} onChange={v=>setSetting('gold_price_cents_per_001g',v)}/>
     <Field label="Gewinner-Gold µg / 1.000 Taler" value={settings.winner_taler_gold_ug_per_1000} onChange={v=>setSetting('winner_taler_gold_ug_per_1000',v)}/>
     <div className="adminField"><label>Aktuelle Umrechnung</label><div className="input readOnlyLike">1.000 Taler = {formatGold(settings.winner_taler_gold_ug_per_1000,6)}</div></div>
@@ -247,7 +267,23 @@ export default function Admin(){
    <button className="btn primary" onClick={saveSettings} disabled={saving||normalSum!==10000||inactiveSum!==10000}>{saving?'Speichert…':'Globale Werte speichern'}</button>
   </div>
 
-  {autoGame&&<section className="panel">
+  <section className="panel" id="admin-games">
+   <div className="adminSectionHead"><div><h2>🎮 Spielverwaltung</h2><p className="small">Aktive oder geschlossene Spiele administrativ beenden bzw. löschen.</p></div><span className="adminStatus">{adminGames.length} Spiele</span></div>
+   <div className="adminGameList">
+    {adminGames.map(g=><div className="adminGameRow" key={g.id}>
+      <div className="adminGameMain">
+       <strong>{g.name}</strong>
+       <span className="small">{g.game_type==='pay'?'✨ Goldgame':'🧭 Schatzsuche'} · {g.status==='active'?'🟢 aktiv':'⚪ '+g.status} · 👥 {Number(g.player_count||0)} · 🗺️ {Number(g.explored_count||0).toLocaleString('de-DE')}</span>
+      </div>
+      <div className="adminGameActions">
+       {g.status==='active'&&<button className="btn" onClick={()=>endAdminGame(g)} disabled={saving}>Beenden</button>}
+       <button className="btn dangerBtn" onClick={()=>deleteAdminGame(g)} disabled={saving}>Löschen</button>
+      </div>
+    </div>)}
+   </div>
+  </section>
+
+  {autoGame&&<section className="panel" id="admin-auto">
    <h2>🤖 Automatische Games</h2>
    <p className="small">Erzeugt öffentliche Spiele automatisch. Der Zeitplan wird serverseitig alle 5 Minuten geprüft, sofern pg_cron verfügbar ist.</p>
    <label className="adminToggle"><input type="checkbox" checked={!!autoGame.enabled} onChange={e=>setAuto('enabled',e.target.checked)}/> automatische Erstellung aktiv</label>
@@ -261,10 +297,10 @@ export default function Admin(){
     <Field label="Zugspeicher" value={autoGame.max_stored_moves} onChange={v=>setAuto('max_stored_moves',v)}/>
     <Field label="Schatzteile" value={autoGame.treasure_count} onChange={v=>setAuto('treasure_count',v)}/>
     <Field label="Gimmicks (%)" step="0.01" value={autoGame.gimmick_percent} onChange={v=>setAuto('gimmick_percent',v)}/>
-    <Field label="Paygame-Einsatz (µg)" value={autoGame.entry_gold_ug} onChange={v=>setAuto('entry_gold_ug',v)}/>
+    <Field label="Goldgame-Einsatz (µg)" value={autoGame.entry_gold_ug} onChange={v=>setAuto('entry_gold_ug',v)}/>
    </div>
    <div className="autoGameSelects">
-    <label>Spieltyp<select className="input" value={autoGame.game_type||'standard'} onChange={e=>setAuto('game_type',e.target.value)}><option value="standard">Standard</option><option value="pay">Paygame (Test)</option></select></label>
+    <label>Spieltyp<select className="input" value={autoGame.game_type||'standard'} onChange={e=>setAuto('game_type',e.target.value)}><option value="standard">Schatzsuche</option><option value="pay">Goldgame</option></select></label>
     <label>Ort<select className="input" value={autoGame.location_mode||'random'} onChange={e=>setAuto('location_mode',e.target.value)}><option value="random">🌍 Zufallsort global</option><option value="coords">📍 Feste Koordinaten</option></select></label>
    </div>
    {autoGame.location_mode==='coords'&&<div className="adminGrid">
@@ -281,8 +317,9 @@ export default function Admin(){
    </div>
   </section>}
 
-  <section className="panel">
-   <h2>🧠 Technologien</h2>
+  <details className="panel adminCollapsible" id="admin-tech">
+   <summary><span>🧠 Technologien</span><span className="small">{techs.length} Einträge</span></summary>
+   <div className="adminCollapsibleBody">
    <p className="small">Diese Werte werden direkt vom Spiel geladen. Änderungen benötigen keinen neuen GitHub-Deploy.</p>
    <div className="adminTechList">
     {techs.map(t=><div className={'adminTech '+(!t.is_active?'disabledTech':'')} key={t.id}>
@@ -311,7 +348,8 @@ export default function Admin(){
       <button className="btn" onClick={()=>saveTech(t)} disabled={saving}>Diese Technologie speichern</button>
     </div>)}
    </div>
-  </section>
+   </div>
+  </details>
  </main>
 }
 

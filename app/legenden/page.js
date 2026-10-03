@@ -32,7 +32,7 @@ export default function Legenden(){
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
   <div className="panel">
    <h1>🏆 Legenden</h1>
-   <p className="muted">Bestenlisten nach unterschiedlichen Errungenschaften. Goldwerte beziehen sich in V6.5 ausschließlich auf Test-Goldstaub.</p>
+   <p className="muted">Bestenlisten nach unterschiedlichen Errungenschaften.</p>
    <div className="legendTabs">{TABS.map(t=><button key={t[0]} className={'branchTab '+(tab===t[0]?'active':'')} onClick={()=>setTab(t[0])}>{t[1]}</button>)}</div>
    <div className="leaderTable">
     <div className="leaderRow header"><span>Rang</span><span>Spieler</span><span>Wert</span></div>

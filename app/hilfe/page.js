@@ -46,15 +46,15 @@ export default function Hilfe(){
         Kartenbereiche einbeziehen.
       </p>
 
-      <h2>Standardspiele</h2>
+      <h2>Schatzsuchen</h2>
       <p>
-        Standardspiele sind kostenlos. Der Host legt unter anderem Kartengröße, reale Feldgröße,
+        Schatzsuchen sind kostenlos. Der Host legt unter anderem Kartengröße, reale Feldgröße,
         maximale Spielerzahl und die Geschwindigkeit der Zugregeneration fest.
       </p>
 
-      <h2>Paygames im Testmodus</h2>
+      <h2>Goldgames im Testmodus</h2>
       <p>
-        Paygames verwenden derzeit ausschließlich Test-Goldstaub ohne Echtgeldwert. Für die Teilnahme wird eine
+        Goldgames verwenden derzeit ausschließlich Test-Goldstaub ohne Echtgeldwert. Für die Teilnahme wird eine
         bestimmte Menge Test-Goldstaub eingesetzt. Ein Teil davon landet im Schatzpool, ein Teil wird als
         Community-Anteil verteilt und ein Teil wird als Plattform-Testanteil verbucht.
       </p>
@@ -65,7 +65,7 @@ export default function Hilfe(){
 
       <h2>Mehrere Schätze</h2>
       <p>
-        Bei Paygames kann es mehrere Goldschätze geben. Der Host kann – innerhalb der serverseitig vorgegebenen Grenzen –
+        Bei Goldgames kann es mehrere Goldschätze geben. Der Host kann – innerhalb der serverseitig vorgegebenen Grenzen –
         eine feste Schatzanzahl wählen oder die automatische Verteilung verwenden.
       </p>
 
@@ -131,7 +131,7 @@ export default function Hilfe(){
         insgesamt den größten Anteil des Schatzes gefunden hat.
       </p>
       <p>
-        Im Paygame wird auch der Test-Gold-Schatzpool auf diese Fundstellen verteilt. Der Gesamtpool
+        Im Goldgame wird auch der Test-Gold-Schatzpool auf diese Fundstellen verteilt. Der Gesamtpool
         wird dadurch nicht größer – er wird lediglich auf mehrere Funde aufgeteilt.
       </p>
 

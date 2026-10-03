@@ -36,7 +36,7 @@ export default function HallOfFame(){
    {rows.map((r,i)=><a className="panel hofCard" href={'/archiv/'+r.game_id} key={r.game_id}>
     <div className="hofTop">
      <span className="hofNumber">#{rows.length-i}</span>
-     <span className="gameBadge">{r.game_type==='pay'?'✨ PAY TEST':'🆓 STANDARD'}</span>
+     <span className="gameBadge">{r.game_type==='pay'?'✨ GOLDGAME':'🧭 SCHATZSUCHE'}</span>
     </div>
     <h2>{r.name}</h2>
     <div className="hofWinner">

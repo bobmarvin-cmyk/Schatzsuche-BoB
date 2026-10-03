@@ -73,12 +73,12 @@ export default function FirstLoginHelp(){
       </div>
 
       <div className="introInfoBox">
-        <strong>🆓 Standardspiele</strong>
+        <strong>🆓 Schatzsuchee</strong>
         <span>sind kostenlos.</span>
       </div>
 
       <div className="introInfoBox gold">
-        <strong>✨ Paygames</strong>
+        <strong>✨ Goldgames</strong>
         <span>verwenden derzeit ausschließlich Test-Goldstaub ohne Echtgeldwert.</span>
       </div>
 

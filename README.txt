@@ -1,134 +1,156 @@
-SCHATZSUCHE ONLINE V6.14.1
+SCHATZSUCHE ONLINE V6.15
 
-1. MOBILES INGAME-HUD
-Die Werte verschwinden mobil nicht mehr komplett.
+NEU / GEÄNDERT
 
-Standardmäßig bleibt permanent eine sehr kleine 4er-Leiste sichtbar:
-- Taler
-- Züge
-- Felder/Zug
-- Felder/Minute
+1. ORTSSUCHE REPARIERT
+Die Ortssuche hatte zwei Probleme:
+- bei ausgewählten Orten wurden die gefundenen Koordinaten beim Erstellen nicht korrekt an den Server übergeben
+- der Geocoding-Endpunkt war zu empfindlich
 
-Mit „📊 Werte“ klappt die vollständige Übersicht auf.
-So bleiben die wichtigsten Werte immer im Blick, ohne viel Karte zu verdecken.
+V6.15:
+- ausgewählter Ort wird korrekt als Koordinaten-Game erstellt
+- ausgewählter Ort wird sichtbar bestätigt
+- serverseitige Ortssuche mit Nominatim
+- Fallback auf Photon, falls Nominatim keinen Treffer liefert oder nicht erreichbar ist
+- keine Live-Autovervollständigung, nur bewusste Suche per Button
 
-2. ANALYSE WIEDER EINFACHER
-Der Landschafts-Analyseversuch aus V6.14 wurde vereinfacht.
+2. SYNCHRONER FELDER-ZÄHLER PRO SPIELER
+Jeder Teilnehmer hat jetzt serverseitig:
+  fields_revealed
 
-Die Analyse zeigt wieder einen normalen Tipp mit:
-- Himmelsrichtung
-- je nach Analyse-Stufe grober/feiner Entfernung bzw. Kartenhinweis
+Der Wert wird automatisch bei jedem wirklich neu aufgedeckten Feld aktualisiert.
+Das gilt für:
+- manuelle Suche
+- Maschinen
+- alle Spieler
 
-Es wird keine sichtbare Zielzone benötigt.
+Wichtig:
+Dafür wird kein zusätzlicher Dauer-Polling-Traffic erzeugt.
+Die bereits vorhandenen Realtime-Updates der game_players-Tabelle verteilen den neuen Wert.
 
-3. STÄRKERE FALLEN
-Zusätzlich zu den bisherigen Fallen gibt es:
-- EMP-Falle: mehrere gespeicherte Züge weg
-- Sabotagefalle: hoher Talerverlust
-- Blackout-Störsender: starke Reduktion des nächsten manuellen Suchzuges
+3. INGAME-RANKING
+Neues einklappbares Menü:
+  🏁 Ingame-Ranking
 
-Alle Werte sind weiterhin über „Technologien“ in der Schaltzentrale veränderbar:
-- Preis
-- Fallentyp
-- Stärke
-- maximale aktive Anzahl
+Vergleichbar sind:
+- 💰 Taler
+- 🧠 Ausbau
+- 🔎 Suchfläche (Felder/Zug)
+- 🗺️ aufgedeckte Felder
+- 🧩 Schatzanteil
 
-4. ORT DIREKT AUSWÄHLEN
-Bei der Game-Erstellung gibt es jetzt drei Möglichkeiten:
-- 🌍 Zufälliger echter Ort
-- 🔎 Ort suchen
-- 📍 Eigene Koordinaten
+Die Rangliste aktualisiert sich während des Spiels.
 
-„Ort suchen“ funktioniert bewusst NICHT als Live-Autocomplete.
-Der Nutzer schreibt z. B.:
-  St. Wendel, Saarland
-und drückt „Suchen“.
+4. NEUE SPIELNAMEN
+Interne Datenbankwerte bleiben unverändert, nur die sichtbaren Namen ändern sich:
 
-Danach erscheinen passende Treffer zum Anklicken.
-Der ausgewählte Ort wird automatisch in Koordinaten + Ortsname übernommen.
+standard -> Schatzsuche
+pay      -> Goldgame / Goldsuche
 
-Die Suche wird serverseitig über einen Geocoding-Endpunkt geleitet.
-Standardmäßig ist Nominatim/OpenStreetMap eingetragen.
-Optional kann in Vercel über
-  GEOCODER_BASE_URL
-ein anderer kompatibler Anbieter gesetzt werden, ohne neuen Code-Deploy.
+Dadurch müssen bestehende Spiele nicht migriert werden.
 
-WICHTIG FÜR NOMINATIM:
-- keine Autocomplete-Anfragen
-- nur bewusst vom Nutzer ausgelöste Suche
-- Attribution bleibt sichtbar
-- keine automatisierten Ortsabfragen
+5. ADMIN: SPIELE BEENDEN / LÖSCHEN
+Neue Sektion:
+  🎮 Spielverwaltung
 
-5. AUTOMATISCHE GAME-ERSTELLUNG
-Neue Sektion in der Schaltzentrale:
-  🤖 Automatische Games
+Dort siehst du:
+- Spielname
+- Schatzsuche oder Goldgame
+- Status
+- Spielerzahl
+- aufgedeckte Felder
 
-Einstellbar:
-- aktiv / deaktiviert
-- alle X Minuten
-- Namenspräfix
-- Kartenfelder
-- Feldkante
-- maximale Spieler
-- Zugintervall
-- Zugspeicher
-- Schatzteile
-- Gimmickdichte
-- Standardgame / Paygame
-- Paygame-Testeinsatz
-- Zufallsort global oder feste Koordinaten
+Möglichkeiten:
+- aktives Spiel administrativ beenden
+- Spiel löschen
 
-Zusätzlich:
-  „Jetzt Game erzeugen“
+Bei einem aktiven Goldgame wird beim Löschen zuerst sauber beendet und Restgold nach den
+bestehenden Serverregeln verteilt.
+Vor dem Löschen wird der Hall-of-Fame-Endstand gespeichert.
 
-Damit kann das eingestellte Rezept sofort getestet werden.
+6. SCHALTZENTRALE AUFGERÄUMT
+Neu:
+- kompakte Sprungnavigation oben:
+  Spiele / Auto / Gold / Regeln / Technologien
+- Spielverwaltung direkt erreichbar
+- Technologien standardmäßig als großer einklappbarer Bereich
+- kompaktere Admin-Spielkarten
+- mobile Darstellung verbessert
 
-AUTOMATISCHER BETRIEB:
-V6.14.1 versucht pg_cron zu aktivieren und prüft alle 5 Minuten,
-ob ein neues Auto-Game fällig ist.
+7. IMPRESSUM
+Der alte Vorlagen-/Hinweistext wurde vollständig entfernt.
 
-Falls pg_cron in deinem Supabase-Projekt nicht verfügbar/erlaubt ist:
-- die Einstellungen funktionieren trotzdem
-- „Jetzt Game erzeugen“ funktioniert trotzdem
-- lediglich der automatische Hintergrund-Zeitplan läuft dann nicht
+Das Impressum enthält jetzt:
+- Anbietername
+- vollständige Anschrift
+- E-Mail
+- Kontaktformular
+- ggf. Umsatzsteuer-ID, falls später in site-config.js hinterlegt
 
-Auto-Games werden unter dem beim Speichern hinterlegten Admin-Account als Host erstellt.
-Bei Auto-Paygames muss dieser Host entsprechend genug Test-Gold im Wallet besitzen.
+Überschrift:
+  Anbieterkennzeichnung gemäß § 5 DDG und § 18 Abs. 1 MStV
+
+8. LEGENDEN
+Der alte Satz
+  „Goldwerte beziehen sich in V6.5 ausschließlich auf Test-Goldstaub.“
+wurde entfernt.
+
+9. GESCHLOSSENE SPIELE – MOBIL
+Der Button wurde kompakter:
+  🏁 Endstand
+
+Er nimmt auf dem Handy nicht mehr die komplette Kartenbreite ein.
+
+10. PRIVATEM SPIEL BEITRETEN
+Der Bereich ist jetzt ein Slide-down / Details-Feld.
+
+Standardmäßig sieht man nur:
+  🔒 Privatem Spiel beitreten
+
+Erst nach dem Öffnen werden Code- und Passwortfelder überhaupt gerendert.
+Das reduziert auch unerwünschtes Passwort-Autofill durch Browser/Passwortmanager.
 
 INSTALLATION
-1. Inhalt dieser ZIP in dein GitHub-Repository hochladen und vorhandene Dateien ersetzen.
-2. .env.local NICHT hochladen.
-3. Supabase → SQL Editor.
-4. NUR:
-   supabase/v6_14_1_migration.sql
+
+1. Inhalt dieser ZIP in dein bestehendes GitHub-Repository hochladen.
+2. Vorhandene Dateien ersetzen.
+3. .env.local NICHT hochladen.
+4. Supabase -> SQL Editor.
+5. NUR:
+   supabase/v6_15_migration.sql
    einmal vollständig ausführen.
-5. Vercel deployt automatisch.
+6. Vercel deployt automatisch.
 
 VORAUSSETZUNG
-V6.14 und der vorherige V6.13.2a-Fix müssen bereits installiert sein.
+V6.14.1 und alle davor genannten Hotfixes müssen bereits installiert sein.
 
-TEST
-A) Handy:
-- Game öffnen
-- Mini-HUD muss immer Taler/Züge/Felder-Zug/Felder-Min zeigen
-- „Werte“ auf-/zuklappen
+TESTEMPFEHLUNG
 
-B) Analyse:
-- Analyse-Technologie besitzen
-- manuell suchen
-- Himmelsrichtungs-Hinweis prüfen
-
-C) Fallen:
-- EMP/Sabotage/Blackout kaufen und testen
-
-D) Ort:
-- Neues Game → „Ort suchen“
+A) Ortssuche
+- Neues Spiel
+- „Ort suchen“
 - z. B. „St. Wendel, Saarland“
-- Treffer auswählen
-- Game erstellen
+- Treffer anklicken
+- prüfen, ob gewählter Ort angezeigt wird
+- Game erstellen und Kartenmittelpunkt prüfen
 
-E) Auto-Games:
-- Schaltzentrale → automatische Games
-- Rezept speichern
-- „Jetzt Game erzeugen“
-- anschließend Zeitplan aktivieren
+B) Synchroner Felderzähler
+- mit zwei Spielern in ein Game
+- Spieler A deckt Felder auf
+- bei Spieler B prüfen, ob A's Felderzahl automatisch steigt
+- dasselbe mit Maschinen testen
+
+C) Ingame-Ranking
+- Taler / Ausbau / Suchfläche / Felder / Schatz durchschalten
+- mit zwei Spielern prüfen
+
+D) Admin
+- Schaltzentrale öffnen
+- Spielverwaltung
+- Testgame beenden
+- danach ein Testgame löschen
+- Hall of Fame prüfen
+
+E) Lobby mobil
+- Privates Spiel beitreten muss standardmäßig geschlossen sein
+- Geschlossenes Spiel: kompakter Endstand-Button

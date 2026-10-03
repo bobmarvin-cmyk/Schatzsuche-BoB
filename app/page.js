@@ -32,7 +32,7 @@ export default function Home(){
   </section>
 
   <section className="panel landingTestNotice">
-   <strong>✨ Goldstaub-Paygames befinden sich weiterhin im Testmodus.</strong>
+   <strong>✨ Goldstaub-Goldgames befinden sich weiterhin im Testmodus.</strong>
    <p className="muted">Test-Goldstaub besitzt keinen Echtgeldwert und kann weder gekauft noch ausgezahlt werden.</p>
   </section>
  </main>

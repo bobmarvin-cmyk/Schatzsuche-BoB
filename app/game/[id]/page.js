@@ -11,7 +11,7 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null)
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins')
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now())
 
  useEffect(()=>{
@@ -22,9 +22,9 @@ export default function Game(){
      // Ein kurzer Debounce lädt nur den aktuell sichtbaren Kartenausschnitt neu.
      scheduleVisibleReload(180)
    })
-   .on('postgres_changes',{event:'*',schema:'public',table:'game_players',filter:`game_id=eq.${id}`},()=>loadPlayersOnly())
+   .on('postgres_changes',{event:'*',schema:'public',table:'game_players',filter:`game_id=eq.${id}`},()=>{loadPlayersOnly();loadCompetition()})
    .on('postgres_changes',{event:'*',schema:'public',table:'games',filter:`id=eq.${id}`},()=>{loadGameOnly();loadActiveGames()})
-   .on('postgres_changes',{event:'*',schema:'public',table:'player_technologies',filter:`game_id=eq.${id}`},()=>loadOwnedOnly())
+   .on('postgres_changes',{event:'*',schema:'public',table:'player_technologies',filter:`game_id=eq.${id}`},()=>{loadOwnedOnly();loadCompetition()})
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'game_events',filter:`game_id=eq.${id}`},payload=>{setGameEvent(payload.new);setTimeout(()=>setGameEvent(null),7000)})
    .subscribe()
   const timer=setInterval(()=>setTick(t=>t+1),1000)
@@ -68,7 +68,7 @@ export default function Game(){
  }
 
  async function loadPlayersOnly(){
-  const {data}=await supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at')
+  const {data}=await supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,fields_revealed,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at')
   if(data)setPlayers(data)
  }
  async function loadGameOnly(){
@@ -88,6 +88,11 @@ export default function Game(){
   ])
   setWallet(w.data);setGoldTreasures(gt.data||[])
  }
+ async function loadCompetition(){
+  const {data}=await supabase.rpc('get_game_competition_v615',{p_game_id:id})
+  if(data)setCompetition(data)
+ }
+
  async function loadOwnTraps(){
   const {data}=await supabase.rpc('get_my_traps_v614',{p_game_id:id})
   if(data)setOwnTraps(data)
@@ -148,7 +153,7 @@ export default function Game(){
   try{
     const [g,p,t,w,gt,tech]=await Promise.all([
       supabase.from('games').select('*').eq('id',id).single(),
-      supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
+      supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,fields_revealed,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
       supabase.rpc('get_treasure_status_v610',{p_game_id:id}),
@@ -161,7 +166,7 @@ export default function Game(){
     setWallet(w.data)
     setGoldTreasures(gt.data||[])
     setTechnologies(tech.data||[])
-    loadActiveGames();loadOwnTraps()
+    loadActiveGames();loadOwnTraps();loadCompetition()
   }catch(err){
     setMsg('Fehler beim Laden der Karte: '+(err?.message||String(err)))
   }
@@ -346,6 +351,20 @@ export default function Game(){
   return effects.join(' · ')||'Keine direkte Wirkung'
  }
 
+ const rankTabs=[
+  ['coins','💰 Taler'],
+  ['tech_count','🧠 Ausbau'],
+  ['reveal_power','🔎 Suchfläche'],
+  ['fields_revealed','🗺️ Felder'],
+  ['treasure_share_bps','🧩 Schatz']
+ ]
+ const ranked=[...competition].sort((a,b)=>Number(b?.[rankMetric]||0)-Number(a?.[rankMetric]||0))
+ function rankValue(r){
+   if(rankMetric==='coins')return Number(r.coins||0).toFixed(2)+' T'
+   if(rankMetric==='treasure_share_bps')return (Number(r.treasure_share_bps||0)/100).toFixed(2)+'%'
+   return Number(r?.[rankMetric]||0).toLocaleString('de-DE')
+ }
+
  if(joinState==='password'){
   return <main className="container authGate">
    <div className="panel compactPanel">
@@ -449,9 +468,23 @@ export default function Game(){
    </aside>
   </div>
 
+  <details className="panel ingameRanking" open={rankOpen} onToggle={e=>setRankOpen(e.currentTarget.open)}>
+   <summary><span>🏁 Ingame-Ranking</span><span className="small">{competition.length} Spieler</span></summary>
+   <div className="rankingBody">
+    <div className="rankingTabs">{rankTabs.map(t=><button key={t[0]} className={'miniBtn '+(rankMetric===t[0]?'active':'')} onClick={()=>setRankMetric(t[0])}>{t[1]}</button>)}</div>
+    <div className="rankingList">
+     {ranked.map((r,i)=><div className={'rankingRow '+(r.user_id===user?.id?'me':'')} key={r.user_id}>
+      <span>{i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</span>
+      <strong>{r.display_name||'Spieler'}</strong>
+      <b>{rankValue(r)}</b>
+     </div>)}
+    </div>
+   </div>
+  </details>
+
   <div className="panel"><h2>Spieler</h2><div className="grid">{players.map(p=><div className="card" key={p.user_id}>
    <div className="playerNameLine"><span className="colorDot large" style={{background:p.player_color||'#35516d'}}></span><strong><a className="profileLink" href={'/spieler/'+p.user_id}>{p.profiles?.display_name||'Spieler'}</a></strong></div>
-   <div className="small">{Number(p.coins).toFixed(2)} T · {p.moves_left} gespeicherte Züge · {p.reveal_power} Felder/Zug · 🧩 {(Number(p.treasure_share_bps||0)/100).toFixed(2)}%</div>
+   <div className="small">{Number(p.coins).toFixed(2)} T · {p.moves_left} gespeicherte Züge · {p.reveal_power} Felder/Zug · 🗺️ {Number(p.fields_revealed||0).toLocaleString('de-DE')} Felder · 🧩 {(Number(p.treasure_share_bps||0)/100).toFixed(2)}%</div>
   </div>)}</div></div>
   {game&&user&&<GameChat gameId={id} userId={user.id}/>}
 
