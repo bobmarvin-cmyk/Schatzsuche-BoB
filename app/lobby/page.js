@@ -1,7 +1,7 @@
 'use client'
 import {useEffect,useState} from 'react'
 import {supabase} from '../../lib/supabase-browser'
-import {formatGold,goldToUg} from '../../lib/gold'
+import {formatGold,mgToUg} from '../../lib/gold'
 import FirstLoginHelp from '../../components/FirstLoginHelp'
 
 const NAME_LEFT=['Nebel','Nordlicht','Kompass','Atlas','Mond','Falken','Gold','Schatten','Fjord','Drachen','Wolken','Glut','Sternen','Wild','Dschungel','Wüsten']
@@ -23,7 +23,7 @@ export default function Lobby(){
  const [regen,setRegen]=useState(5),[capacity,setCapacity]=useState(4),[maxPlayers,setMaxPlayers]=useState(20)
  const [privateGame,setPrivateGame]=useState(false),[password,setPassword]=useState('')
  const [inviteCode,setInviteCode]=useState(''),[joinPassword,setJoinPassword]=useState('')
- const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('0.01'),[treasureCount,setTreasureCount]=useState(1),[gimmickPercent,setGimmickPercent]=useState(1),[gimmickWarn,setGimmickWarn]=useState(false),[privateJoinOpen,setPrivateJoinOpen]=useState(false)
+ const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('10'),[sponsorGold,setSponsorGold]=useState('100'),[sponsorName,setSponsorName]=useState(''),[treasureCount,setTreasureCount]=useState(1),[gimmickPercent,setGimmickPercent]=useState(1),[gimmickWarn,setGimmickWarn]=useState(false),[privateJoinOpen,setPrivateJoinOpen]=useState(false)
  const [placeQuery,setPlaceQuery]=useState(''),[placeResults,setPlaceResults]=useState([]),[placeSearching,setPlaceSearching]=useState(false),[selectedPlaceLabel,setSelectedPlaceLabel]=useState('')
 
  useEffect(()=>{
@@ -63,7 +63,7 @@ export default function Lobby(){
  }
  async function loadGames(){
    const {data,error}=await supabase.from('games')
-    .select('id,name,status,max_players,created_at,closed_at,close_reason,last_activity_at,width,height,center_label,cell_size_m,regen_seconds,max_stored_moves,is_private,game_type,entry_gold_ug,treasure_count,gold_prize_pool_ug,game_players(count)')
+    .select('id,name,status,max_players,created_at,closed_at,close_reason,last_activity_at,width,height,center_label,cell_size_m,regen_seconds,max_stored_moves,is_private,game_type,entry_gold_ug,treasure_count,gold_prize_pool_ug,sponsor_name,sponsor_pool_ug,game_players(count)')
     .eq('is_private',false).order('created_at',{ascending:false})
    if(error){setMsg(error.message);return}
    setGames(data||[])
@@ -102,10 +102,12 @@ export default function Lobby(){
    if(privateGame && password.trim().length>0 && password.trim().length<4){
      setMsg('Das Passwort muss mindestens 4 Zeichen haben.');return
    }
-   const entryUg=gameType==='pay'?goldToUg(entryGold):0
+   const entryUg=gameType==='pay'?mgToUg(entryGold):0
+   const sponsorUg=gameType==='sponsor'?mgToUg(sponsorGold):0
    if(gameType==='pay' && entryUg<=0){setMsg('Bitte einen Goldstaub-Einsatz größer 0 wählen.');return}
+   if(gameType==='sponsor' && sponsorUg<=0){setMsg('Bitte einen Sponsor-Pool größer 0 mg wählen.');return}
 
-   const {data,error}=await supabase.rpc('create_game_v612',{
+   const common={
     p_name:name,
     p_field_count:Number(fields),
     p_cell_size_m:Number(cellSize),
@@ -118,11 +120,13 @@ export default function Lobby(){
     p_max_stored_moves:Number(capacity),
     p_is_private:privateGame,
     p_password:privateGame && password.trim()?password:null,
-    p_game_type:gameType,
-    p_entry_gold_ug:entryUg,
     p_treasure_count:Number(treasureCount),
     p_gimmick_percent:Number(gimmickPercent)
-   })
+   }
+   const request=gameType==='sponsor'
+    ? ['create_sponsor_game_v619',{...common,p_sponsor_name:sponsorName||name,p_sponsor_gold_ug:sponsorUg}]
+    : ['create_game_v612',{...common,p_game_type:gameType,p_entry_gold_ug:entryUg}]
+   const {data,error}=await supabase.rpc(request[0],request[1])
    if(error){setMsg(error.message);return}
    await loadWallet()
    location.href='/game/'+data
@@ -171,7 +175,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.18</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.19</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -179,18 +183,18 @@ export default function Lobby(){
   <div className="topnav"><a className="btn" href="/tutorial">🎓 Tutorial</a>
    <a className="btn" href="/profile">Profil</a>
    <a className="btn" href="/legenden">🏆 Legenden</a>
-   <a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a>
+   <a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a><a className="btn" href="/praemien">🪙 Prämien</a>
    {isAdmin&&<a className="btn adminNavBtn" href="/admin">🎛️ Schaltzentrale</a>}
    <button className="btn" onClick={logout}>Abmelden</button>
   </div>
 
   <div className="panel heroPanel">
    <div className="heroSplit">
-    <div><h1>Lobby</h1><p className="muted">Schatzsuchen sind kostenlos. Goldgames laufen ausschließlich mit <strong>Goldstaub ohne Echtgeldwert</strong>.</p><p className="small">Spiele ohne Zug werden nach {inactivityHours} Stunden automatisch geschlossen. Die großen Live-Daten geschlossener Spiele werden nach {Math.round(retentionHours/24)} Tagen bereinigt; der Endstand bleibt dauerhaft in der Hall of Fame.</p></div>
+    <div><h1>Lobby</h1><p className="muted">Schatzsuchen und Sponsorspiele können kostenlos für Teilnehmer laufen. Sponsor-Pools werden vom Sponsor gestiftet; Gold-/Prämienfunktionen werden serverseitig geregelt.</p><p className="small">Spiele ohne Zug werden nach {inactivityHours} Stunden automatisch geschlossen. Die großen Live-Daten geschlossener Spiele werden nach {Math.round(retentionHours/24)} Tagen bereinigt; der Endstand bleibt dauerhaft in der Hall of Fame.</p></div>
     <div className="goldWalletCard">
      <div className="small">Goldstaub</div>
      <div className="goldBalance">✨ {formatGold(wallet?.balance_ug||0)}</div>
-     {!wallet?.test_grant_claimed&&<button className="btn goldBtn" onClick={claimTestGold}>0,25 mg Gold holen</button>}
+     {!wallet?.test_grant_claimed&&<button className="btn goldBtn" onClick={claimTestGold}>250 mg Gold holen</button>}
     </div>
    </div>
   </div>
@@ -201,12 +205,19 @@ export default function Lobby(){
     <div className="gameTypeSwitch">
      <button type="button" className={'typeBtn '+(gameType==='standard'?'active':'')} onClick={()=>setGameType('standard')}>🧭 Schatzsuche</button>
      <button type="button" className={'typeBtn gold '+(gameType==='pay'?'active':'')} onClick={()=>setGameType('pay')}>✨ Goldsuche</button>
+     <button type="button" className={'typeBtn sponsor '+(gameType==='sponsor'?'active':'')} onClick={()=>setGameType('sponsor')}>🤝 Sponsorspiel</button>
     </div>
 
     {gameType==='pay'&&<div className="goldRulesBox">
      <strong>Goldstaub-Verteilung</strong>
      <div>{prizePct}% Schatzpool · {communityPct}% Community-Ausschüttung · {platformPct}% Plattformanteil</div>
      <div className="small">Diese Quoten kann nur die Spielleitung serverseitig ändern.</div>
+    </div>}
+
+    {gameType==='sponsor'&&<div className="sponsorRulesBox">
+     <strong>🤝 Kostenloses Sponsorspiel</strong>
+     <div>Der Sponsor stiftet den vollständigen Gold-Pool. Spieler zahlen keinen Einsatz.</div>
+     <div className="small">Ein Schatz wird erst nach bestandener Bergungsprüfung endgültig gewonnen.</div>
     </div>}
 
     <div className="createGrid">
@@ -243,8 +254,15 @@ export default function Lobby(){
 
       {gameType==='pay'&&<>
        <label>Schürfrechte / Teilnahme pro Spieler</label>
-       <div className="goldInputRow"><input className="input" type="number" min="0.001" step="0.001" value={entryGold} onChange={e=>setEntryGold(e.target.value)}/><span>g Gold</span></div>
+       <div className="goldInputRow"><input className="input" type="number" min="1" step="1" value={entryGold} onChange={e=>setEntryGold(e.target.value)}/><span>mg Gold</span></div>
        <div className="small">Auch der Host zahlt beim Erstellen denselben Einsatz.</div>
+      </>}
+      {gameType==='sponsor'&&<>
+       <label>Sponsor / Kampagnenname</label>
+       <input className="input" value={sponsorName} onChange={e=>setSponsorName(e.target.value)} placeholder="z. B. BoBs Burger"/>
+       <label>Gestifteter Schatzpool</label>
+       <div className="goldInputRow"><input className="input" type="number" min="1" step="1" value={sponsorGold} onChange={e=>setSponsorGold(e.target.value)}/><span>mg Gold</span></div>
+       <div className="small">Wird einmalig aus deinem Gold-Wallet finanziert. Für Teilnehmer ist das Spiel kostenlos.</div>
       </>}
 
       <label>Schatzteile</label>
@@ -292,7 +310,7 @@ export default function Lobby(){
       <select className="input" value={capacity} onChange={e=>setCapacity(e.target.value)}>{[3,4,5,6,8,10].map(n=><option value={n} key={n}>{n}</option>)}</select>
      </div>
     </div>
-    <button className="btn primary wideOnMobile" onClick={createGame}>{gameType==='pay'?'Goldsuche erstellen & Einsatz zahlen':'Spiel erstellen'}</button>
+    <button className="btn primary wideOnMobile" onClick={createGame}>{gameType==='pay'?'Goldsuche erstellen & Einsatz zahlen':gameType==='sponsor'?'Sponsorspiel erstellen & Pool stiften':'Spiel erstellen'}</button>
    </section>
 
    <details className="panel privateJoinPanel" open={privateJoinOpen} onToggle={e=>setPrivateJoinOpen(e.currentTarget.open)}>
@@ -314,16 +332,20 @@ export default function Lobby(){
     {activeGames.map(g=>{
       const count=g.game_players?.[0]?.count||0
       const isPay=g.game_type==='pay'
-      return <div className={'card '+(isPay?'payGameCard':'')} key={g.id}>
-       <div className="gameCardTop"><h3>{g.name}</h3><span className={'gameBadge '+(isPay?'gold':'')}>{isPay?'✨ GOLDGAME':'🧭 SCHATZSUCHE'}</span></div>
+      const isSponsor=g.game_type==='sponsor'
+      return <div className={'card '+(isPay?'payGameCard':isSponsor?'sponsorGameCard':'')} key={g.id}>
+       <div className="gameCardTop"><h3>{g.name}</h3><span className={'gameBadge '+(isPay?'gold':isSponsor?'sponsor':'')}>{isPay?'✨ GOLDGAME':isSponsor?'🤝 SPONSORSPIEL':'🧭 SCHATZSUCHE'}</span></div>
        <div className="small">{g.center_label||'Weltkarte'} · {(g.width*g.height).toLocaleString('de-DE')} Felder</div>
        <div className="small">{g.cell_size_m||100} m/Feld · Zug alle {g.regen_seconds||30}s · 🧩 {g.treasure_count||1} Schatzteil{Number(g.treasure_count||1)===1?'':'e'}</div>
        {isPay&&<div className="payFacts">
         <span>Einsatz: <b>{formatGold(g.entry_gold_ug)}</b></span><span>Schätze: <b>{g.treasure_count}</b></span><span>Aktueller Pool: <b>{formatGold(g.gold_prize_pool_ug)}</b></span>
        </div>}
+       {isSponsor&&<div className="payFacts sponsorFacts">
+        <span>Sponsor: <b>{g.sponsor_name||'Sponsor'}</b></span><span>Teilnahme: <b>kostenlos</b></span><span>Pool: <b>{formatGold(g.gold_prize_pool_ug)}</b></span>
+       </div>}
        <div className="capacityLine"><span>👥 {count} / {g.max_players}</span><span>🟢 aktiv</span></div>
        <button className={'btn '+(isPay?'goldBtn':'primary')+' wideOnMobile'} disabled={count>=g.max_players} onClick={()=>joinPublic(g)}>
-        {count>=g.max_players?'Voll':isPay?`Beitreten · ${formatGold(g.entry_gold_ug)}`:'Beitreten'}
+        {count>=g.max_players?'Voll':isPay?`Beitreten · ${formatGold(g.entry_gold_ug)}`:isSponsor?'Kostenlos teilnehmen':'Beitreten'}
        </button>
       </div>
     })}
@@ -339,7 +361,7 @@ export default function Lobby(){
       <div className="gameCardTop"><h3>{g.name}</h3><span className="gameBadge">🔒 GESCHLOSSEN</span></div>
       <div className="small">{g.close_reason==='inactive'?`${inactivityHours} Stunden ohne Zug`:g.status==='finished'?'Regulär beendet':'Beendet'}</div>
       <div className="small">{g.closed_at?new Date(g.closed_at).toLocaleString('de-DE'):'–'}</div>
-      {g.game_type==='pay'&&<div className="small">Rest-Goldpool wurde nach Serverregel verteilt.</div>}
+      {(g.game_type==='pay'||g.game_type==='sponsor')&&<div className="small">Gold-/Sponsor-Spiel beendet.</div>}
       <a className="btn closedResultBtn" href={'/archiv/'+g.id}>🏁 Endstand</a>
     </div>)}
    </div>

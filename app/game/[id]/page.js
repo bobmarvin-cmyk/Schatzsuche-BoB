@@ -11,8 +11,8 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null)
- const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0)
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false)
+ const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null)
 
  useEffect(()=>{
   init()
@@ -21,7 +21,7 @@ export default function Game(){
    .subscribe()
   const timer=setInterval(()=>setTick(t=>t+1),1000)
   const liveTimer=setInterval(()=>{if(document.visibilityState==='visible')pollLiveState()},7000)
-  return()=>{supabase.removeChannel(ch);clearInterval(timer);clearInterval(liveTimer);clearTimeout(viewportTimer.current);clearTimeout(playerReloadTimer.current)}
+  return()=>{supabase.removeChannel(ch);clearInterval(timer);clearInterval(liveTimer);clearTimeout(viewportTimer.current);clearTimeout(playerReloadTimer.current);clearTimeout(claimTimerRef.current)}
  },[id])
 
  useEffect(()=>{
@@ -236,14 +236,26 @@ export default function Game(){
  async function loadOwnTraps(){
   const {data}=await supabase.rpc('get_my_traps_v614',{p_game_id:id})
   if(data)setOwnTraps(data)
+  return data||[]
  }
 
  async function placeTrap(x,y){
   if(!trapMode)return
-  const {data,error}=await supabase.rpc('place_trap_v614',{p_game_id:id,p_x:x,p_y:y,p_technology_id:trapMode})
-  if(error){setMsg('Falle: '+error.message);return}
+  const selectedTrap=trapMode
+  const {data,error}=await supabase.rpc('place_trap_v614',{p_game_id:id,p_x:x,p_y:y,p_technology_id:selectedTrap})
+  if(error){
+    setMsg('Falle: '+error.message)
+    if(error.message?.includes('Maximale aktive Fallen'))setTrapMode(null)
+    return
+  }
   setMsg(data?.message||'Falle platziert')
-  await loadOwnTraps()
+  const traps=await loadOwnTraps()
+  const tech=technologies.find(t=>t.id===selectedTrap)
+  const active=traps.filter(t=>t.technology_id===selectedTrap).length
+  if(tech&&active>=Number(tech.trap_limit||0)){
+    setTrapMode(null)
+    setMsg((data?.message||'Falle platziert')+' · Limit erreicht, Fallenmodus beendet.')
+  }
  }
 
  function buildAnalysisClue(items){
@@ -316,7 +328,7 @@ export default function Game(){
       5:Number(ps.data?.analysis_price_l5||25),
       6:Number(ps.data?.analysis_price_l6||30)
     })
-    loadActiveGames();loadOwnTraps();loadCompetition()
+    loadActiveGames();loadOwnTraps();loadCompetition();loadPendingClaim()
   }catch(err){
     setMsg('Fehler beim Laden der Karte: '+(err?.message||String(err)))
   }
@@ -373,6 +385,14 @@ export default function Game(){
   return null
  }
 
+ async function cacheTerrainBatch(cells){
+  if(!Array.isArray(cells)||!cells.length)return
+  const {error}=await supabase.rpc('cache_terrain_cells_v619',{
+    p_game_id:id,p_cells:cells
+  })
+  if(error&&!error.message?.includes('duplicate'))setMsg('Terrain: '+error.message)
+ }
+
  async function terrainReveal(x,y,terrain){
   const t=terrain||{type:'open',label:'🧭 Offenes Gelände'}
   setTerrainInfo(t)
@@ -392,6 +412,68 @@ export default function Game(){
 
   setMsg(`${t.label||'Gelände erkannt'} · Suche startet…`)
   await reveal(x,y)
+ }
+
+ async function loadPendingClaim(){
+  const {data,error}=await supabase.rpc('get_my_pending_claim_v619',{p_game_id:id})
+  if(error)return null
+  if(data&&data.id){
+    setPendingClaim(data)
+    setClaimInput('')
+    const canShow=!!String(data.challenge_code||'')
+    setClaimShow(canShow)
+    clearTimeout(claimTimerRef.current)
+    if(canShow)claimTimerRef.current=setTimeout(()=>setClaimShow(false),3500)
+    return data
+  }
+  return null
+ }
+
+ async function resolveClaim(answer){
+  if(!pendingClaim||claimResolving)return
+  setClaimResolving(true)
+  clearTimeout(claimTimerRef.current)
+  const {data,error}=await supabase.rpc('resolve_treasure_claim_v619',{
+    p_claim_id:pendingClaim.id,p_answer:answer
+  })
+  setClaimResolving(false)
+  if(error){setMsg('Bergung: '+error.message);return}
+
+  setPendingClaim(null)
+  setClaimInput('')
+  setClaimShow(false)
+  setMsg(data?.message||'Bergungsprüfung beendet')
+
+  if(data?.passed){
+    setTreasurePopup({
+      parts:1,
+      share:Number(data.share_bps||0),
+      gold:Number(data.amount_ug||0),
+      source:'claim'
+    })
+    await Promise.all([loadGoldOnly(),loadPlayersOnly(),loadGameOnly()])
+    if(data?.game_over){
+      setWinnerCelebration({
+        won:user?.id===data.winner_id,
+        name:data.winner_name||'Spieler',
+        moves:Number(data.winner_moves_used||0),
+        opened:0,
+        share:Number(data.winner_share_bps||0),
+        talerGold:Number(data.winner_taler_gold_ug||0)
+      })
+    }
+  }else{
+    if(currentViewport.current)scheduleVisibleReload(100)
+  }
+
+  setTimeout(()=>loadPendingClaim(),500)
+ }
+
+ function pressClaimKey(key){
+  if(!pendingClaim||claimShow||claimResolving)return
+  const next=(claimInput+String(key)).slice(0,6)
+  setClaimInput(next)
+  if(next.length>=6)setTimeout(()=>resolveClaim(next),100)
  }
 
  async function reveal(x,y){
@@ -423,6 +505,7 @@ export default function Game(){
 
     // Gold ist nach eigenem Fund relevant; Spieler/Game kommen über den kompakten Live-State.
     await loadGoldOnly()
+    await loadPendingClaim()
     setTimeout(()=>pollLiveState(),350)
   }finally{
     revealBusy.current=false
@@ -474,6 +557,7 @@ export default function Game(){
       }
     }
     await loadGoldOnly()
+    await loadPendingClaim()
     setTimeout(()=>pollLiveState(),600)
     if(data?.game_over){
       setWinnerCelebration({
@@ -614,7 +698,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.18</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.19</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -660,20 +744,27 @@ export default function Game(){
     <span>🧩 Schatz</span>
     <strong>{(Number(me?.treasure_share_bps||0)/100).toFixed(2)}%</strong>
     <span>{goldTreasures.filter(t=>!t.found_by).length}/{goldTreasures.length||game.treasure_count||1} offen</span>
-    {game.game_type==='pay'&&<span>{formatGold(game.gold_prize_pool_ug)}</span>}
+    {(game.game_type==='pay'||game.game_type==='sponsor')&&<span>{formatGold(game.gold_prize_pool_ug)}</span>}
    </summary>
    <div className="compactTreasureBody">
     <div className="treasurePills">{goldTreasures.map((t,i)=>{
      const finder=players.find(p=>p.user_id===t.found_by)
      return <span key={t.id} className={'treasurePill '+(t.found_by?'found':'')}>
        {t.found_by?'✅':'🧩'} {i+1}: {(Number(t.share_bps||0)/10000).toFixed(3)}
-       {game.game_type==='pay'&&<> · {formatGold(t.amount_ug)}</>}
+       {(game.game_type==='pay'||game.game_type==='sponsor')&&<> · {formatGold(t.amount_ug)}</>}
        {t.found_by&&<> · {finder?.profiles?.display_name||'gefunden'}</>}
      </span>
     })}</div>
     <div className="small">Gesamtschatz 1,000 · Spielende erst nach allen Teilen · größter Gesamtanteil gewinnt.</div>
    </div>
   </details>}
+
+  {game?.game_type==='sponsor'&&<div className="sponsorGameBanner">
+   <span>🤝 Sponsorspiel</span>
+   <strong>{game.sponsor_name||'Sponsor'}</strong>
+   <span>stiftet {formatGold(game.sponsor_pool_ug||game.gold_prize_pool_ug||0)}</span>
+   <small>Teilnahme für Spieler kostenlos · Schatz muss nach Entdeckung geborgen werden.</small>
+  </div>}
 
   {gameEvent&&<div className="globalGameEvent">📣 {gameEvent.message}</div>}
 
@@ -682,7 +773,7 @@ export default function Game(){
     <div className="mapHeader"><div><h2>{game?.name||'Schatzsuche'}{game?.center_label?` · ${game.center_label}`:''}</h2><div className="small">Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.</div></div>
      <div className="mapLegend">{players.map(p=><div className={'legendItem '+(onlineIds.includes(p.user_id)?'online':'offline')} key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.profiles?.display_name||'Spieler'}{onlineIds.includes(p.user_id)&&<span className="onlineDot" title="online">●</span>}</div>)}</div>
     </div>
-    {game&&<><div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name}</button>)}</>}</div><GameMap game={game} fields={fields} players={players} onReveal={reveal} onTerrainReveal={terrainReveal} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}
+    {game&&<><div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name}</button>)}{trapMode&&<button className="miniBtn trapCancelBtn" onClick={()=>setTrapMode(null)}>✕ Fallenmodus beenden</button>}</>}</div><GameMap game={game} fields={fields} players={players} onReveal={reveal} onTerrainReveal={terrainReveal} onTerrainBatch={cacheTerrainBatch} terrainScanPower={Number(me?.reveal_power||1)+Number(me?.gimmick_reveal_bonus_pending||0)} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}
       mobileHud={<div className="mobileMapHud">
        {[
         [Number(me?.coins||0).toFixed(1),'Taler'],
@@ -746,6 +837,29 @@ export default function Game(){
   </div>)}</div></div>
   {game&&user&&<GameChat gameId={id} userId={user.id}/>}
 
+  {pendingClaim&&<div className="claimOverlay" role="dialog" aria-modal="true">
+   <div className="claimModal">
+    <div className="claimIcon">🧗</div>
+    <div className="small">SCHATZ ENTDECKT · NOCH NICHT GEBORGEN</div>
+    <h2>Bergungsprüfung</h2>
+    <p>Merke dir die sechs Symbole. Danach musst du sie in exakt derselben Reihenfolge wiederholen.</p>
+    {Number(pendingClaim.amount_ug||0)>0&&<div className="claimPrize">✨ möglicher Fund: {formatGold(pendingClaim.amount_ug)}</div>}
+    {claimShow
+      ? <div className="claimSequence">{String(pendingClaim.challenge_code||'').split('').map((n,i)=><span className={'claimKey k'+n} key={i}>{n==='1'?'▲':n==='2'?'●':n==='3'?'■':'◆'}</span>)}</div>
+      : <>
+        <div className="claimInput">{[0,1,2,3,4,5].map((_,i)=><span key={i}>{claimInput[i]?({1:'▲',2:'●',3:'■',4:'◆'}[claimInput[i]]):'·'}</span>)}</div>
+        <div className="claimButtons">
+         <button disabled={claimResolving} onClick={()=>pressClaimKey(1)}>▲</button>
+         <button disabled={claimResolving} onClick={()=>pressClaimKey(2)}>●</button>
+         <button disabled={claimResolving} onClick={()=>pressClaimKey(3)}>■</button>
+         <button disabled={claimResolving} onClick={()=>pressClaimKey(4)}>◆</button>
+        </div>
+        <button className="miniBtn" disabled={claimResolving||!claimInput} onClick={()=>setClaimInput('')}>Eingabe löschen</button>
+       </>}
+    <div className="small">Ein Versuch · spätestens innerhalb von 90 Sekunden. Bei Fehlschlag wird der Schatz neu versteckt.</div>
+   </div>
+  </div>}
+
   {treasurePopup&&<div className="treasureFoundOverlay" role="dialog" aria-modal="true">
    <div className="treasureFoundModal">
     <div className="treasureFoundIcon">🧩</div>
@@ -796,7 +910,7 @@ export default function Game(){
     {winnerCelebration.talerGold>0&&<div className="winnerGoldBonus">✨ Gewinnerbonus: {formatGold(winnerCelebration.talerGold)} aus den Taler des Siegers</div>}
     <div className="winnerActions">
       <a className="btn primary" href={'/archiv/'+id}>🏛️ Endstand ansehen</a>
-      <button className="btn" onClick={recreateSameGame}>🔁 Gleiches Spiel nochmal</button>
+      {game?.game_type!=='sponsor'&&<button className="btn" onClick={recreateSameGame}>🔁 Gleiches Spiel nochmal</button>}
       <button className="btn" onClick={()=>setWinnerCelebration(null)}>Noch kurz hier bleiben</button>
     </div>
    </div>

@@ -1,67 +1,76 @@
-SCHATZSUCHE ONLINE V6.18 – TERRAIN EXPERIMENT
+SCHATZSUCHE ONLINE V6.19
 
-NEU
-- Terrain-Erkennung aus den geladenen OpenFreeMap/OpenMapTiles-Vektordaten
-- erkannte Felder werden in Supabase gecacht
-- Gelände-Legende im Spiel
-- aktuelles Terrain wird beim Klick angezeigt
-- gesperrtes Terrain verbraucht keinen Zug
-- neuer Tech-Zweig „Gelände“
-- Maschinen überspringen bereits klassifizierte Terrainfelder, wenn die passende Fähigkeit fehlt
-- alle zentral formatierten Goldwerte bleiben in mg; zusätzliche sichtbare Gramm-Labels wurden auf mg umgestellt
-
-TERRAINTYPEN
-- Offen
-- Wasser
-- Wald
-- Grünland
-- Landwirtschaft
-- Feuchtgebiet
-- Sand
-- Fels
-- Park
-- Wohngebiet
-- Gewerbe
-- Industrie
-- Verkehrsfläche
-- Sondergebiet
-
-TERRAIN-TECHS
-- Geländekunde
-- Waldkunde
-- Landexpedition
-- Boot & Sonar
-- Sumpfausrüstung
-- Urban Explorer
-- Universalexpedition
-
-WICHTIG
-V6.18 ist bewusst ein Terrain-Experiment.
-Die Klassifizierung stammt zunächst aus den im Browser geladenen OpenFreeMap-Vektordaten
-und wird anschließend serverseitig gecacht. Das ist gut zum Testen von Erkennung,
-Spielgefühl und Performance, aber noch NICHT die endgültige manipulationssichere
-Variante für Echtgeld-/Sponsor-Auszahlungen.
-
-Die organische Kartenform wird in dieser ersten Terrain-Version noch nicht als
-dauerhafte serverseitige Spielfeldmaske gespeichert. Erst sollen wir prüfen, wie
-zuverlässig Wasser/Wald/Stadt usw. in echten Spielen erkannt werden.
+VORAUSSETZUNG
+V6.18 ist installiert.
 
 INSTALLATION
-Voraussetzung: V6.17 / V6.17.1.
-
-1. ZIP-Inhalt in GitHub ersetzen.
-2. Supabase SQL Editor.
+1. ZIP-Inhalt in GitHub hochladen und vorhandene Dateien ersetzen.
+2. Supabase -> SQL Editor.
 3. NUR:
-   supabase/v6_18_migration.sql
+   supabase/v6_19_migration.sql
    einmal ausführen.
 4. Alte Migrationen NICHT erneut ausführen.
 5. Vercel deployen lassen.
-6. Unten rechts muss V6.18 stehen.
+6. Unten rechts muss V6.19 stehen.
 
-TESTEMPFEHLUNG
-- Spiel an einer Küste / See testen
-- Waldgebiet testen
-- Stadt/Industrie testen
-- ohne Terrain-Tech auf gesperrtes Feld klicken: kein Zug darf verbraucht werden
-- Fähigkeit kaufen und dasselbe Terrain erneut testen
-- Maschine danach einige Minuten beobachten
+HAUPTÄNDERUNGEN
+
+1. SPONSORSPIELE
+- neuer Spieltyp „🤝 Sponsorspiel“
+- Sponsor stiftet den kompletten Gold-Pool aus seinem Wallet
+- Teilnehmer zahlen keinen Einsatz
+- Sponsorname + Pool werden in Lobby und Game angezeigt
+- Goldwerte in mg
+- Sponsor-Spiel kann öffentlich oder privat sein
+
+2. SCHATZ: ENTDECKT != GEBORGEN
+- Fund eines Schatzfelds zahlt den Schatz NICHT mehr sofort aus
+- Server erstellt einen pending claim
+- kurze Bergungsprüfung: 6 Symbole merken und korrekt wiederholen
+- ein Versuch, 90 Sekunden
+- Erfolg: Schatz wird endgültig zugeordnet + Gold/Anteil gutgeschrieben
+- Fehlschlag/Timeout: Schatz wird auf ein neues, noch unerforschtes Feld versetzt
+- Spielende/Siegerwertung erst nach erfolgreich geborgenen Schatzteilen
+
+3. TERRAIN-FIX
+- Terrain wird vor großen manuellen Suchzügen in einem Batch vermessen
+- Server-Trigger verhindert, dass nicht vermessene oder nicht erlaubte Terrainfelder
+  durch große Mehrfach-Aufdeckungen trotzdem geöffnet werden
+- gesperrte Terraintypen beachten die gekauften Gelände-Techs
+- Terrain-Cache schreibt bestehende Zeilen nicht mehr konkurrierend um
+  (weniger Deadlock-Risiko)
+- Maschinen können ebenfalls nur vermessene/erlaubte Felder aufdecken
+
+4. FALLEN-FIX
+- sichtbarer Button „Fallenmodus beenden“
+- wenn das Fallenlimit erreicht ist, beendet sich der Modus automatisch
+- Fehler „Maximale aktive Fallen“ lässt den Spieler nicht mehr im Platziermodus hängen
+
+5. GOLD GLOBAL IN mg
+- Spieleerstellung
+- Lobby/Spieleauswahl
+- Gewinnanzeigen
+- Archiv
+- Admin-Goldfelder
+- Sponsor-Pool
+- Prämienseite
+- zentrale formatGold-Anzeige
+
+6. PRÄMIEN/BARREN-GRUNDLAGE
+- neue Seite /praemien
+- technische Goldbarren-Anfrage vorbereitet
+- serverseitig standardmäßig DEAKTIVIERT
+- reale Ausgabe erst aktivieren, wenn rechtliche/organisatorische Prüfung abgeschlossen ist
+- Einstellung: platform_settings.redemptions_enabled (default false)
+
+WICHTIG ZUR BERGUNGSPRÜFUNG
+Die aktuelle Gedächtnisprüfung ist eine funktionale Skill-Komponente und trennt
+„Entdeckung“ von „Gewinn“. Sie ist aber ein Browser-Minispiel und damit noch nicht
+als manipulationssichere Echtgeld-/Sachpreisprüfung zu betrachten.
+
+WICHTIG ZUR RECHTLICHEN EINORDNUNG
+Sponsor-Spiel + kostenlose Teilnahme + Skill-Bergung sind bewusst so gestaltet,
+dass kein Spieler für die Sponsor-Gewinnchance zahlen muss. Das ist eine deutlich
+andere Konstruktion als ein entgeltliches Zufallsspiel. Eine echte Auszahlung oder
+Sachpreis-/Barren-Einlösung bleibt trotzdem ein eigener rechtlicher und regulatorischer
+Prüfpunkt und ist deshalb in V6.19 standardmäßig nicht freigeschaltet.

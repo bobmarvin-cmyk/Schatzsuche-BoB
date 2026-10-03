@@ -125,13 +125,15 @@ function terrainFromFeatures(features){
   return {type:'open',label:'🧭 Offenes Gelände'}
 }
 
-export default function GameMap({game,fields,players,onReveal,onTerrainReveal,onTrapPlace,trapMode,ownTraps=[],analysisHint,onViewportChange,analysisFocusToken,onAnalysisFeatures,mobileHud}){
+export default function GameMap({game,fields,players,onReveal,onTerrainReveal,onTerrainBatch,terrainScanPower=1,onTrapPlace,trapMode,ownTraps=[],analysisHint,onViewportChange,analysisFocusToken,onAnalysisFeatures,mobileHud}){
   const holder=useRef(null)
   const mapRef=useRef(null)
   const gameRef=useRef(game)
   const fieldsRef=useRef(fields)
   const playersRef=useRef(players)
   const onTerrainRevealRef=useRef(onTerrainReveal)
+  const onTerrainBatchRef=useRef(onTerrainBatch)
+  const terrainScanPowerRef=useRef(terrainScanPower)
   const onRevealRef=useRef(onReveal)
   const onTrapPlaceRef=useRef(onTrapPlace)
   const trapModeRef=useRef(trapMode)
@@ -148,6 +150,8 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
   playersRef.current=players
   onRevealRef.current=onReveal
   onTerrainRevealRef.current=onTerrainReveal
+  onTerrainBatchRef.current=onTerrainBatch
+  terrainScanPowerRef.current=terrainScanPower
   onTrapPlaceRef.current=onTrapPlace
   trapModeRef.current=trapMode
   ownTrapsRef.current=ownTraps
@@ -227,26 +231,47 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
         map.on('moveend',updateGridAndViewport)
         map.on('zoomend',updateGridAndViewport)
 
-        map.on('click',(e)=>{
+        map.on('click',async(e)=>{
           const cg=geometry(gameRef.current)
           const x=Math.floor((e.lngLat.lng-cg.west)*cg.metersLon/cg.cell)
           const y=Math.floor((cg.north-e.lngLat.lat)*METERS_PER_DEG_LAT/cg.cell)
           if(x<0||y<0||x>=cg.width||y>=cg.height)return
           if(trapModeRef.current){onTrapPlaceRef.current?.(x,y);return}
 
-          let terrain={type:'open',label:'🧭 Offenes Gelände'}
-          try{
-            const [w,so,ea,n]=cellBounds(cg,x,y,1)
-            const a=map.project([w,n]),b=map.project([ea,so])
-            const features=map.queryRenderedFeatures([
-              [Math.min(a.x,b.x),Math.min(a.y,b.y)],
-              [Math.max(a.x,b.x),Math.max(a.y,b.y)]
-            ])||[]
-            terrain=terrainFromFeatures(features.filter(f=>
-              !['explored-fill','explored-outline','grid-lines','analysis-zone-fill','analysis-zone-line','my-traps-fill','my-traps-line'].includes(f.layer?.id)
-            ))
-          }catch{}
-          if(onTerrainRevealRef.current)onTerrainRevealRef.current(x,y,terrain)
+          const ignored=['explored-fill','explored-outline','grid-lines','analysis-zone-fill','analysis-zone-line','my-traps-fill','my-traps-line']
+          const classifyCell=(cx,cy)=>{
+            try{
+              const [w,so,ea,n]=cellBounds(cg,cx,cy,1)
+              const center=map.project([(w+ea)/2,(so+n)/2])
+              const features=map.queryRenderedFeatures(center)||[]
+              return terrainFromFeatures(features.filter(f=>!ignored.includes(f.layer?.id)))
+            }catch{
+              return {type:'unknown',label:'❓ Unbekannt'}
+            }
+          }
+
+          const terrain=classifyCell(x,y)
+
+          // Vor einem großen Suchzug werden die nächstgelegenen Felder vermessen.
+          // Der Server deckt anschließend nur vermessene + erlaubte Terrainfelder auf.
+          const target=Math.min(1500,Math.max(1,Number(terrainScanPowerRef.current||1)))
+          const cells=[]
+          let r=0
+          while(cells.length<target&&r<Math.max(cg.width,cg.height)){
+            for(let dy=-r;dy<=r&&cells.length<target;dy++){
+              for(let dx=-r;dx<=r&&cells.length<target;dx++){
+                if(r>0&&Math.max(Math.abs(dx),Math.abs(dy))!==r)continue
+                const cx=x+dx,cy=y+dy
+                if(cx<0||cy<0||cx>=cg.width||cy>=cg.height)continue
+                const t=classifyCell(cx,cy)
+                cells.push({x:cx,y:cy,terrain_type:t.type,terrain_label:t.label})
+              }
+            }
+            r++
+          }
+
+          try{await onTerrainBatchRef.current?.(cells)}catch{}
+          if(onTerrainRevealRef.current)await onTerrainRevealRef.current(x,y,terrain)
           else onRevealRef.current?.(x,y)
         })
 

@@ -1,7 +1,7 @@
 'use client'
 import {useEffect,useState} from 'react'
 import {supabase} from '../../lib/supabase-browser'
-import {formatGold} from '../../lib/gold'
+import {formatGold,ugToGoldMg} from '../../lib/gold'
 
 const NUM=(v)=>v===''?0:Number(v)
 
@@ -185,7 +185,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.18</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.19</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -227,13 +227,13 @@ export default function Admin(){
     <Field label="Schatzpool (Basispunkte)" value={settings.prize_share_bps} onChange={v=>setSetting('prize_share_bps',v)}/>
     <Field label="Community (Basispunkte)" value={settings.community_share_bps} onChange={v=>setSetting('community_share_bps',v)}/>
     <Field label="Plattform (Basispunkte)" value={settings.platform_share_bps} onChange={v=>setSetting('platform_share_bps',v)}/>
-    <Field label="Testguthaben (µg)" value={settings.test_grant_ug} onChange={v=>setSetting('test_grant_ug',v)}/>
-    <Field label="Mehrschatz-Schwelle (µg)" value={settings.multi_treasure_threshold_ug} onChange={v=>setSetting('multi_treasure_threshold_ug',v)}/>
+    <MgField label="Startgutschrift (mg)" valueUg={settings.test_grant_ug} onChangeUg={v=>setSetting('test_grant_ug',v)}/>
+    <MgField label="Mehrschatz-Schwelle (mg)" valueUg={settings.multi_treasure_threshold_ug} onChangeUg={v=>setSetting('multi_treasure_threshold_ug',v)}/>
     <Field label="Max. Schätze" value={settings.max_treasures} onChange={v=>setSetting('max_treasures',v)}/>
-    <Field label="Min. Goldgame-Einsatz (µg)" value={settings.min_entry_gold_ug} onChange={v=>setSetting('min_entry_gold_ug',v)}/>
-    <Field label="Max. Goldgame-Einsatz (µg)" value={settings.max_entry_gold_ug} onChange={v=>setSetting('max_entry_gold_ug',v)}/>
+    <MgField label="Min. Goldgame-Einsatz (mg)" valueUg={settings.min_entry_gold_ug} onChangeUg={v=>setSetting('min_entry_gold_ug',v)}/>
+    <MgField label="Max. Goldgame-Einsatz (mg)" valueUg={settings.max_entry_gold_ug} onChangeUg={v=>setSetting('max_entry_gold_ug',v)}/>
     <Field label="Referenzpreis Cent / 10 mg" value={settings.gold_price_cents_per_001g} onChange={v=>setSetting('gold_price_cents_per_001g',v)}/>
-    <Field label="Gewinner-Gold µg / 1.000 Taler" value={settings.winner_taler_gold_ug_per_1000} onChange={v=>setSetting('winner_taler_gold_ug_per_1000',v)}/>
+    <MgField label="Gewinner-Gold mg / 1.000 Taler" valueUg={settings.winner_taler_gold_ug_per_1000} onChangeUg={v=>setSetting('winner_taler_gold_ug_per_1000',v)}/>
     <div className="adminField"><label>Aktuelle Umrechnung</label><div className="input readOnlyLike">1.000 Taler = {formatGold(settings.winner_taler_gold_ug_per_1000,6)}</div></div>
    </div>
    <div className={'sumCheck '+(normalSum===10000?'ok':'bad')}>Normale Verteilung: {(normalSum/100).toFixed(2)} % {normalSum===10000?'✓':'– muss 100 % ergeben'}</div>
@@ -287,7 +287,7 @@ export default function Admin(){
     {adminGames.map(g=><div className="adminGameRow" key={g.id}>
       <div className="adminGameMain">
        <strong>{g.name}</strong>
-       <span className="small">{g.game_type==='pay'?'✨ Goldgame':'🧭 Schatzsuche'} · {g.status==='active'?'🟢 aktiv':'⚪ '+g.status} · 👥 {Number(g.player_count||0)} · 🗺️ {Number(g.explored_count||0).toLocaleString('de-DE')}</span>
+       <span className="small">{g.game_type==='pay'?'✨ Goldgame':g.game_type==='sponsor'?'🤝 Sponsorspiel':'🧭 Schatzsuche'} · {g.status==='active'?'🟢 aktiv':'⚪ '+g.status} · 👥 {Number(g.player_count||0)} · 🗺️ {Number(g.explored_count||0).toLocaleString('de-DE')}</span>
       </div>
       <div className="adminGameActions">
        {g.status==='active'&&<button className="btn" onClick={()=>endAdminGame(g)} disabled={saving}>Beenden</button>}
@@ -311,7 +311,7 @@ export default function Admin(){
     <Field label="Zugspeicher" value={autoGame.max_stored_moves} onChange={v=>setAuto('max_stored_moves',v)}/>
     <Field label="Schatzteile" value={autoGame.treasure_count} onChange={v=>setAuto('treasure_count',v)}/>
     <Field label="Gimmicks (%)" step="0.01" value={autoGame.gimmick_percent} onChange={v=>setAuto('gimmick_percent',v)}/>
-    <Field label="Goldgame-Einsatz (µg)" value={autoGame.entry_gold_ug} onChange={v=>setAuto('entry_gold_ug',v)}/>
+    <MgField label="Goldgame-Einsatz (mg)" valueUg={autoGame.entry_gold_ug} onChangeUg={v=>setAuto('entry_gold_ug',v)}/>
    </div>
    <div className="autoGameSelects">
     <label>Spieltyp<select className="input" value={autoGame.game_type||'standard'} onChange={e=>setAuto('game_type',e.target.value)}><option value="standard">Schatzsuche</option><option value="pay">Goldgame</option></select></label>
@@ -371,5 +371,14 @@ function Field({label,value,onChange,type='number',step='1'}){
  return <div className="adminField">
   <label>{label}</label>
   <input className="input" type={type} step={type==='number'?step:undefined} value={value??''} onChange={e=>onChange(e.target.value)}/>
+ </div>
+}
+
+function MgField({label,valueUg,onChangeUg}){
+ return <div className="adminField">
+  <label>{label}</label>
+  <input className="input" type="number" step="0.001"
+    value={Number.isFinite(Number(valueUg))?ugToGoldMg(valueUg):''}
+    onChange={e=>onChangeUg(Math.round(Number(e.target.value||0)*1000))}/>
  </div>
 }
