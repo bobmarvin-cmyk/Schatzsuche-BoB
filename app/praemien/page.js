@@ -32,7 +32,7 @@ export default function Praemien(){
  }
 
  return <main className="container rewardsPage">
-  <div className="buildBadge">V6.20</div>
+  <div className="buildBadge">V6.20.1</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a></div>
 
   <section className="panel rewardHero">

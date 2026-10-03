@@ -503,9 +503,10 @@ export default function Game(){
 
  function pressClaimKey(key){
   if(!pendingClaim||claimShow||claimResolving)return
-  const next=(claimInput+String(key)).slice(0,6)
-  setClaimInput(next)
-  if(next.length>=6)setTimeout(()=>resolveClaim(next),100)
+  setClaimInput(prev=>{
+    if(prev.length>=6)return prev
+    return (prev+String(key)).slice(0,6)
+  })
  }
 
  async function reveal(x,y){
@@ -754,7 +755,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.20</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.20.1</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -918,14 +919,14 @@ export default function Game(){
       <p>Merke dir die Symbolfolge und gib sie danach in derselben Reihenfolge ein.</p>
       {claimShow
        ? <div className="claimSequence">{String(claimChallenge.display_code||'').split('').map((n,i)=><span className={'claimKey k'+n} key={i}>{n==='1'?'▲':n==='2'?'●':n==='3'?'■':'◆'}</span>)}</div>
-       : <ClaimSymbolInput value={claimInput} onKey={pressClaimKey} onClear={()=>setClaimInput('')} disabled={claimResolving}/>}
+       : <ClaimSymbolInput value={claimInput} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
     </>}
 
     {claimStarted&&claimChallenge?.challenge_type==='memory_reverse'&&<>
       <p>Merke dir die Folge. Danach musst du sie <strong>rückwärts</strong> eingeben.</p>
       {claimShow
        ? <div className="claimSequence">{String(claimChallenge.display_code||'').split('').map((n,i)=><span className={'claimKey k'+n} key={i}>{n==='1'?'▲':n==='2'?'●':n==='3'?'■':'◆'}</span>)}</div>
-       : <ClaimSymbolInput value={claimInput} onKey={pressClaimKey} onClear={()=>setClaimInput('')} disabled={claimResolving}/>}
+       : <ClaimSymbolInput value={claimInput} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
     </>}
 
     {claimStarted&&claimChallenge?.challenge_type==='math'&&<>
@@ -1002,13 +1003,20 @@ export default function Game(){
 }
 
 
-function ClaimSymbolInput({value,onKey,onClear,disabled}){
+function ClaimSymbolInput({value,onKey,onClear,onSubmit,disabled}){
  const symbols={1:'▲',2:'●',3:'■',4:'◆'}
  return <div className="claimInputArea">
   <div className="claimInput">{[0,1,2,3,4,5].map((_,i)=><span key={i}>{value[i]?symbols[value[i]]:'·'}</span>)}</div>
   <div className="claimButtons">
-   {[1,2,3,4].map(n=><button key={n} disabled={disabled} onClick={()=>onKey(n)}>{symbols[n]}</button>)}
+   {[1,2,3,4].map(n=><button key={n} disabled={disabled||value.length>=6} onClick={()=>onKey(n)}>{symbols[n]}</button>)}
   </div>
-  <button className="miniBtn" disabled={disabled||!value} onClick={onClear}>Eingabe löschen</button>
+  <div className="claimSubmitRow">
+   <button className="miniBtn" disabled={disabled||!value} onClick={onClear}>Eingabe löschen</button>
+   <button className="btn primary" disabled={disabled||value.length!==6} onClick={()=>onSubmit(value)}>
+    Antwort prüfen
+   </button>
+  </div>
+  {value.length<6&&<div className="small">{value.length}/6 Symbole eingegeben</div>}
+  {value.length===6&&<div className="small">Kontrolliere die Folge und bestätige dann bewusst.</div>}
  </div>
 }
