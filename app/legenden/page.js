@@ -7,6 +7,7 @@ const TABS=[
  ['wins','🏆 Siege'],
  ['fields','🗺️ Erkundung'],
  ['gold','✨ Goldfunde'],
+ ['wealth','💰 Reichtum'],
  ['games','🎮 Spiele']
 ]
 
@@ -23,7 +24,7 @@ export default function Legenden(){
  }
 
  function value(r){
-  if(tab==='gold')return formatGold(r.metric_value)
+  if(tab==='gold'||tab==='wealth')return formatGold(r.metric_value)
   return Number(r.metric_value||0).toLocaleString('de-DE')
  }
 

@@ -1,120 +1,116 @@
-SCHATZSUCHE ONLINE V6.12
+SCHATZSUCHE ONLINE V6.13
 
-1. GIMMICK-MINIINFO IM SPIEL
-Oben in der kompakten Spielanzeige steht jetzt z. B.:
-  0,10 % · 37 / 1.000
-  Gimmicks
+1. GOLDSTAUB-BILANZ IN DER SCHALTZENTRALE
+Unter „Goldstaub-Testökonomie“ steht jetzt eine Übersicht mit:
+- aktuellem Goldbestand aller Spieler-Wallets
+- Schatz-Auszahlungen gesamt
+- Community-Ausschüttungen gesamt
+- Gewinner-Taler → Gold gesamt
+- vom Game / der Plattform vereinnahmtem Gold
+- Community-Reserve
+- aktuell insgesamt bilanziertem Gold
+- durch Test-Grants erzeugtem Gold
 
-Bedeutung:
-- 0,10 % = eingestellte Dichte
-- 37 = bisher gefundene Gimmicks
-- 1.000 = für dieses Spiel geplante Gesamtzahl
+Damit ist sichtbar, wo das Test-Gold im System steckt.
 
-Die geplante Gesamtzahl wird bei Spielstart aus Kartenfeldern × Gimmickdichte berechnet.
+2. SCHATZTEIL-POPUP
+Wird ein Schatzteil gefunden, erscheint ein eigenes Popup:
+- gefundener Prozentanteil
+- Anzahl der Teile, falls mehrere gleichzeitig gefunden wurden
+- bei Paygames: erhaltenes Test-Gold
 
-2. GIMMICK-POPUP
-Das Popup schließt sich automatisch nach 1,5 Sekunden.
-Man kann es weiterhin vorher anklicken.
+3. MASCHINENMODUS „LETZTE SUCHE“
+Der Fokusbereich ist nicht mehr dauerhaft ein gleich großes Quadrat.
+Mit jedem Maschinentakt erweitert sich das Gebiet um die letzte manuelle Suche schrittweise.
 
-3. GIMMICKDICHTE
-Die Spielerstellung arbeitet jetzt in 0,01-%-Schritten.
+Dadurch können die Maschinen auch nach vielen bereits aufgedeckten Feldern weiterarbeiten,
+ohne sofort auf „Zufällig“ umgestellt werden zu müssen.
 
-Beispiele:
-  0,01 %
-  0,05 %
-  0,10 %
-  0,25 %
+Die Kandidatenzahl bleibt begrenzt, damit die SQL-Abfrage nicht wieder explodiert.
 
-Bei Karten ab 100.000 Feldern und einer Dichte über 0,10 % erscheint vor dem Erstellen
-eine Warnung, weil sehr viele Überraschungen den Spielfluss beeinträchtigen können.
+4. LEGENDEN → REICHTUM
+Neue Bestenliste:
+  💰 Reichtum
 
-Min/Max/Standard bleiben über die Schaltzentrale steuerbar.
-Die Eingabegenauigkeit dort wurde ebenfalls auf 0,01 % erhöht.
+„Goldfunde“ = insgesamt gefundenes / verdientes Test-Gold.
+„Reichtum“ = aktueller tatsächlicher Wallet-Bestand.
 
-4. TECHNOLOGIEN
-Der separate Bereich „Basis“ entfällt.
-„Grundlagen“ befindet sich jetzt direkt unter „Erkundung“.
+5. GOLDGAME-ENDABRECHNUNG
+Im Archiv eines Paygames steht jetzt zusätzlich:
+- Schatz-Auszahlung je Spieler
+- Community-Gold insgesamt
+- Zahl der Community-Empfänger
+- durchschnittlicher Community-Anteil je Empfänger
+- Community-Anteil eines teilnehmenden Spielers aus genau diesem Game
+- Gewinner-Taler→Gold-Bonus
 
-Die Überschrift heißt weiterhin einfach:
-  Technologien
+6. SATELLITENANSICHT
+In der laufenden Karte gibt es:
+  🗺️ Karte
+  🛰️ Satellit
 
-5. HALL OF FAME / SOLO-PUSH
-In der Hall of Fame werden nur Spiele mit mindestens 2 tatsächlichen Teilnehmern angezeigt.
+Raster, Spielerfarben, erkundete Felder und Analysezonen bleiben darüber sichtbar.
+Falls die Satellitenquelle nicht lädt, versucht die Karte automatisch zurückzuschalten.
 
-Neue Solo-Spiele erhöhen außerdem die offizielle Siegeszahl nicht mehr.
-Damit kann man die Wertung nicht durch selbst erstellte Einzelspieler-Partien pushen.
+7. „NÄCHSTES GAME“
+Oben im laufenden Spiel gibt es:
+  ↪ Nächstes Game
 
-6. GOLDGAME-ENDABRECHNUNG
-Bei beendeten Paygames zeigt das Archiv jetzt:
-- jeden Spieler
-- erhaltenes Test-Gold
-- Schatzanteil in %
-- gefundene Schatzteile
-- insgesamt an Spieler ausgezahltes Test-Gold
+Der Button springt zyklisch zum nächsten aktiven Spiel, an dem der eingeloggte Spieler
+selbst teilnimmt. Bei nur einem aktiven Spiel ist er deaktiviert.
 
-Die Werte werden mit dem Spiel archiviert und nicht später aus dem aktuellen Wallet
-zurückgerechnet.
+8. GEWINNER-TALER → GOLD
+Beim regulären Spielende werden die restlichen Taler des Gewinners in Test-Gold umgerechnet.
 
-7. PROFIL
-Im eigenen und im öffentlichen Spielerprofil steht jetzt:
-  Mitglied seit <Monat Jahr>
+Standard:
+  1.000 Taler = 10 µg = 0,000010 g Test-Gold
 
-8. GLOBALERE ZUFALLSORTE
-Zufallsspiele wählen jetzt aus einem wesentlich globaleren Pool, unter anderem:
-- Europa
-- Afrika
-- Asien
-- Australien / Neuseeland
-- Nordamerika
-- Mittelamerika
-- Südamerika
-- Inselregionen
+Der Faktor ist in der Schaltzentrale veränderbar:
+  Gewinner-Gold µg / 1.000 Taler
 
-Beispiele sind Reykjavík, Nairobi, Kapstadt, Delhi, Bangkok, Tokio, Bali, Sydney,
-Auckland, Honolulu, Vancouver, Mexiko-Stadt, Lima, Rio und Buenos Aires.
+Der Bonus:
+- wird genau einmal vergeben
+- erscheint im Gewinner-Endpopup
+- wird in der Goldtransaktion protokolliert
+- wird im Spielarchiv gespeichert
+- gilt nur für Spiele mit mindestens zwei Teilnehmern
 
-9. MANUELLE ZÜGE BEI STARKEN MASCHINEN
-Maschinen sperren während ihrer großen Feldsuche nicht mehr die game_players-Zeile.
-
-Neu:
-- eigener machine_runtime-Datensatz für die Taktreservierung
-- maximal 6.000 Kandidaten pro Maschinentakt
-- Kandidatenmenge hängt nur noch von der Maschinenleistung ab, nicht zusätzlich von
-  einer eventuell extrem hohen manuellen Felder/Zug-Leistung
-- manuelle Aufdeckung hat dadurch praktisch Vorrang
-- Maschinen schreiben ihre Statistiken erst nach der Feldsuche kurz zurück
-
-Das ist gezielt gegen das Problem gedacht, dass im Endgame mit starkem Maschinenpark
-manuelle Felder irgendwann nicht mehr sinnvoll anklickbar waren.
+Solo-Games können dadurch nicht zum Gold-Farmen benutzt werden.
 
 INSTALLATION
-1. Inhalt dieser ZIP in das bestehende GitHub-Repository hochladen und ersetzen.
+1. Inhalt dieser ZIP in dein bestehendes GitHub-Repository hochladen und vorhandene Dateien ersetzen.
 2. Supabase → SQL Editor.
 3. NUR:
-   supabase/v6_12_migration.sql
+   supabase/v6_13_migration.sql
    einmal vollständig ausführen.
 4. Vercel deployt automatisch.
 
 TESTEMPFEHLUNG
-A) Gimmicks:
-- neues Spiel mit 0,01 % testen
-- großes Spiel (>100.000 Felder) mit >0,10 % wählen → Warnpopup prüfen
-- Gimmick finden → Popup sollte nach 1,5 Sekunden verschwinden
-- Zähler oben prüfen
+A) Schaltzentrale:
+- Goldbilanz ansehen.
+- Gewinner-Gold auf 10 µg / 1.000 Taler lassen.
 
-B) Maschinen:
-- starken Maschinenpark verwenden
-- Maschinen laufen lassen
-- gleichzeitig mehrfach manuell verschiedene Kartenfelder anklicken
-- manuelle Klicks sollten weiter zeitnah reagieren
+B) Schatzteil:
+- Teil finden → eigenes Schatzteil-Popup prüfen.
 
-C) Hall of Fame:
-- Solo-Spiel beenden → darf nicht in Hall of Fame auftauchen
-- Zwei-Spieler-Spiel beenden → muss auftauchen
+C) Maschinen:
+- „Letzte Suche“ mit hohem Maschinenwert über viele Takte laufen lassen.
+- prüfen, ob sich die Suche weiter nach außen ausbreitet.
 
-D) Paygame:
-- Paygame beenden
-- Archiv → Goldstaub-Verteilung prüfen
+D) Legenden:
+- „Reichtum“ öffnen → aktueller Walletbestand muss sortiert angezeigt werden.
 
-E) Profil:
-- eigenes und öffentliches Profil → „Mitglied seit“ prüfen
+E) Goldgame:
+- mit mindestens zwei Spielern beenden.
+- Archiv → Schatz- und Community-Verteilung prüfen.
+
+F) Karte:
+- zwischen Karte und Satellit wechseln.
+
+G) Mehrere Spiele:
+- in zwei oder mehr Games teilnehmen.
+- „Nächstes Game“ mehrmals drücken.
+
+H) Gewinnerbonus:
+- Multiplayer-Spiel beenden.
+- Gewinner-Endpopup und Wallet prüfen.

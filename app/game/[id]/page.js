@@ -11,7 +11,7 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null)
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([])
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null)
 
  useEffect(()=>{
@@ -23,7 +23,7 @@ export default function Game(){
      scheduleVisibleReload(180)
    })
    .on('postgres_changes',{event:'*',schema:'public',table:'game_players',filter:`game_id=eq.${id}`},()=>loadPlayersOnly())
-   .on('postgres_changes',{event:'*',schema:'public',table:'games',filter:`id=eq.${id}`},()=>loadGameOnly())
+   .on('postgres_changes',{event:'*',schema:'public',table:'games',filter:`id=eq.${id}`},()=>{loadGameOnly();loadActiveGames()})
    .on('postgres_changes',{event:'*',schema:'public',table:'player_technologies',filter:`game_id=eq.${id}`},()=>loadOwnedOnly())
    .subscribe()
   const timer=setInterval(()=>setTick(t=>t+1),1000)
@@ -87,6 +87,30 @@ export default function Game(){
   ])
   setWallet(w.data);setGoldTreasures(gt.data||[])
  }
+ async function loadActiveGames(){
+  const {data}=await supabase.rpc('my_active_games_v613')
+  if(data)setActiveGames(data)
+ }
+
+ function nextGame(){
+  if(activeGames.length<2)return
+  const idx=activeGames.findIndex(g=>g.game_id===id)
+  const next=activeGames[(idx>=0?idx+1:0)%activeGames.length]
+  if(next?.game_id)location.href='/game/'+next.game_id
+ }
+
+ function handleTreasure(data,source='manual'){
+  if(!data?.part_found)return
+  const popup={
+    parts:Number(data.parts_gained||1),
+    share:Number(data.share_gained_bps||0),
+    gold:Number(data.gold_won_ug||0),
+    source
+  }
+  setTreasurePopup(popup)
+  setTimeout(()=>setTreasurePopup(current=>current===popup?null:current),2200)
+ }
+
  async function load(){
   const {data:{user}}=await supabase.auth.getUser()
   try{
@@ -105,6 +129,7 @@ export default function Game(){
     setWallet(w.data)
     setGoldTreasures(gt.data||[])
     setTechnologies(tech.data||[])
+    loadActiveGames()
   }catch(err){
     setMsg('Fehler beim Laden der Karte: '+(err?.message||String(err)))
   }
@@ -140,18 +165,20 @@ export default function Game(){
   setMsg('Suche läuft…')
   try{
     await supabase.rpc('set_machine_focus_v690',{p_game_id:id,p_x:x,p_y:y})
-    const {data,error}=await supabase.rpc('reveal_area_v612',{p_game_id:id,p_x:x,p_y:y})
+    const {data,error}=await supabase.rpc('reveal_area_v613',{p_game_id:id,p_x:x,p_y:y})
     if(error){setMsg(error.message);return}
 
     setMsg(data?.message||'Gebiet untersucht')
     handleGimmicks(data?.gimmicks)
+    handleTreasure(data,'manual')
     if(data?.game_over){
       setWinnerCelebration({
         won:!!data.won,
         name:data.winner_name||'Spieler',
         moves:Number(data.winner_moves_used||0),
         opened:Number(data.opened||0),
-        share:Number(data.winner_share_bps||0)
+        share:Number(data.winner_share_bps||0),
+        talerGold:Number(data.winner_taler_gold_ug||0)
       })
     }
     // Der Server schickt nicht mehr tausende Feldobjekte zurück.
@@ -194,13 +221,14 @@ export default function Game(){
   machineBusy.current=true
   try{
     await supabase.rpc('machine_presence_v690',{p_game_id:id})
-    const {data,error}=await supabase.rpc('run_machines_v612',{p_game_id:id})
+    const {data,error}=await supabase.rpc('run_machines_game_v613',{p_game_id:id})
     if(error){
       if(!error.message?.includes('Noch nicht fällig'))setMsg('Maschinen: '+error.message)
       return
     }
     if(data?.message)setMsg(data.message)
     handleGimmicks(data?.gimmicks)
+    handleTreasure(data,'machine')
     if(data?.opened>0&&currentViewport.current)await loadVisibleFields(currentViewport.current)
     await Promise.all([loadPlayersOnly(),loadGameOnly(),loadGoldOnly()])
     if(data?.game_over){
@@ -209,7 +237,8 @@ export default function Game(){
         name:data.winner_name||'Spieler',
         moves:Number(data.winner_moves_used||0),
         opened:Number(data.opened||0),
-        share:Number(data.winner_share_bps||0)
+        share:Number(data.winner_share_bps||0),
+        talerGold:Number(data.winner_taler_gold_ug||0)
       })
     }
   }finally{
@@ -296,7 +325,7 @@ export default function Game(){
  }
 
  return <main className="container">
-  <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
+  <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel"><h1>{game?.name||'Spiel'}</h1>
    <div className="worldMeta">
@@ -387,6 +416,17 @@ export default function Game(){
   </div>)}</div></div>
   {game&&user&&<GameChat gameId={id} userId={user.id}/>}
 
+  {treasurePopup&&<div className="treasureFoundOverlay" role="dialog" aria-modal="true">
+   <div className="treasureFoundModal">
+    <div className="treasureFoundIcon">🧩</div>
+    <div className="small">SCHATZTEIL GEFUNDEN</div>
+    <h2>+{(treasurePopup.share/100).toFixed(2)} %</h2>
+    <p>{treasurePopup.parts>1?`${treasurePopup.parts} Schatzteile auf einmal!`:'Du hast einen Teil des Gesamtschatzes gefunden.'}</p>
+    {treasurePopup.gold>0&&<div className="treasureGold">✨ {formatGold(treasurePopup.gold)} Test-Gold</div>}
+    <button className="btn primary" onClick={()=>setTreasurePopup(null)}>Weiter</button>
+   </div>
+  </div>}
+
   {gimmickPopup&&<div className="gimmickOverlay" role="dialog" aria-modal="true">
    <div className="gimmickModal">
     <div className="gimmickIcon">🎁</div>
@@ -413,6 +453,7 @@ export default function Game(){
       <div><span>🧩</span><strong>{(winnerCelebration.share/100).toFixed(2)}%</strong><small>Siegeranteil</small></div>
       <div><span>🎯</span><strong>{winnerCelebration.moves.toLocaleString('de-DE')}</strong><small>Züge des Siegers</small></div>
     </div>
+    {winnerCelebration.talerGold>0&&<div className="winnerGoldBonus">✨ Gewinnerbonus: {formatGold(winnerCelebration.talerGold)} aus den Taler des Siegers</div>}
     <div className="winnerActions">
       <a className="btn primary" href={'/archiv/'+id}>🏛️ Endstand ansehen</a>
       <button className="btn" onClick={()=>setWinnerCelebration(null)}>Noch kurz hier bleiben</button>

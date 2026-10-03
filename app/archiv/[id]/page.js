@@ -40,7 +40,7 @@ export default function ArchivedGame(){
    {archive.winner_name&&<div className="archiveWinnerBadge">
     <span>🏆 Sieger</span>
     <strong>{archive.winner_name}</strong>
-    <small>Siegerwertung: {(Number(archive.winner_share_bps||0)/100).toFixed(2)}% Schatz{archive.winner_moves_used!=null?` · ${Number(archive.winner_moves_used).toLocaleString('de-DE')} manuelle Züge`:''}</small>
+    <small>Siegerwertung: {(Number(archive.winner_share_bps||0)/100).toFixed(2)}% Schatz{archive.winner_moves_used!=null?` · ${Number(archive.winner_moves_used).toLocaleString('de-DE')} manuelle Züge`:''}{Number(archive.winner_taler_gold_ug||0)>0?` · ${(Number(archive.winner_taler_gold_ug)/1000000).toFixed(6)} g Talerbonus`:''}</small>
    </div>}
   </div>
 
@@ -60,12 +60,19 @@ export default function ArchivedGame(){
 
   {archive.game_type==='pay'&&<section className="panel">
    <h2>✨ Goldstaub-Verteilung</h2>
-   <p className="small">Auszahlung der gefundenen Test-Gold-Schatzteile in diesem Spiel. Insgesamt an Spieler ausgezahlt: <strong>✨ {(players.reduce((sum,p)=>sum+Number(p.gold_received_ug||0),0)/1000000).toFixed(6)} g</strong>.</p>
+   <p className="small">Auszahlung der gefundenen Test-Gold-Schatzteile in diesem Spiel. Insgesamt an Schatzfinder ausgezahlt: <strong>✨ {(players.reduce((sum,p)=>sum+Number(p.gold_received_ug||0),0)/1000000).toFixed(6)} g</strong>.</p>
+   <div className="goldDistributionSummary">
+    <div className="card"><div className="small">Community gesamt</div><div className="stat">✨ {(Number(archive.community_distributed_ug||0)/1000000).toFixed(6)} g</div></div>
+    <div className="card"><div className="small">Community-Empfänger</div><div className="stat">{Number(archive.community_recipient_count||0)}</div></div>
+    <div className="card"><div className="small">Ø je Empfänger</div><div className="stat">✨ {(Number(archive.community_distributed_ug||0)/Math.max(1,Number(archive.community_recipient_count||0))/1000000).toFixed(6)} g</div></div>
+   </div>
    <div className="archivePlayerList">
     {players.map(p=><div className="card archivePlayer" key={'gold-'+p.user_id}>
       <div className="playerNameLine"><span className="colorDot large" style={{background:p.player_color||'#35516d'}}></span><strong>{p.display_name||'Spieler'}</strong></div>
       <div className="stat">✨ {(Number(p.gold_received_ug||0)/1000000).toFixed(6)} g</div>
       <div className="small">{(Number(p.treasure_share_bps||0)/100).toFixed(2)} % Schatzanteil · {Number(p.treasure_parts_found||0)} Teile</div>
+      {Number(p.community_received_ug||0)>0&&<div className="small">Community-Anteil aus diesem Spiel: ✨ {(Number(p.community_received_ug||0)/1000000).toFixed(6)} g</div>}
+      {Number(p.winner_conversion_ug||0)>0&&<div className="small">Gewinner-Taler → Gold: ✨ {(Number(p.winner_conversion_ug||0)/1000000).toFixed(6)} g</div>}
     </div>)}
    </div>
   </section>}

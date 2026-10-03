@@ -9,6 +9,7 @@ export default function Admin(){
  const [allowed,setAllowed]=useState(null)
  const [settings,setSettings]=useState(null)
  const [techs,setTechs]=useState([])
+ const [goldOverview,setGoldOverview]=useState(null)
  const [msg,setMsg]=useState('')
  const [saving,setSaving]=useState(false)
 
@@ -25,12 +26,13 @@ export default function Admin(){
  }
 
  async function load(){
-  const [{data:s,error:se},{data:t,error:te}]=await Promise.all([
+  const [{data:s,error:se},{data:t,error:te},{data:go,error:ge}]=await Promise.all([
     supabase.from('platform_settings').select('*').eq('id',1).single(),
-    supabase.from('technologies').select('*').order('sort_order',{ascending:true}).order('id',{ascending:true})
+    supabase.from('technologies').select('*').order('sort_order',{ascending:true}).order('id',{ascending:true}),
+    supabase.rpc('admin_gold_overview_v613')
   ])
-  if(se||te){setMsg(se?.message||te?.message||'Fehler beim Laden');return}
-  setSettings(s);setTechs(t||[])
+  if(se||te||ge){setMsg(se?.message||te?.message||ge?.message||'Fehler beim Laden');return}
+  setSettings(s);setTechs(t||[]);setGoldOverview(go||null)
  }
 
  function setSetting(key,value){
@@ -78,6 +80,9 @@ export default function Admin(){
       p_taler_bonus:NUM(settings.gimmick_taler_bonus),
       p_move_bonus:NUM(settings.gimmick_move_bonus),
       p_reveal_bonus:NUM(settings.gimmick_reveal_bonus)
+    })
+    await supabase.rpc('admin_set_winner_gold_factor_v613',{
+      p_ug_per_1000:NUM(settings.winner_taler_gold_ug_per_1000)
     })
   }
   setSaving(false)
@@ -154,12 +159,24 @@ export default function Admin(){
     <Field label="Min. Paygame-Einsatz (µg)" value={settings.min_entry_gold_ug} onChange={v=>setSetting('min_entry_gold_ug',v)}/>
     <Field label="Max. Paygame-Einsatz (µg)" value={settings.max_entry_gold_ug} onChange={v=>setSetting('max_entry_gold_ug',v)}/>
     <Field label="Referenzpreis Cent / 0,01 g" value={settings.gold_price_cents_per_001g} onChange={v=>setSetting('gold_price_cents_per_001g',v)}/>
+    <Field label="Gewinner-Gold µg / 1.000 Taler" value={settings.winner_taler_gold_ug_per_1000} onChange={v=>setSetting('winner_taler_gold_ug_per_1000',v)}/>
+    <div className="adminField"><label>Aktuelle Umrechnung</label><div className="input readOnlyLike">1.000 Taler = {formatGold(settings.winner_taler_gold_ug_per_1000,6)}</div></div>
    </div>
    <div className={'sumCheck '+(normalSum===10000?'ok':'bad')}>Normale Verteilung: {(normalSum/100).toFixed(2)} % {normalSum===10000?'✓':'– muss 100 % ergeben'}</div>
    <div className="adminReadOnly">
     <span>Community-Reserve: <b>{formatGold(settings.community_reserve_ug)}</b></span>
     <span>Plattform-Testanteil: <b>{formatGold(settings.platform_revenue_ug)}</b></span>
    </div>
+   {goldOverview&&<div className="goldOverviewGrid">
+    <div className="card"><div className="small">Bei Spielern aktuell</div><div className="stat">{formatGold(goldOverview.wallet_total_ug)}</div></div>
+    <div className="card"><div className="small">Schatz-Auszahlungen gesamt</div><div className="stat">{formatGold(goldOverview.treasure_paid_ug)}</div></div>
+    <div className="card"><div className="small">Community verteilt gesamt</div><div className="stat">{formatGold(goldOverview.community_paid_ug)}</div></div>
+    <div className="card"><div className="small">Gewinner-Taler → Gold</div><div className="stat">{formatGold(goldOverview.winner_conversion_paid_ug)}</div></div>
+    <div className="card"><div className="small">Vom Game vereinnahmt</div><div className="stat">{formatGold(goldOverview.platform_absorbed_ug)}</div></div>
+    <div className="card"><div className="small">Community-Reserve</div><div className="stat">{formatGold(goldOverview.community_reserve_ug)}</div></div>
+    <div className="card"><div className="small">Aktuell im System bilanziert</div><div className="stat">{formatGold(goldOverview.tracked_total_ug)}</div></div>
+    <div className="card"><div className="small">Aus Test-Grants erzeugt</div><div className="stat">{formatGold(goldOverview.test_grants_ug)}</div></div>
+   </div>}
   </section>
 
   <section className="panel">

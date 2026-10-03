@@ -3,6 +3,19 @@ import {useEffect,useRef,useState} from 'react'
 
 const METERS_PER_DEG_LAT=111320
 const TARGET_VISIBLE_BUCKETS=2600
+const MAP_STYLE='https://tiles.openfreemap.org/styles/liberty'
+const SATELLITE_STYLE={
+  version:8,
+  sources:{
+    satellite:{
+      type:'raster',
+      tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+      tileSize:256,
+      attribution:'Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+    }
+  },
+  layers:[{id:'satellite-base',type:'raster',source:'satellite'}]
+}
 const FALLBACK_STYLE={
   version:8,
   sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'© OpenStreetMap contributors'}},
@@ -82,7 +95,9 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
   const analysisRef=useRef(analysisHint)
   const viewportRef=useRef(onViewportChange)
   const analysisFeaturesRef=useRef(onAnalysisFeatures)
+  const mapModeRef=useRef('map')
   const [status,setStatus]=useState('Karte wird geladen…')
+  const [mapMode,setMapMode]=useState('map')
 
   gameRef.current=game
   fieldsRef.current=fields
@@ -91,6 +106,7 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
   analysisRef.current=analysisHint
   viewportRef.current=onViewportChange
   analysisFeaturesRef.current=onAnalysisFeatures
+  mapModeRef.current=mapMode
 
   useEffect(()=>{
     if(!game||!holder.current||mapRef.current)return
@@ -105,7 +121,7 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
         const g=geometry(game)
         const map=new maplibregl.Map({
           container:holder.current,
-          style:'https://tiles.openfreemap.org/styles/liberty',
+          style:MAP_STYLE,
           center:[g.lon,g.lat],
           zoom:10,
           attributionControl:true,
@@ -266,6 +282,28 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
     if(map.loaded())apply();else map.once('load',apply)
   },[analysisHint])
 
+  function switchMapMode(mode){
+    const map=mapRef.current
+    if(!map||mode===mapMode)return
+    setMapMode(mode)
+    mapModeRef.current=mode
+    setStatus(mode==='satellite'?'Satellitenkarte wird geladen…':'Karte wird geladen…')
+    try{
+      map.setStyle(mode==='satellite'?SATELLITE_STYLE:MAP_STYLE)
+      if(mode==='satellite'){
+        setTimeout(()=>{
+          if(mapModeRef.current==='satellite'&&!map.isStyleLoaded?.()){
+            setStatus('Satellitenquelle langsam – zurück zur Karte…')
+            setMapMode('map');mapModeRef.current='map'
+            try{map.setStyle(MAP_STYLE)}catch{}
+          }
+        },8000)
+      }
+    }catch{
+      setStatus('Kartenstil konnte nicht gewechselt werden.')
+    }
+  }
+
   useEffect(()=>{
     const map=mapRef.current
     const h=analysisHint
@@ -305,6 +343,10 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
 
   return <div className="worldMapShell">
     <div ref={holder} className="worldMap"/>
+    <div className="mapModeSwitch">
+      <button type="button" className={'miniBtn '+(mapMode==='map'?'active':'')} onClick={()=>switchMapMode('map')}>🗺️ Karte</button>
+      <button type="button" className={'miniBtn '+(mapMode==='satellite'?'active':'')} onClick={()=>switchMapMode('satellite')}>🛰️ Satellit</button>
+    </div>
     {status&&<div className="mapLoadingOverlay">{status}</div>}
   </div>
 }
