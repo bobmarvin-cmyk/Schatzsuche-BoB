@@ -171,12 +171,12 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.16a.1</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
   <main className="container lobbyPage">
-  <div className="topnav">
+  <div className="topnav"><a className="btn" href="/tutorial">🎓 Tutorial</a>
    <a className="btn" href="/profile">Profil</a>
    <a className="btn" href="/legenden">🏆 Legenden</a>
    <a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a>

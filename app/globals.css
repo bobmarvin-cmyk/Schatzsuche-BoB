@@ -814,3 +814,26 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .tutorialRanking>div{display:flex;justify-content:space-between;padding-top:5px}.tutorialOnline{font-size:9px;color:#63d391}
 .tutorialActions{display:flex;gap:7px;flex-wrap:wrap}
 @media(max-width:760px){.tutorialLayout{grid-template-columns:1fr}.tutorialHero{align-items:flex-start}.tutorialMap{aspect-ratio:1.2}}
+
+/* V6.16a.1 visibility hotfix */
+.buildBadge{
+ position:fixed;right:6px;bottom:6px;z-index:12000;
+ padding:3px 6px;border-radius:999px;
+ background:rgba(8,16,28,.82);border:1px solid #39516f;
+ color:#a9bdd3;font-size:8px;font-weight:800;letter-spacing:.04em;
+ pointer-events:none
+}
+@media(max-width:900px){
+ .gameTopPanel.mobileAllStats{display:none!important}
+ .gamePage{padding-top:0!important}
+ .mobileMapHud{
+   display:grid!important;
+   grid-template-columns:repeat(4,minmax(0,1fr));
+   gap:3px;
+ }
+ .mapCenterBtn{
+   display:block!important;
+   z-index:40!important;
+ }
+ .presenceLabel.online,.onlineDot{display:inline!important}
+}
