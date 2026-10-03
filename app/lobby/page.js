@@ -171,7 +171,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.17.1</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.18</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -190,7 +190,7 @@ export default function Lobby(){
     <div className="goldWalletCard">
      <div className="small">Goldstaub</div>
      <div className="goldBalance">✨ {formatGold(wallet?.balance_ug||0)}</div>
-     {!wallet?.test_grant_claimed&&<button className="btn goldBtn" onClick={claimTestGold}>0,25 g Gold holen</button>}
+     {!wallet?.test_grant_claimed&&<button className="btn goldBtn" onClick={claimTestGold}>0,25 mg Gold holen</button>}
     </div>
    </div>
   </div>

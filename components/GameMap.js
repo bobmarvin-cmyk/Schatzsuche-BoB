@@ -96,12 +96,42 @@ function analysisCollection(h){
   return {type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[coords]}}]}
 }
 
-export default function GameMap({game,fields,players,onReveal,onTrapPlace,trapMode,ownTraps=[],analysisHint,onViewportChange,analysisFocusToken,onAnalysisFeatures,mobileHud}){
+
+function terrainFromFeatures(features){
+  const rows=(features||[]).map(f=>({
+    sourceLayer:String(f.sourceLayer||'').toLowerCase(),
+    cls:String(f.properties?.class||'').toLowerCase(),
+    sub:String(f.properties?.subclass||'').toLowerCase(),
+    layer:String(f.layer?.id||'').toLowerCase()
+  }))
+
+  const has=(...words)=>rows.some(r=>words.some(w=>
+    r.sourceLayer.includes(w)||r.cls===w||r.sub===w||r.layer.includes(w)
+  ))
+
+  if(has('water','ocean','lake','river','pond','dock'))return {type:'water',label:'🌊 Wasser'}
+  if(has('wetland','swamp','bog','marsh','reedbed','saltmarsh','tidalflat'))return {type:'wetland',label:'🟫 Feuchtgebiet'}
+  if(has('wood','forest'))return {type:'forest',label:'🌲 Wald'}
+  if(has('industrial'))return {type:'industrial',label:'🏭 Industrie'}
+  if(has('military','quarry'))return {type:'restricted',label:'⚠️ Sondergebiet'}
+  if(has('commercial','retail'))return {type:'commercial',label:'🏬 Gewerbe'}
+  if(has('residential','suburb','quarter','neighbourhood'))return {type:'residential',label:'🏙 Wohngebiet'}
+  if(has('park','garden','recreation_ground','playground'))return {type:'park',label:'🌳 Park'}
+  if(has('farmland','farm','orchard','vineyard','allotments'))return {type:'farmland',label:'🚜 Landwirtschaft'}
+  if(has('sand','beach','dune'))return {type:'sand',label:'🏖 Sand'}
+  if(has('rock','bare_rock','scree'))return {type:'rock',label:'🪨 Fels'}
+  if(has('grass','grassland','meadow','heath','scrub'))return {type:'grass',label:'🌾 Grünland'}
+  if(has('transportation','road','street','highway'))return {type:'road',label:'🛣 Verkehrsfläche'}
+  return {type:'open',label:'🧭 Offenes Gelände'}
+}
+
+export default function GameMap({game,fields,players,onReveal,onTerrainReveal,onTrapPlace,trapMode,ownTraps=[],analysisHint,onViewportChange,analysisFocusToken,onAnalysisFeatures,mobileHud}){
   const holder=useRef(null)
   const mapRef=useRef(null)
   const gameRef=useRef(game)
   const fieldsRef=useRef(fields)
   const playersRef=useRef(players)
+  const onTerrainRevealRef=useRef(onTerrainReveal)
   const onRevealRef=useRef(onReveal)
   const onTrapPlaceRef=useRef(onTrapPlace)
   const trapModeRef=useRef(trapMode)
@@ -117,6 +147,7 @@ export default function GameMap({game,fields,players,onReveal,onTrapPlace,trapMo
   fieldsRef.current=fields
   playersRef.current=players
   onRevealRef.current=onReveal
+  onTerrainRevealRef.current=onTerrainReveal
   onTrapPlaceRef.current=onTrapPlace
   trapModeRef.current=trapMode
   ownTrapsRef.current=ownTraps
@@ -200,7 +231,23 @@ export default function GameMap({game,fields,players,onReveal,onTrapPlace,trapMo
           const cg=geometry(gameRef.current)
           const x=Math.floor((e.lngLat.lng-cg.west)*cg.metersLon/cg.cell)
           const y=Math.floor((cg.north-e.lngLat.lat)*METERS_PER_DEG_LAT/cg.cell)
-          if(x>=0&&y>=0&&x<cg.width&&y<cg.height){if(trapModeRef.current)onTrapPlaceRef.current?.(x,y);else onRevealRef.current?.(x,y)}
+          if(x<0||y<0||x>=cg.width||y>=cg.height)return
+          if(trapModeRef.current){onTrapPlaceRef.current?.(x,y);return}
+
+          let terrain={type:'open',label:'🧭 Offenes Gelände'}
+          try{
+            const [w,so,ea,n]=cellBounds(cg,x,y,1)
+            const a=map.project([w,n]),b=map.project([ea,so])
+            const features=map.queryRenderedFeatures([
+              [Math.min(a.x,b.x),Math.min(a.y,b.y)],
+              [Math.max(a.x,b.x),Math.max(a.y,b.y)]
+            ])||[]
+            terrain=terrainFromFeatures(features.filter(f=>
+              !['explored-fill','explored-outline','grid-lines','analysis-zone-fill','analysis-zone-line','my-traps-fill','my-traps-line'].includes(f.layer?.id)
+            ))
+          }catch{}
+          if(onTerrainRevealRef.current)onTerrainRevealRef.current(x,y,terrain)
+          else onRevealRef.current?.(x,y)
         })
 
         function collectAnalysisFeatures(){

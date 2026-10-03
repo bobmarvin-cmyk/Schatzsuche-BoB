@@ -11,7 +11,7 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[onlineIds,setOnlineIds]=useState([])
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null)
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0)
 
  useEffect(()=>{
@@ -364,6 +364,36 @@ export default function Game(){
   scheduleVisibleReload(100)
  }
 
+
+ function terrainRequirement(type){
+  if(type==='forest')return {tech:'ter2',name:'🌲 Waldkunde'}
+  if(type==='water')return {tech:'ter4',name:'🌊 Boot & Sonar'}
+  if(type==='wetland')return {tech:'ter5',name:'🟫 Sumpfausrüstung'}
+  if(type==='industrial'||type==='restricted')return {tech:'ter6',name:'🏭 Urban Explorer'}
+  return null
+ }
+
+ async function terrainReveal(x,y,terrain){
+  const t=terrain||{type:'open',label:'🧭 Offenes Gelände'}
+  setTerrainInfo(t)
+  try{
+    await supabase.rpc('cache_terrain_cell_v618',{
+      p_game_id:id,p_x:x,p_y:y,
+      p_terrain_type:t.type||'open',
+      p_terrain_label:t.label||''
+    })
+  }catch{}
+
+  const req=terrainRequirement(t.type)
+  if(req&&!has('ter7')&&!has(req.tech)){
+    setMsg(`${t.label||'Dieses Gelände'} · benötigt ${req.name}. Kein Zug verbraucht.`)
+    return
+  }
+
+  setMsg(`${t.label||'Gelände erkannt'} · Suche startet…`)
+  await reveal(x,y)
+ }
+
  async function reveal(x,y){
   if(revealBusy.current)return
   revealBusy.current=true
@@ -546,6 +576,11 @@ export default function Game(){
   if(Number(t.machine_auto_fields))effects.push(`${Number(t.machine_auto_fields).toLocaleString('de-DE')} automatische Felder/Takt`)
   if(t.exclusive_per_game)effects.push('🔒 exklusiv: nur 1 Spieler pro Game')
   if(t.trap_type)effects.push(`🪤 ${t.trap_type} · Stärke ${Number(t.trap_power||0)} · max. ${Number(t.trap_limit||0)} aktiv`)
+  if(t.id==='ter2')effects.push('🌲 Wald freigeschaltet')
+  if(t.id==='ter4')effects.push('🌊 Wasser freigeschaltet')
+  if(t.id==='ter5')effects.push('🟫 Feuchtgebiete freigeschaltet')
+  if(t.id==='ter6')effects.push('🏭 Industrie/Sonderflächen freigeschaltet')
+  if(t.id==='ter7')effects.push('🧭 alle Terrain-Sperren aufgehoben')
   return effects.join(' · ')||'Keine direkte Wirkung'
  }
 
@@ -579,7 +614,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.17.1</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.18</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -647,7 +682,7 @@ export default function Game(){
     <div className="mapHeader"><div><h2>{game?.name||'Schatzsuche'}{game?.center_label?` · ${game.center_label}`:''}</h2><div className="small">Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.</div></div>
      <div className="mapLegend">{players.map(p=><div className={'legendItem '+(onlineIds.includes(p.user_id)?'online':'offline')} key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.profiles?.display_name||'Spieler'}{onlineIds.includes(p.user_id)&&<span className="onlineDot" title="online">●</span>}</div>)}</div>
     </div>
-    {game&&<><div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name}</button>)}</>}</div><GameMap game={game} fields={fields} players={players} onReveal={reveal} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}
+    {game&&<><div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name}</button>)}</>}</div><GameMap game={game} fields={fields} players={players} onReveal={reveal} onTerrainReveal={terrainReveal} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}
       mobileHud={<div className="mobileMapHud">
        {[
         [Number(me?.coins||0).toFixed(1),'Taler'],
@@ -657,6 +692,13 @@ export default function Game(){
         [left.toLocaleString('de-DE'),'Felder übrig']
        ].map((v,i)=><div className="mobileHudStat" key={i}><span>{v[1]}</span><b>{v[0]}</b></div>)}
       </div>}/></>}
+
+    <div className="terrainLegend">
+      <span>Terrain:</span>
+      <span>🌊 Wasser</span><span>🌲 Wald</span><span>🌾 Offen</span>
+      <span>🚜 Acker</span><span>🏙 Stadt</span><span>🏭 Industrie</span>
+      {terrainInfo&&<b className="terrainCurrent">{terrainInfo.label}</b>}
+    </div>
     {Number(me?.analysis_level||0)>0&&<div className="analysisPurchaseBox">
       <div className="analysisPurchaseHead">
        <div><strong>🧭 Analyse Stufe {me.analysis_level}</strong><div className="small">Ein Hinweis pro neuer manueller Suchposition.</div></div>
