@@ -366,7 +366,12 @@ export default function Game(){
  return <main className="container gamePage">
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
-  <div className={"panel gameTopPanel "+(statsOpen?"mobileOpen":"mobileClosed")}><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1><button className="miniBtn mobileStatsToggle" onClick={()=>setStatsOpen(v=>!v)}>📊 {statsOpen?"Weniger":"Werte"}</button></div>
+  <div className={"panel gameTopPanel "+(statsOpen?"mobileOpen":"mobileClosed")}><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1><button className="miniBtn mobileStatsToggle" onClick={()=>setStatsOpen(v=>!v)}>📊 {statsOpen?"Weniger":"Werte"}</button></div><div className="mobileEssentialStats">
+    <span><small>Taler</small><b>{Number(me?.coins||0).toFixed(1)}</b></span>
+    <span><small>Züge</small><b>{me?.moves_left??0}</b></span>
+    <span><small>F/Zug</small><b>{me?.reveal_power??1}</b></span>
+    <span><small>F/Min</small><b>{fieldsPerMinute.toFixed(1)}</b></span>
+   </div>
    <div className="worldMeta">
     <span>📍 {game?.center_label||'Kartenmittelpunkt'} · {game?.cell_size_m||100} m pro Feld · echte Weltkarte</span>
     {game?.invite_code&&<span className="inviteChip">Einladungscode: <strong>{game.invite_code}</strong>{game.is_private?' · 🔒 privat':''}</span>}
@@ -422,11 +427,9 @@ export default function Game(){
      <div className="mapLegend">{players.map(p=><div className="legendItem" key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.profiles?.display_name||'Spieler'}</div>)}</div>
     </div>
     {game&&<><div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name}</button>)}</>}</div><GameMap game={game} fields={fields} players={players} onReveal={reveal} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}/></>}
-    {analysisHint&&<div className="analysisHintBox">
-      <strong>🧭 Kartenanalyse Stufe {analysisHint.level}</strong>
-      <div>{analysisClue||'Analysiere den Kartenhintergrund, um einen Landschaftshinweis zu erhalten.'}</div>
-      <div className="analysisActions"><button className="btn" onClick={()=>setAnalysisFocusToken(v=>v+1)}>🌍 Kartenumgebung analysieren</button></div>
-      <div className="small">Die Analyse nennt Landschafts- und Siedlungsmerkmale, nicht die Position des Schatzes.</div>
+    {analysisHint&&<div className="analysisHintBox compactAnalysisHint">
+      <strong>🧭 Analyse Stufe {analysisHint.level}</strong>
+      <div>{analysisHint.text}</div>
     </div>}
     <p className="statusLine">{msg}</p>
    </section>

@@ -10,6 +10,7 @@ export default function Admin(){
  const [settings,setSettings]=useState(null)
  const [techs,setTechs]=useState([])
  const [goldOverview,setGoldOverview]=useState(null)
+ const [autoGame,setAutoGame]=useState(null)
  const [msg,setMsg]=useState('')
  const [saving,setSaving]=useState(false)
 
@@ -26,13 +27,14 @@ export default function Admin(){
  }
 
  async function load(){
-  const [{data:s,error:se},{data:t,error:te},{data:go,error:ge}]=await Promise.all([
+  const [{data:s,error:se},{data:t,error:te},{data:go,error:ge},{data:ag,error:ae}]=await Promise.all([
     supabase.from('platform_settings').select('*').eq('id',1).single(),
     supabase.from('technologies').select('*').order('sort_order',{ascending:true}).order('id',{ascending:true}),
-    supabase.rpc('admin_gold_overview_v613')
+    supabase.rpc('admin_gold_overview_v613'),
+    supabase.rpc('admin_get_auto_game_config_v6141')
   ])
-  if(se||te||ge){setMsg(se?.message||te?.message||ge?.message||'Fehler beim Laden');return}
-  setSettings(s);setTechs(t||[]);setGoldOverview(go||null)
+  if(se||te||ge||ae){setMsg(se?.message||te?.message||ge?.message||ae?.message||'Fehler beim Laden');return}
+  setSettings(s);setTechs(t||[]);setGoldOverview(go||null);setAutoGame(ag||null)
  }
 
  function setSetting(key,value){
@@ -88,6 +90,40 @@ export default function Admin(){
   setSaving(false)
   setMsg(error?error.message:(data?.message||'Globale Einstellungen gespeichert.'))
   if(!error)await load()
+ }
+
+ function setAuto(key,value){setAutoGame(a=>({...a,[key]:value}))}
+ async function saveAutoGame(){
+  setSaving(true);setMsg('')
+  const payload={
+    enabled:!!autoGame.enabled,
+    interval_minutes:NUM(autoGame.interval_minutes),
+    name_prefix:autoGame.name_prefix||'Auto-Runde',
+    field_count:NUM(autoGame.field_count),
+    cell_size_m:NUM(autoGame.cell_size_m),
+    max_players:NUM(autoGame.max_players),
+    regen_seconds:NUM(autoGame.regen_seconds),
+    max_stored_moves:NUM(autoGame.max_stored_moves),
+    game_type:autoGame.game_type||'standard',
+    entry_gold_ug:NUM(autoGame.entry_gold_ug),
+    treasure_count:NUM(autoGame.treasure_count),
+    gimmick_percent:NUM(autoGame.gimmick_percent),
+    location_mode:autoGame.location_mode||'random',
+    center_lat:autoGame.center_lat??'',
+    center_lon:autoGame.center_lon??'',
+    center_label:autoGame.center_label||''
+  }
+  const {data,error}=await supabase.rpc('admin_save_auto_game_config_v6141',{p:payload})
+  setSaving(false);setMsg(error?error.message:(data?.message||'Auto-Game gespeichert'))
+  if(!error)await load()
+ }
+ async function generateAutoGameNow(){
+  setSaving(true);setMsg('Erzeuge Auto-Game…')
+  const {data,error}=await supabase.rpc('admin_generate_auto_game_v6141')
+  setSaving(false)
+  if(error){setMsg(error.message);return}
+  setMsg(data?.created?'Auto-Game wurde erstellt.':'Kein Game erstellt.')
+  await load()
  }
 
  async function saveTech(t){
@@ -210,6 +246,40 @@ export default function Admin(){
   <div className="adminSaveBar">
    <button className="btn primary" onClick={saveSettings} disabled={saving||normalSum!==10000||inactiveSum!==10000}>{saving?'Speichert…':'Globale Werte speichern'}</button>
   </div>
+
+  {autoGame&&<section className="panel">
+   <h2>🤖 Automatische Games</h2>
+   <p className="small">Erzeugt öffentliche Spiele automatisch. Der Zeitplan wird serverseitig alle 5 Minuten geprüft, sofern pg_cron verfügbar ist.</p>
+   <label className="adminToggle"><input type="checkbox" checked={!!autoGame.enabled} onChange={e=>setAuto('enabled',e.target.checked)}/> automatische Erstellung aktiv</label>
+   <div className="adminGrid">
+    <Field label="Alle X Minuten" value={autoGame.interval_minutes} onChange={v=>setAuto('interval_minutes',v)}/>
+    <Field label="Namenspräfix" type="text" value={autoGame.name_prefix} onChange={v=>setAuto('name_prefix',v)}/>
+    <Field label="Kartenfelder" value={autoGame.field_count} onChange={v=>setAuto('field_count',v)}/>
+    <Field label="Feldkante (m)" step="1" value={autoGame.cell_size_m} onChange={v=>setAuto('cell_size_m',v)}/>
+    <Field label="Max. Spieler" value={autoGame.max_players} onChange={v=>setAuto('max_players',v)}/>
+    <Field label="Zug alle (s)" value={autoGame.regen_seconds} onChange={v=>setAuto('regen_seconds',v)}/>
+    <Field label="Zugspeicher" value={autoGame.max_stored_moves} onChange={v=>setAuto('max_stored_moves',v)}/>
+    <Field label="Schatzteile" value={autoGame.treasure_count} onChange={v=>setAuto('treasure_count',v)}/>
+    <Field label="Gimmicks (%)" step="0.01" value={autoGame.gimmick_percent} onChange={v=>setAuto('gimmick_percent',v)}/>
+    <Field label="Paygame-Einsatz (µg)" value={autoGame.entry_gold_ug} onChange={v=>setAuto('entry_gold_ug',v)}/>
+   </div>
+   <div className="autoGameSelects">
+    <label>Spieltyp<select className="input" value={autoGame.game_type||'standard'} onChange={e=>setAuto('game_type',e.target.value)}><option value="standard">Standard</option><option value="pay">Paygame (Test)</option></select></label>
+    <label>Ort<select className="input" value={autoGame.location_mode||'random'} onChange={e=>setAuto('location_mode',e.target.value)}><option value="random">🌍 Zufallsort global</option><option value="coords">📍 Feste Koordinaten</option></select></label>
+   </div>
+   {autoGame.location_mode==='coords'&&<div className="adminGrid">
+    <Field label="Breitengrad" step="0.000001" value={autoGame.center_lat} onChange={v=>setAuto('center_lat',v)}/>
+    <Field label="Längengrad" step="0.000001" value={autoGame.center_lon} onChange={v=>setAuto('center_lon',v)}/>
+    <Field label="Ortsname" type="text" value={autoGame.center_label||''} onChange={v=>setAuto('center_label',v)}/>
+   </div>}
+   <div className="adminReadOnly">
+    <span>Nächster geplanter Lauf: <b>{autoGame.next_run_at?new Date(autoGame.next_run_at).toLocaleString('de-DE'):'–'}</b></span>
+   </div>
+   <div className="winnerActions">
+    <button className="btn" onClick={saveAutoGame} disabled={saving}>Auto-Game Einstellungen speichern</button>
+    <button className="btn primary" onClick={generateAutoGameNow} disabled={saving}>Jetzt Game erzeugen</button>
+   </div>
+  </section>}
 
   <section className="panel">
    <h2>🧠 Technologien</h2>

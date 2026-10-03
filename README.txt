@@ -1,122 +1,134 @@
-SCHATZSUCHE ONLINE V6.14
+SCHATZSUCHE ONLINE V6.14.1
 
-NEU 1 – FELDER PRO MINUTE
-Im laufenden Spiel erscheint:
-  Felder/Min
+1. MOBILES INGAME-HUD
+Die Werte verschwinden mobil nicht mehr komplett.
 
-Der Wert wird aus allen Feldern berechnet, die der Spieler seit dem Öffnen dieser
-Spielsession selbst erzeugt hat – manuell und durch eigene Maschinen.
+Standardmäßig bleibt permanent eine sehr kleine 4er-Leiste sichtbar:
+- Taler
+- Züge
+- Felder/Zug
+- Felder/Minute
 
-NEU 2 – MOBILE WERTEÜBERSICHT
-Auf dem Handy ist das Ingame-HUD standardmäßig klein eingeklappt.
-Mit:
-  📊 Werte
-kann es geöffnet werden.
+Mit „📊 Werte“ klappt die vollständige Übersicht auf.
+So bleiben die wichtigsten Werte immer im Blick, ohne viel Karte zu verdecken.
 
-Dadurch bleibt deutlich mehr von der Karte sichtbar.
+2. ANALYSE WIEDER EINFACHER
+Der Landschafts-Analyseversuch aus V6.14 wurde vereinfacht.
 
-NEU 3 – MASCHINENMODUS KOMPAKTER
-Statt des großen Maschinenkastens gibt es eine kleine Zeile:
-  ⚙️ <Leistung>/Takt   📍 Fokus   🎲 Zufall
+Die Analyse zeigt wieder einen normalen Tipp mit:
+- Himmelsrichtung
+- je nach Analyse-Stufe grober/feiner Entfernung bzw. Kartenhinweis
 
-NEU 4 – ANALYSE ALS KARTENHINTERGRUND-HINWEIS
-Der alte Fokus auf ein gelbes Zielgebiet wird ersetzt.
+Es wird keine sichtbare Zielzone benötigt.
 
-Der Button heißt:
-  🌍 Kartenumgebung analysieren
+3. STÄRKERE FALLEN
+Zusätzlich zu den bisherigen Fallen gibt es:
+- EMP-Falle: mehrere gespeicherte Züge weg
+- Sabotagefalle: hoher Talerverlust
+- Blackout-Störsender: starke Reduktion des nächsten manuellen Suchzuges
 
-Das Spiel untersucht Kartenmerkmale der ungefähren Schatzumgebung und formuliert daraus
-allgemeine Hinweise, z. B.:
-- Schatz liegt in oder bei einem Gewässer
-- Wald-/Grüngebiet
-- nahe einer Stadt/Siedlung
-- Gebiet mit markanten Straßen/Wegen
-
-Die gelbe Zielzone wird nicht mehr sichtbar dargestellt.
-
-NEU 5 – EXKLUSIVE TECHNOLOGIEN
-Technologien können in der Schaltzentrale als:
-  Exklusiv pro Game
-markiert werden.
-
-Dann kann genau EIN Spieler pro Spiel diese Technologie besitzen.
-Wer sie zuerst kauft, blockiert sie für alle anderen.
-
-Beispiele:
-- Pionierpatent
-- Kartographenmonopol
-- Automationspatent
-
-Ein globales Spielevent meldet, wer eine exklusive Technologie gesichert hat.
-
-NEU 6 – FALLEN
-Neuer Technologie-Bereich:
-  Fallen
-
-Standard:
-- Talerfalle
-- Zugfalle
-- Störsender
-
-Nach Kauf einer Fallen-Technologie erscheinen oberhalb der Karte kleine Fallenbuttons.
-Falle auswählen → auf ein noch verdecktes Kartenfeld klicken.
-
-Regeln:
-- nur noch nicht aufgedeckte Felder
-- nur der Fallensteller sieht seine Fallen auf der Karte
-- andere Spieler sehen sie nicht
-- eigener Fallensteller kann seine eigene Falle nicht auslösen
-- wird eine Falle getroffen, erscheint eine globale Meldung für das ganze Spiel
-- auf einem Fallenfeld gibt es keinen normalen Felder-Talerbonus
-- Talerfalle zieht zusätzlich Taler ab
-- Zugfalle vernichtet gespeicherte Züge
-- Störsender reduziert den nächsten manuellen Suchzug
-- Stärke und maximal aktive Fallen sind in der Schaltzentrale je Technologie einstellbar
-
-SCHATZ + FALLE:
-Liegt zufällig ein Schatzteil unter einer Falle, wird der Schatzanteil auf alle aktiven
-Spieler des Games verteilt – außer auf den Fallensteller.
-
-Bei Paygames wird auch das dort liegende Test-Gold entsprechend aufgeteilt.
-
-NEU 7 – GLOBALER EVENT-BANNER
-Fallen und exklusive Technologie-Käufe erzeugen eine sichtbare Meldung im laufenden Game.
-
-NEU 8 – CHAT ALS SLIDE-DOWN
-Der Chat ist standardmäßig zugeklappt.
-
-Oben bleibt nur:
-  💬 Chat
-
-Neue ungelesene Nachrichten erzeugen einen roten Zähler.
-Antippen → Chat fährt auf.
-Dadurch belegt er im normalen Spiel praktisch keinen Platz.
-
-SCHALTZENTRALE
-Bei jeder Technologie stehen zusätzlich zur Verfügung:
-- Exklusiv pro Game
+Alle Werte sind weiterhin über „Technologien“ in der Schaltzentrale veränderbar:
+- Preis
 - Fallentyp
-- Fallenstärke
-- Max. aktive Fallen
+- Stärke
+- maximale aktive Anzahl
+
+4. ORT DIREKT AUSWÄHLEN
+Bei der Game-Erstellung gibt es jetzt drei Möglichkeiten:
+- 🌍 Zufälliger echter Ort
+- 🔎 Ort suchen
+- 📍 Eigene Koordinaten
+
+„Ort suchen“ funktioniert bewusst NICHT als Live-Autocomplete.
+Der Nutzer schreibt z. B.:
+  St. Wendel, Saarland
+und drückt „Suchen“.
+
+Danach erscheinen passende Treffer zum Anklicken.
+Der ausgewählte Ort wird automatisch in Koordinaten + Ortsname übernommen.
+
+Die Suche wird serverseitig über einen Geocoding-Endpunkt geleitet.
+Standardmäßig ist Nominatim/OpenStreetMap eingetragen.
+Optional kann in Vercel über
+  GEOCODER_BASE_URL
+ein anderer kompatibler Anbieter gesetzt werden, ohne neuen Code-Deploy.
+
+WICHTIG FÜR NOMINATIM:
+- keine Autocomplete-Anfragen
+- nur bewusst vom Nutzer ausgelöste Suche
+- Attribution bleibt sichtbar
+- keine automatisierten Ortsabfragen
+
+5. AUTOMATISCHE GAME-ERSTELLUNG
+Neue Sektion in der Schaltzentrale:
+  🤖 Automatische Games
+
+Einstellbar:
+- aktiv / deaktiviert
+- alle X Minuten
+- Namenspräfix
+- Kartenfelder
+- Feldkante
+- maximale Spieler
+- Zugintervall
+- Zugspeicher
+- Schatzteile
+- Gimmickdichte
+- Standardgame / Paygame
+- Paygame-Testeinsatz
+- Zufallsort global oder feste Koordinaten
+
+Zusätzlich:
+  „Jetzt Game erzeugen“
+
+Damit kann das eingestellte Rezept sofort getestet werden.
+
+AUTOMATISCHER BETRIEB:
+V6.14.1 versucht pg_cron zu aktivieren und prüft alle 5 Minuten,
+ob ein neues Auto-Game fällig ist.
+
+Falls pg_cron in deinem Supabase-Projekt nicht verfügbar/erlaubt ist:
+- die Einstellungen funktionieren trotzdem
+- „Jetzt Game erzeugen“ funktioniert trotzdem
+- lediglich der automatische Hintergrund-Zeitplan läuft dann nicht
+
+Auto-Games werden unter dem beim Speichern hinterlegten Admin-Account als Host erstellt.
+Bei Auto-Paygames muss dieser Host entsprechend genug Test-Gold im Wallet besitzen.
 
 INSTALLATION
-1. Inhalt dieser ZIP in dein bestehendes GitHub-Repository hochladen und vorhandene Dateien ersetzen.
-2. Supabase → SQL Editor.
-3. NUR:
-   supabase/v6_14_migration.sql
+1. Inhalt dieser ZIP in dein GitHub-Repository hochladen und vorhandene Dateien ersetzen.
+2. .env.local NICHT hochladen.
+3. Supabase → SQL Editor.
+4. NUR:
+   supabase/v6_14_1_migration.sql
    einmal vollständig ausführen.
-4. Vercel deployt automatisch.
+5. Vercel deployt automatisch.
 
-WICHTIG:
-V6.14 setzt voraus, dass der kleine V6.13.2a-Hotfix bereits ausgeführt wurde.
+VORAUSSETZUNG
+V6.14 und der vorherige V6.13.2a-Fix müssen bereits installiert sein.
 
-TESTEMPFEHLUNG
-1. Zwei Spieler in ein Testgame.
-2. Eine exklusive Technologie mit Spieler A kaufen.
-3. Mit Spieler B dieselbe kaufen → muss blockiert werden.
-4. Spieler A kauft Talerfalle und platziert sie auf verdecktem Feld.
-5. Spieler B deckt dieses Feld auf → Event + Schaden prüfen.
-6. Prüfen, dass A die Falle vorher auf der Karte sieht, B aber nicht.
-7. Chat einklappen → Nachricht von B senden → Ungelesen-Zähler bei A prüfen.
-8. Handy: Werte-HUD öffnen/schließen.
-9. Analyse-Technologie verwenden → Kartenumgebungs-Hinweis prüfen.
+TEST
+A) Handy:
+- Game öffnen
+- Mini-HUD muss immer Taler/Züge/Felder-Zug/Felder-Min zeigen
+- „Werte“ auf-/zuklappen
+
+B) Analyse:
+- Analyse-Technologie besitzen
+- manuell suchen
+- Himmelsrichtungs-Hinweis prüfen
+
+C) Fallen:
+- EMP/Sabotage/Blackout kaufen und testen
+
+D) Ort:
+- Neues Game → „Ort suchen“
+- z. B. „St. Wendel, Saarland“
+- Treffer auswählen
+- Game erstellen
+
+E) Auto-Games:
+- Schaltzentrale → automatische Games
+- Rezept speichern
+- „Jetzt Game erzeugen“
+- anschließend Zeitplan aktivieren

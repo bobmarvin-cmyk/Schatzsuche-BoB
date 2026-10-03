@@ -561,3 +561,36 @@ button:disabled{cursor:not-allowed;opacity:.45}
 }
 
 @media(max-width:700px){.gamePage{padding-top:48px}}
+
+/* V6.14.1 – mobiles Mini-HUD bleibt immer sichtbar */
+.mobileEssentialStats{display:none}
+.compactAnalysisHint{padding:8px 10px}
+@media(max-width:700px){
+ .gameTopPanel.mobileClosed{max-width:calc(100vw - 16px);right:8px}
+ .gameTopPanel.mobileClosed .gameTopTitle{margin-bottom:5px}
+ .gameTopPanel.mobileClosed .worldMeta,
+ .gameTopPanel.mobileClosed .gameStatsBody{display:none}
+ .mobileEssentialStats{
+   display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;
+ }
+ .mobileEssentialStats span{
+   min-width:0;background:#17253a;border:1px solid #30445f;border-radius:7px;
+   padding:3px 4px;text-align:center
+ }
+ .mobileEssentialStats small{display:block;font-size:7px;color:#91a4bc;line-height:1}
+ .mobileEssentialStats b{display:block;font-size:11px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .gameTopPanel.mobileOpen .mobileEssentialStats{display:none}
+ .gameTopPanel.mobileClosed{padding:5px 6px}
+ .gameTopPanel.mobileClosed h1{font-size:13px;max-width:55vw}
+ .mobileStatsToggle{font-size:9px;padding:3px 5px}
+ .gamePage{padding-top:72px}
+}
+
+.autoGameSelects{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 0}.autoGameSelects label{font-size:11px}@media(max-width:700px){.autoGameSelects{grid-template-columns:1fr}}
+
+.placeSearchBox{margin-top:8px;padding:9px;border:1px solid #30445f;border-radius:10px;background:#111d2f}
+.placeSearchRow{display:grid;grid-template-columns:1fr auto;gap:7px}
+.placeResults{display:grid;gap:5px;margin-top:7px}
+.placeResult{text-align:left;border:1px solid #30445f;background:#17253a;color:#e7edf7;border-radius:8px;padding:7px 9px;cursor:pointer}
+.placeResult strong,.placeResult span{display:block}.placeResult span{font-size:10px;color:#93a6bf;margin-top:2px}
+@media(max-width:700px){.placeSearchRow{grid-template-columns:1fr}.placeSearchRow .btn{width:100%}}

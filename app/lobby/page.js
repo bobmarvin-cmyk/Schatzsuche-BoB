@@ -65,6 +65,24 @@ export default function Lobby(){
    await loadWallet()
  }
 
+ async function searchPlace(){
+   const q=placeQuery.trim()
+   if(q.length<2){setMsg('Bitte mindestens 2 Zeichen für die Ortssuche eingeben.');return}
+   setPlaceSearching(true);setMsg('')
+   try{
+     const res=await fetch('/api/geocode?q='+encodeURIComponent(q))
+     const data=await res.json()
+     if(!res.ok)throw new Error(data?.error||'Ortssuche fehlgeschlagen')
+     setPlaceResults(data.results||[])
+     if(!(data.results||[]).length)setMsg('Kein passender Ort gefunden.')
+   }catch(e){setMsg(e.message||'Ortssuche fehlgeschlagen')}
+   finally{setPlaceSearching(false)}
+ }
+ function choosePlace(r){
+   setLat(String(r.lat));setLon(String(r.lon));setLabel(r.short_label||r.label)
+   setPlaceResults([]);setMsg('Ort gewählt: '+(r.short_label||r.label))
+ }
+
  async function createGame(force=false){
    setMsg('Spiel wird erstellt…')
    if(!force && Number(fields)>=100000 && Number(gimmickPercent)>0.1){
@@ -81,7 +99,7 @@ export default function Lobby(){
     p_field_count:Number(fields),
     p_cell_size_m:Number(cellSize),
     p_max_players:Number(maxPlayers),
-    p_location_mode:mode,
+    p_location_mode:mode==='place'?'coords':mode,
     p_center_lat:mode==='coords'?Number(lat):null,
     p_center_lon:mode==='coords'?Number(lon):null,
     p_center_label:mode==='coords'?(label||'Kartenmittelpunkt'):null,
@@ -185,8 +203,25 @@ export default function Lobby(){
       <label>Spielname</label><input className="input" value={name} onChange={e=>setName(e.target.value)}/>
       <label>Kartenquelle</label>
       <select className="input" value={mode} onChange={e=>setMode(e.target.value)}>
-       <option value="random">🌍 Zufälliger echter Ort</option><option value="coords">📍 Eigene Koordinaten</option>
+       <option value="random">🌍 Zufälliger echter Ort</option><option value="place">🔎 Ort suchen</option><option value="coords">📍 Eigene Koordinaten</option>
       </select>
+
+      {mode==='place'&&<div className="placeSearchBox">
+       <label>Ort auswählen</label>
+       <div className="placeSearchRow">
+        <input className="input" value={placeQuery} onChange={e=>setPlaceQuery(e.target.value)}
+          onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();searchPlace()}}}
+          placeholder="z. B. St. Wendel, Saarland"/>
+        <button type="button" className="btn" onClick={searchPlace} disabled={placeSearching}>{placeSearching?'Suche…':'Suchen'}</button>
+       </div>
+       <div className="small">Einzelne, bewusst ausgelöste Ortssuche · Kartendaten © OpenStreetMap-Mitwirkende.</div>
+       {placeResults.length>0&&<div className="placeResults">
+        {placeResults.map((r,i)=><button type="button" key={i} className="placeResult" onClick={()=>choosePlace(r)}>
+          <strong>{r.short_label||r.label}</strong><span>{r.label}</span>
+        </button>)}
+       </div>}
+      </div>}
+
       {mode==='coords'&&<>
        <label>Breitengrad</label><input className="input" type="number" step="0.000001" value={lat} onChange={e=>setLat(e.target.value)}/>
        <label>Längengrad</label><input className="input" type="number" step="0.000001" value={lon} onChange={e=>setLon(e.target.value)}/>
