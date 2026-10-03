@@ -837,3 +837,96 @@ button:disabled{cursor:not-allowed;opacity:.45}
  }
  .presenceLabel.online,.onlineDot{display:inline!important}
 }
+
+/* V6.16a.4 – mobile HUD refinement + compact nav */
+.mobileSecondaryStats{display:none}
+
+@media(max-width:900px){
+  .mobileSecondaryStats{
+    display:flex;
+    gap:4px;
+    overflow-x:auto;
+    padding:4px 2px 6px;
+    margin:0 0 5px;
+    scrollbar-width:none;
+  }
+  .mobileSecondaryStats::-webkit-scrollbar{display:none}
+  .mobileSecondaryStat{
+    flex:0 0 auto;
+    min-width:72px;
+    padding:4px 6px;
+    border-radius:8px;
+    background:#152238;
+    border:1px solid #2d425d;
+    text-align:center;
+  }
+  .mobileSecondaryStat span{
+    display:block;
+    font-size:7px;
+    line-height:1;
+    color:#8fa5bd;
+    white-space:nowrap;
+  }
+  .mobileSecondaryStat b{
+    display:block;
+    margin-top:2px;
+    font-size:10px;
+    line-height:1.1;
+    white-space:nowrap;
+  }
+
+  .mobileMapHud{
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+    left:8px!important;
+    right:8px!important;
+    top:8px!important;
+    padding:4px!important;
+    gap:3px!important;
+  }
+  .mobileHudStat{
+    padding:4px 2px!important;
+    background:rgba(24,39,59,.86)!important;
+  }
+  .mobileHudStat span{
+    font-size:6.5px!important;
+    line-height:1!important;
+    letter-spacing:0!important;
+  }
+  .mobileHudStat b{
+    font-size:10px!important;
+    line-height:1.15!important;
+    margin-top:2px!important;
+  }
+
+  .topnav{
+    display:flex;
+    align-items:center;
+    gap:4px;
+    overflow-x:auto;
+    flex-wrap:nowrap;
+    padding:3px 0 6px;
+    scrollbar-width:none;
+  }
+  .topnav::-webkit-scrollbar{display:none}
+  .topnav .btn{
+    flex:0 0 auto;
+    min-height:28px!important;
+    padding:5px 8px!important;
+    border-radius:999px!important;
+    font-size:10px!important;
+    line-height:1!important;
+    box-shadow:none!important;
+  }
+  .gamePage>.topnav .btn{
+    min-width:auto!important;
+    width:auto!important;
+  }
+}
+
+@media(max-width:520px){
+  .mobileMapHud{
+    grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  }
+  .mobileHudStat span{font-size:6px!important}
+  .mobileHudStat b{font-size:9px!important}
+}

@@ -566,7 +566,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.16a.3</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.16a.4</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -595,6 +595,16 @@ export default function Game(){
     <button className={'miniBtn '+(me?.machine_mode==='random'?'active':'')} onClick={()=>setMachineMode('random')}>🎲 Zufall</button>
    </div>}
    </div>
+  </div>
+
+  <div className="mobileSecondaryStats">
+   {[
+    ['Bonus',(me?.reward_multiplier??1)+'×'],
+    ['Analyse','Stufe '+(me?.analysis_level??0)],
+    ['Maschine',machinePower>0?machinePower.toLocaleString('de-DE'):'0'],
+    ['Schatz',(Number(me?.treasure_share_bps||0)/100).toFixed(1)+'%'],
+    ['Nächster Zug',secondsUntilMove===null?`${effectiveRegen}s`:`${secondsUntilMove}s`]
+   ].map((v,i)=><div className="mobileSecondaryStat" key={i}><span>{v[0]}</span><b>{v[1]}</b></div>)}
   </div>
 
   {game&&<details className={'panel compactTreasurePanel '+(game.game_type==='pay'?'goldGamePanel':'treasureGamePanel')}>
@@ -629,12 +639,9 @@ export default function Game(){
        {[
         [Number(me?.coins||0).toFixed(1),'Taler'],
         [`${me?.moves_left??0}/${cap}`,'Züge'],
-        [me?.reveal_power??1,'F/Zug'],
-        [fieldsPerMinute.toFixed(1),'F/Min'],
-        [left.toLocaleString('de-DE'),'übrig'],
-        ['S'+(me?.analysis_level??0),'Analyse'],
-        [machinePower>0?machinePower.toLocaleString('de-DE'):'0','Maschine'],
-        [`${(Number(me?.treasure_share_bps||0)/100).toFixed(1)}%`,'Schatz']
+        [me?.reveal_power??1,'Felder/Zug'],
+        [fieldsPerMinute.toFixed(1),'Felder/Min'],
+        [left.toLocaleString('de-DE'),'Felder übrig']
        ].map((v,i)=><div className="mobileHudStat" key={i}><span>{v[1]}</span><b>{v[0]}</b></div>)}
       </div>}/></>}
     {Number(me?.analysis_level||0)>0&&<div className="analysisPurchaseBox">
