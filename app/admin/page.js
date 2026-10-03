@@ -88,8 +88,13 @@ export default function Admin(){
     await supabase.rpc('admin_set_winner_gold_factor_v613',{
       p_ug_per_1000:NUM(settings.winner_taler_gold_ug_per_1000)
     })
-    await supabase.rpc('admin_set_analysis_cost_v6151',{
-      p_base_cost:NUM(settings.analysis_hint_base_cost)
+    await supabase.rpc('admin_set_analysis_prices_v616',{
+      p_l1:NUM(settings.analysis_price_l1),
+      p_l2:NUM(settings.analysis_price_l2),
+      p_l3:NUM(settings.analysis_price_l3),
+      p_l4:NUM(settings.analysis_price_l4),
+      p_l5:NUM(settings.analysis_price_l5),
+      p_l6:NUM(settings.analysis_price_l6)
     })
   }
   setSaving(false)
@@ -207,12 +212,17 @@ export default function Admin(){
     <Field label="Max. Zugspeicher" value={settings.max_stored_moves_limit} onChange={v=>setSetting('max_stored_moves_limit',v)}/>
     <Field label="Taler pro leerem Feld" step="0.001" value={settings.exploration_reward} onChange={v=>setSetting('exploration_reward',v)}/>
     <Field label="Maschinen-Talerfaktor (1 = 100%)" step="0.05" value={settings.machine_reward_factor} onChange={v=>setSetting('machine_reward_factor',v)}/>
-    <Field label="Analyse-Grundpreis je Stufe (Taler)" step="0.1" value={settings.analysis_hint_base_cost} onChange={v=>setSetting('analysis_hint_base_cost',v)}/>
+        <Field label="Analyse-Hinweis Stufe 1 (Taler)" step="0.1" value={settings.analysis_price_l1} onChange={v=>setSetting('analysis_price_l1',v)}/>
+    <Field label="Analyse-Hinweis Stufe 2 (Taler)" step="0.1" value={settings.analysis_price_l2} onChange={v=>setSetting('analysis_price_l2',v)}/>
+    <Field label="Analyse-Hinweis Stufe 3 (Taler)" step="0.1" value={settings.analysis_price_l3} onChange={v=>setSetting('analysis_price_l3',v)}/>
+    <Field label="Analyse-Hinweis Stufe 4 (Taler)" step="0.1" value={settings.analysis_price_l4} onChange={v=>setSetting('analysis_price_l4',v)}/>
+    <Field label="Analyse-Hinweis Stufe 5 (Taler)" step="0.1" value={settings.analysis_price_l5} onChange={v=>setSetting('analysis_price_l5',v)}/>
+    <Field label="Analyse-Hinweis Stufe 6+ (Taler)" step="0.1" value={settings.analysis_price_l6} onChange={v=>setSetting('analysis_price_l6',v)}/>
    </div>
   </section>
 
   <section className="panel" id="admin-economy">
-   <h2>✨ Goldstaub-Testökonomie</h2>
+   <h2>✨ Goldstaub-Ökonomie</h2>
    <div className="adminGrid">
     <Field label="Schatzpool (Basispunkte)" value={settings.prize_share_bps} onChange={v=>setSetting('prize_share_bps',v)}/>
     <Field label="Community (Basispunkte)" value={settings.community_share_bps} onChange={v=>setSetting('community_share_bps',v)}/>
@@ -229,17 +239,17 @@ export default function Admin(){
    <div className={'sumCheck '+(normalSum===10000?'ok':'bad')}>Normale Verteilung: {(normalSum/100).toFixed(2)} % {normalSum===10000?'✓':'– muss 100 % ergeben'}</div>
    <div className="adminReadOnly">
     <span>Community-Reserve: <b>{formatGold(settings.community_reserve_ug)}</b></span>
-    <span>Plattform-Testanteil: <b>{formatGold(settings.platform_revenue_ug)}</b></span>
+    <span>Plattformanteil: <b>{formatGold(settings.platform_revenue_ug)}</b></span>
    </div>
    {goldOverview&&<div className="goldOverviewGrid">
-    <div className="card"><div className="small">Bei Spielern aktuell</div><div className="stat">{formatGold(goldOverview.wallet_total_ug)}</div></div>
+    <div className="card"><div className="small">Bei Spielern aktuell</div><div className="stat">{formatGold(goldOverview.wallet_total_ug)}</div></div></div>
     <div className="card"><div className="small">Schatz-Auszahlungen gesamt</div><div className="stat">{formatGold(goldOverview.treasure_paid_ug)}</div></div>
     <div className="card"><div className="small">Community verteilt gesamt</div><div className="stat">{formatGold(goldOverview.community_paid_ug)}</div></div>
     <div className="card"><div className="small">Gewinner-Taler → Gold</div><div className="stat">{formatGold(goldOverview.winner_conversion_paid_ug)}</div></div>
     <div className="card"><div className="small">Vom Game vereinnahmt</div><div className="stat">{formatGold(goldOverview.platform_absorbed_ug)}</div></div>
     <div className="card"><div className="small">Community-Reserve</div><div className="stat">{formatGold(goldOverview.community_reserve_ug)}</div></div>
     <div className="card"><div className="small">Aktuell im System bilanziert</div><div className="stat">{formatGold(goldOverview.tracked_total_ug)}</div></div>
-    <div className="card"><div className="small">Aus Test-Grants erzeugt</div><div className="stat">{formatGold(goldOverview.test_grants_ug)}</div></div>
+    <div className="card"><div className="small">Aus Startgutschriften erzeugt</div><div className="stat">{formatGold(goldOverview.test_grants_ug)}</div></div>
    </div>}
   </section>
 

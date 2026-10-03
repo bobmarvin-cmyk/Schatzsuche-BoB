@@ -52,14 +52,14 @@ export default function Hilfe(){
         maximale Spielerzahl und die Geschwindigkeit der Zugregeneration fest.
       </p>
 
-      <h2>Goldgames im Testmodus</h2>
+      <h2>Goldgames</h2>
       <p>
-        Goldgames verwenden derzeit ausschließlich Test-Goldstaub ohne Echtgeldwert. Für die Teilnahme wird eine
-        bestimmte Menge Test-Goldstaub eingesetzt. Ein Teil davon landet im Schatzpool, ein Teil wird als
-        Community-Anteil verteilt und ein Teil wird als Plattform-Testanteil verbucht.
+        Goldgames verwenden derzeit ausschließlich Goldstaub ohne Echtgeldwert. Für die Teilnahme wird eine
+        bestimmte Menge Goldstaub eingesetzt. Ein Teil davon landet im Schatzpool, ein Teil wird als
+        Community-Anteil verteilt und ein Teil wird als Plattformanteil verbucht.
       </p>
       <p>
-        In dieser Testversion kann Goldstaub weder mit echtem Geld gekauft noch ausgezahlt oder in echtes Gold
+        In dieser Spielversion kann Goldstaub weder mit echtem Geld gekauft noch ausgezahlt oder in echtes Gold
         umgewandelt werden.
       </p>
 
@@ -131,7 +131,7 @@ export default function Hilfe(){
         insgesamt den größten Anteil des Schatzes gefunden hat.
       </p>
       <p>
-        Im Goldgame wird auch der Test-Gold-Schatzpool auf diese Fundstellen verteilt. Der Gesamtpool
+        Im Goldgame wird auch der Gold-Schatzpool auf diese Fundstellen verteilt. Der Gesamtpool
         wird dadurch nicht größer – er wird lediglich auf mehrere Funde aufgeteilt.
       </p>
 

@@ -96,7 +96,7 @@ function analysisCollection(h){
   return {type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[coords]}}]}
 }
 
-export default function GameMap({game,fields,players,onReveal,onTrapPlace,trapMode,ownTraps=[],analysisHint,onViewportChange,analysisFocusToken,onAnalysisFeatures}){
+export default function GameMap({game,fields,players,onReveal,onTrapPlace,trapMode,ownTraps=[],analysisHint,onViewportChange,analysisFocusToken,onAnalysisFeatures,mobileHud}){
   const holder=useRef(null)
   const mapRef=useRef(null)
   const gameRef=useRef(game)
@@ -304,6 +304,20 @@ export default function GameMap({game,fields,players,onReveal,onTrapPlace,trapMo
     if(map.loaded())apply();else map.once('load',apply)
   },[analysisHint])
 
+  function centerOnGame(){
+    const map=mapRef.current
+    const cg=gameRef.current
+    if(!map||!cg)return
+    const g=geometry(cg)
+    try{
+      map.fitBounds([[g.west,g.south],[g.east,g.north]],{
+        padding:36,
+        maxZoom:15,
+        duration:650
+      })
+    }catch{}
+  }
+
   function switchMapMode(mode){
     const map=mapRef.current
     if(!map||mode===mapMode)return
@@ -375,10 +389,12 @@ export default function GameMap({game,fields,players,onReveal,onTrapPlace,trapMo
 
   return <div className="worldMapShell">
     <div ref={holder} className="worldMap"/>
+    {mobileHud}
     <div className="mapModeSwitch">
       <button type="button" className={'miniBtn '+(mapMode==='map'?'active':'')} onClick={()=>switchMapMode('map')}>🗺️ Karte</button>
       <button type="button" className={'miniBtn '+(mapMode==='satellite'?'active':'')} onClick={()=>switchMapMode('satellite')}>🛰️ Satellit</button>
     </div>
+    <button type="button" className="mapCenterBtn" onClick={centerOnGame}>◎ Zum Spielfeld</button>
     {status&&<div className="mapLoadingOverlay">{status}</div>}
   </div>
 }

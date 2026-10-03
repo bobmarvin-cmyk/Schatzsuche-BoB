@@ -114,7 +114,7 @@ export default function Profile(){
   </div>
 
   <div className="grid profileStats">
-   <div className="card goldMiniCard"><div className="small">Test-Goldstaub</div><div className="stat">✨ {formatGold(wallet?.balance_ug||0)}</div></div>
+   <div className="card goldMiniCard"><div className="small">Goldstaub</div><div className="stat">✨ {formatGold(wallet?.balance_ug||0)}</div></div>
    <div className="card"><div className="small">Spiele</div><div className="stat">{p.total_games}</div></div>
    <div className="card"><div className="small">Siege</div><div className="stat">{p.wins}</div></div>
    <div className="card"><div className="small">Erforschte Felder</div><div className="stat">{Number(p.total_fields_revealed||0).toLocaleString('de-DE')}</div></div>

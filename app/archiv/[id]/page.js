@@ -60,7 +60,7 @@ export default function ArchivedGame(){
 
   {archive.game_type==='pay'&&<section className="panel">
    <h2>✨ Goldstaub-Verteilung</h2>
-   <p className="small">Auszahlung der gefundenen Test-Gold-Schatzteile in diesem Spiel. Insgesamt an Schatzfinder ausgezahlt: <strong>✨ {(players.reduce((sum,p)=>sum+Number(p.gold_received_ug||0),0)/1000000).toFixed(6)} g</strong>.</p>
+   <p className="small">Auszahlung der gefundenen Gold-Schatzteile in diesem Spiel. Insgesamt an Schatzfinder ausgezahlt: <strong>✨ {(players.reduce((sum,p)=>sum+Number(p.gold_received_ug||0),0)/1000000).toFixed(6)} g</strong>.</p>
    <div className="goldDistributionSummary">
     <div className="card"><div className="small">Community gesamt</div><div className="stat">✨ {(Number(archive.community_distributed_ug||0)/1000000).toFixed(6)} g</div></div>
     <div className="card"><div className="small">Community-Empfänger</div><div className="stat">{Number(archive.community_recipient_count||0)}</div></div>

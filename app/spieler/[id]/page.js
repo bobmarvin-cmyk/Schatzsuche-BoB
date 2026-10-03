@@ -34,7 +34,7 @@ export default function PublicProfile(){
    <div className="card"><div className="small">Siege</div><div className="stat">{p.wins}</div></div>
    <div className="card"><div className="small">Spiele</div><div className="stat">{p.total_games}</div></div>
    <div className="card"><div className="small">Erforschte Felder</div><div className="stat">{Number(p.total_fields_revealed||0).toLocaleString('de-DE')}</div></div>
-   <div className="card"><div className="small">Gefundenes Test-Gold</div><div className="stat">{formatGold(p.gold_found_ug||0)}</div></div>
+   <div className="card"><div className="small">Gefundenes Gold</div><div className="stat">{formatGold(p.gold_found_ug||0)}</div></div>
    <div className="card"><div className="small">Mitglied seit</div><div className="stat memberSince">{p.created_at?new Date(p.created_at).toLocaleDateString('de-DE',{month:'short',year:'numeric'}):'–'}</div></div>
   </section>
  </main>

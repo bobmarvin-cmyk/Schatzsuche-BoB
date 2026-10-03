@@ -73,17 +73,18 @@ export default function FirstLoginHelp(){
       </div>
 
       <div className="introInfoBox">
-        <strong>🆓 Schatzsuchee</strong>
+        <strong>🆓 Schatzsuchen</strong>
         <span>sind kostenlos.</span>
       </div>
 
       <div className="introInfoBox gold">
         <strong>✨ Goldgames</strong>
-        <span>verwenden derzeit ausschließlich Test-Goldstaub ohne Echtgeldwert.</span>
+        <span>verwenden Goldstaub als spielinterne Ressource.</span>
       </div>
 
       <div className="introActions">
-        <button className="btn primary" onClick={close}>Verstanden – los geht's</button>
+        <a className="btn primary" href="/tutorial" onClick={close}>🎓 Tutorial starten</a>
+        <button className="btn" onClick={close}>Direkt zur Lobby</button>
         <a className="btn" href="/hilfe" onClick={close}>Ausführliche Hilfe</a>
       </div>
     </div>

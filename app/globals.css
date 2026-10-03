@@ -693,3 +693,124 @@ button:disabled{cursor:not-allowed;opacity:.45}
  .analysisPurchaseHead .btn{width:100%}
  .winnerActions{display:grid;grid-template-columns:1fr}
 }
+
+/* V6.16 – kompakte Vollwerte, Map-Zentrierung, Barren */
+.mapCenterBtn{
+ position:absolute;left:50%;bottom:10px;z-index:9;transform:translateX(-50%);
+ border:1px solid #476587;background:rgba(11,19,31,.88);color:#eef5ff;
+ border-radius:999px;padding:6px 10px;font-size:10px;font-weight:800;
+ backdrop-filter:blur(6px);box-shadow:0 5px 18px rgba(0,0,0,.28)
+}
+.mapCenterBtn:hover{background:#203a59}
+@media(max-width:700px){
+ .gameTopPanel.mobileAllStats{
+   position:fixed;left:6px;right:6px;top:5px;z-index:80;
+   padding:5px 6px;margin:0;border-radius:11px!important;
+   max-height:none;overflow:visible
+ }
+ .gameTopPanel.mobileAllStats .worldMeta{display:none}
+ .gameTopPanel.mobileAllStats .gameTopTitle{margin-bottom:4px}
+ .gameTopPanel.mobileAllStats h1{
+   font-size:12px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+ }
+ .gameTopPanel.mobileAllStats .gameStatsBody{display:block}
+ .gameTopPanel.mobileAllStats .gameQuickStats{
+   display:grid;
+   grid-template-columns:repeat(4,minmax(0,1fr));
+   gap:3px;
+   overflow:visible;
+   padding:0
+ }
+ .gameTopPanel.mobileAllStats .quickStat{
+   min-width:0;padding:3px 3px;border-radius:6px;text-align:center
+ }
+ .gameTopPanel.mobileAllStats .quickStat span{
+   font-size:6.5px;line-height:1;min-height:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+ }
+ .gameTopPanel.mobileAllStats .quickStat strong{
+   font-size:9.5px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+ }
+ .gameTopPanel.mobileAllStats .regenBarText{font-size:7.5px;margin-top:3px;line-height:1.1}
+ .gameTopPanel.mobileAllStats .machineStatusCompact{margin-top:3px;padding:3px 4px;font-size:8px}
+ .gameTopPanel.mobileAllStats .machineStatusCompact .miniBtn{font-size:8px;padding:3px 5px}
+ .gamePage{padding-top:110px}
+ .mapCenterBtn{bottom:8px;padding:5px 8px;font-size:9px}
+}
+
+/* V6.16a – Karten-HUD + Presence */
+.mobileMapHud{display:none}
+.playerStatusCard.online{border-color:#3d785b;box-shadow:0 0 0 1px rgba(70,180,120,.12) inset}
+.playerStatusCard.offline{opacity:.72}
+.presenceLabel{margin-left:auto;font-size:9px;color:#75859b;font-weight:700}
+.presenceLabel.online{color:#63d391}
+.onlineDot{margin-left:4px;color:#63d391;font-size:9px}
+.legendItem.offline{opacity:.55}
+.legendItem.online{font-weight:700}
+.gameMapPanel{position:relative}
+
+@media(max-width:700px){
+  .gameTopPanel.mobileAllStats{display:none!important}
+  .gamePage{padding-top:0!important}
+  .gameMapPanel{padding-top:8px}
+  .mobileMapHud{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:3px;
+    position:absolute;
+    left:12px;
+    right:12px;
+    top:8px;
+    z-index:24;
+    padding:4px;
+    border-radius:9px;
+    background:rgba(7,14,24,.76);
+    border:1px solid rgba(100,130,165,.35);
+    backdrop-filter:blur(7px);
+    pointer-events:none;
+    box-shadow:0 5px 18px rgba(0,0,0,.24)
+  }
+  .mobileHudStat{
+    min-width:0;
+    padding:3px 4px;
+    border-radius:6px;
+    text-align:center;
+    background:rgba(25,40,60,.76)
+  }
+  .mobileHudStat span{
+    display:block;
+    font-size:6.5px;
+    color:#91a6bf;
+    line-height:1;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis
+  }
+  .mobileHudStat b{
+    display:block;
+    font-size:9.5px;
+    line-height:1.15;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis
+  }
+}
+
+/* Tutorial */
+.tutorialHero{display:flex;align-items:center;justify-content:space-between;gap:16px}
+.tutorialProgress{font-size:22px;font-weight:900}
+.tutorialLayout{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);gap:12px}
+.tutorialGame{position:relative}
+.tutorialHud{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px}
+.tutorialHud span{background:#16253a;border:1px solid #304760;border-radius:8px;padding:5px;text-align:center}
+.tutorialHud small,.tutorialHud b{display:block}
+.tutorialHud small{font-size:8px;color:#91a6bf}.tutorialHud b{font-size:14px}
+.tutorialMap{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;aspect-ratio:1.55;background:#07111f;padding:5px;border-radius:12px}
+.tutorialCell{border:1px solid #26384f;background:#101b2c;border-radius:5px;color:white;font-size:20px;cursor:pointer}
+.tutorialCell.revealed{background:#2c5782}.tutorialCell.trap{background:#51263f}.tutorialCell.treasure{background:#66561d}
+.tutorialCoach{align-self:start}.tutorialCallout{padding:10px;border-radius:9px;background:#1a304c;border:1px solid #395b83}
+.tutorialTechCard{display:grid;gap:3px;margin-top:12px;padding:10px;border-radius:9px;background:#16253a;border:1px solid #304760}
+.tutorialHint{margin-top:9px;padding:8px;border-radius:8px;background:#1e2944;border:1px solid #495b84}
+.tutorialRanking{margin-top:9px;padding:9px;border-radius:8px;background:#111d30;border:1px solid #30445d}
+.tutorialRanking>div{display:flex;justify-content:space-between;padding-top:5px}.tutorialOnline{font-size:9px;color:#63d391}
+.tutorialActions{display:flex;gap:7px;flex-wrap:wrap}
+@media(max-width:760px){.tutorialLayout{grid-template-columns:1fr}.tutorialHero{align-items:flex-start}.tutorialMap{aspect-ratio:1.2}}

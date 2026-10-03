@@ -72,7 +72,7 @@ export default function Lobby(){
  async function claimTestGold(){
    const {data,error}=await supabase.rpc('claim_test_gold_v65')
    if(error){setMsg(error.message);return}
-   setMsg(data?.message||'Test-Goldstaub gutgeschrieben.')
+   setMsg(data?.message||'Goldstaub gutgeschrieben.')
    await loadWallet()
  }
 
@@ -186,11 +186,11 @@ export default function Lobby(){
 
   <div className="panel heroPanel">
    <div className="heroSplit">
-    <div><h1>Lobby</h1><p className="muted">Schatzsuchen sind kostenlos. Goldgames laufen ausschließlich mit <strong>Test-Goldstaub ohne Echtgeldwert</strong>.</p><p className="small">Spiele ohne Zug werden nach {inactivityHours} Stunden automatisch geschlossen. Die großen Live-Daten geschlossener Spiele werden nach {Math.round(retentionHours/24)} Tagen bereinigt; der Endstand bleibt dauerhaft in der Hall of Fame.</p></div>
+    <div><h1>Lobby</h1><p className="muted">Schatzsuchen sind kostenlos. Goldgames laufen ausschließlich mit <strong>Goldstaub ohne Echtgeldwert</strong>.</p><p className="small">Spiele ohne Zug werden nach {inactivityHours} Stunden automatisch geschlossen. Die großen Live-Daten geschlossener Spiele werden nach {Math.round(retentionHours/24)} Tagen bereinigt; der Endstand bleibt dauerhaft in der Hall of Fame.</p></div>
     <div className="goldWalletCard">
-     <div className="small">Test-Goldstaub</div>
+     <div className="small">Goldstaub</div>
      <div className="goldBalance">✨ {formatGold(wallet?.balance_ug||0)}</div>
-     {!wallet?.test_grant_claimed&&<button className="btn goldBtn" onClick={claimTestGold}>0,25 g Test-Gold holen</button>}
+     {!wallet?.test_grant_claimed&&<button className="btn goldBtn" onClick={claimTestGold}>0,25 g Gold holen</button>}
     </div>
    </div>
   </div>
@@ -204,7 +204,7 @@ export default function Lobby(){
     </div>
 
     {gameType==='pay'&&<div className="goldRulesBox">
-     <strong>Test-Goldstaub-Verteilung</strong>
+     <strong>Goldstaub-Verteilung</strong>
      <div>{prizePct}% Schatzpool · {communityPct}% Community-Ausschüttung · {platformPct}% Plattformanteil</div>
      <div className="small">Diese Quoten kann nur die Spielleitung serverseitig ändern.</div>
     </div>}
@@ -243,7 +243,7 @@ export default function Lobby(){
 
       {gameType==='pay'&&<>
        <label>Schürfrechte / Teilnahme pro Spieler</label>
-       <div className="goldInputRow"><input className="input" type="number" min="0.001" step="0.001" value={entryGold} onChange={e=>setEntryGold(e.target.value)}/><span>g Test-Gold</span></div>
+       <div className="goldInputRow"><input className="input" type="number" min="0.001" step="0.001" value={entryGold} onChange={e=>setEntryGold(e.target.value)}/><span>g Gold</span></div>
        <div className="small">Auch der Host zahlt beim Erstellen denselben Einsatz.</div>
       </>}
 

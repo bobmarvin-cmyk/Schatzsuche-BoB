@@ -1,144 +1,171 @@
-SCHATZSUCHE ONLINE V6.15.1
+SCHATZSUCHE ONLINE V6.16a
 
-1. FELDERZÄHLER REALTIME FIX
-Problem:
-Die serverseitige Zahl stieg korrekt, aber fremde Spieler sahen die Änderung oft erst,
-wenn sie selbst wieder eine Aktion ausführten.
+WICHTIG
+Diese Version ersetzt die noch NICHT installierte V6.16.
+Die Goldbarren-Funktion wurde vollständig wieder entfernt.
 
-Fix:
-- game_players wird sicher zur Supabase-Realtime-Publikation hinzugefügt
-- Replica Identity für zuverlässige UPDATE-Ereignisse
-- der bestehende Client hört bereits auf game_players
-- dadurch aktualisieren sich Feldzahlen und Ingame-Ranking ohne zusätzliches Polling
+1. MOBILE INGAME-WERTE ALS KARTEN-HUD
+Auf Mobilgeräten wird die große Wertebox nicht mehr oberhalb der Karte angezeigt.
 
-Es entsteht also kein neuer dauernder Polling-Traffic.
-
-2. INGAME-RANKING
-„Suchfläche“ wurde entfernt.
-
-Verbleibende Kategorien:
+Stattdessen liegt direkt am oberen Kartenrand ein kleines halbtransparentes HUD mit:
 - Taler
-- Ausbau / erworbene Technologien
-- tatsächlich aufgedeckte Felder
+- Züge
+- Felder/Zug
+- Felder/Minute
+- Felder übrig
+- Analyse
+- Maschinenleistung
 - Schatzanteil
 
-3. GLOBALE MELDUNG FÜR EXKLUSIVE TECHNOLOGIEN
-Wenn ein Spieler eine exklusive Technologie zuerst sichert, erscheint bei allen
-verbundenen Teilnehmern ein deutliches Popup.
+Das HUD ist nicht klickbar und liegt nur am Kartenrand, sodass es die Bedienung der Karte
+möglichst wenig stört. Desktop bleibt bei der normalen Werteübersicht.
 
-4. GLOBALE ENDCARD
-Wenn ein Spieler gewinnt, erhalten alle aktuell verbundenen Teilnehmer eine Endcard.
+2. TUTORIAL / SIMULIERTES TESTSPIEL
+Neue Seite:
+  /tutorial
 
-Sie zeigt:
-- Gewinner
-- Schatzanteil
-- Züge des Gewinners
-- Gewinner-Taler->Gold-Bonus, falls vorhanden
+Neue Nutzer bekommen im bestehenden Willkommensfenster zusätzlich:
+  🎓 Tutorial starten
 
-Der Gewinner sieht „Du hast gewonnen“, andere sehen den Namen des Gewinners.
+Das Tutorial ist komplett lokal simuliert:
+- Felder erkunden
+- Taler erhalten
+- Technologie kaufen
+- Analysehinweis kaufen
+- Falle platzieren
+- Ranking ansehen
+- Schatz finden
 
-5. GLEICHES SPIEL NOCHMAL
-Die Endcard enthält:
-  🔁 Gleiches Spiel nochmal
+Es verbraucht keine echten Züge, Taler oder Gold und verändert kein echtes Spiel.
+Das Tutorial kann später jederzeit erneut geöffnet werden.
 
-Damit erstellt der klickende Spieler ein neues Game mit denselben Einstellungen:
-- Feldanzahl
-- Feldgröße
-- Spielerzahl
-- Zugregeneration
-- Zugspeicher
-- Spieltyp
-- Goldgame-Einsatz
-- Schatzteile
-- Gimmickdichte
-- Standortmodus
+3. GOLD-BEZEICHNUNGEN
+Der Begriff „Test“ wurde aus allen sichtbaren Gold-Bezeichnungen entfernt.
 
-Bei Zufallsspielen bleibt „Zufall“ die Einstellung, daher wird erneut ein neuer
-Zufallsort gewählt.
+Sichtbar heißt es jetzt nur noch:
+- Goldstaub
+- Goldgame
+- Gold
+- Goldstaub-Ökonomie
 
-6. KREATIVERE SPIELNAMEN
-„Mein Spiel“ ist verschwunden.
+Interne Datenbanknamen wie test_grant_ug bleiben aus Kompatibilitätsgründen unverändert.
 
-Beim Öffnen der Lobby wird automatisch ein abwechslungsreicher Name erzeugt, z.B.:
-- NebelJagd
-- KompassQuest
-- NordlichtExpedition
-- DrachenSpur
-- AtlasMission
-- FjordAbenteuer
+4. ONLINE-ANZEIGE
+Aktive Spieler werden über Supabase Realtime Presence erkannt.
 
-Der Nutzer kann den Namen weiterhin ganz normal überschreiben.
+Vorteile:
+- kein Datenbank-Heartbeat
+- keine zusätzlichen UPDATEs alle paar Sekunden
+- Spielerkarte wird grün hervorgehoben
+- „● online“ im Spielerbereich
+- Online-Markierung auch im Ranking
+- Kartenlegende zeigt aktive Spieler deutlicher
 
-Auch „Gleiches Spiel nochmal“ erhält serverseitig einen neuen kreativen Namen.
+5. AUTHENTIFIZIERUNGSMAIL / BRANDING
+Das lässt sich nicht sinnvoll nur im App-Code ändern.
 
-7. ANALYSE NEU BALANCIERT
-Analysehinweise erscheinen NICHT mehr automatisch nach jedem manuellen Zug.
+Empfohlen:
+Supabase Dashboard -> Authentication -> SMTP Settings
 
-Stattdessen:
-- Analyse-Technologie erwerben
-- manuell auf der Karte suchen
-- separat „Hinweis kaufen“ drücken
-- Taler bezahlen
-- einmaligen Richtungs-/Entfernungshinweis erhalten
+Eigenen SMTP-Anbieter eintragen, z. B.:
+- Resend
+- Postmark
+- SendGrid
+- Amazon SES
 
-Für dieselbe letzte Suchposition kann kein zweiter Hinweis gekauft werden.
-Erst nach einer neuen manuellen Suche ist eine weitere Analyse möglich.
+Dann:
+Sender name:
+  BoBs Schatzsuche
 
-Standardpreis:
-  5 Taler × Analyse-Stufe
+Absenderadresse z. B.:
+  login@deinedomain.de
 
-Beispiele:
-- Analyse Stufe 1 = 5 Taler
-- Stufe 2 = 10 Taler
-- Stufe 5 = 25 Taler
+Danach unter:
+Authentication -> Email Templates
 
-Der Grundpreis ist in der Schaltzentrale veränderbar:
-  Analyse-Grundpreis je Stufe (Taler)
+Betreff und HTML für:
+- Registrierung bestätigen
+- Passwort zurücksetzen
+- Magic Link
+- Einladungen
 
-Damit lässt sich Analyse Stufe 1 nicht mehr kostenlos Zug für Zug zur Schatzposition
-nachführen.
+brandgerecht anpassen.
+
+6. PERFORMANCE FÜR GROSSE SPIELE
+V6.16a reduziert die Realtime-Last weiter.
+
+Vorher wurden unter anderem game_players, games und Technologien als Postgres-Changes
+an jeden offenen Client verteilt.
+
+Jetzt:
+- nur seltene globale Ereignisse bleiben als unmittelbare Realtime-Events
+- Presence übernimmt ausschließlich „wer ist online“
+- ein kompakter Live-State wird alle 5 Sekunden abgefragt
+- dieser Live-State enthält in EINER Antwort:
+  - globale Feldzahl
+  - Feldversion
+  - Spielstatus
+  - Spielerwerte
+  - Rankingwerte
+  - nachzuholende globale Events
+- sichtbare Kartenfelder werden nur neu geladen, wenn field_version wirklich geändert wurde
+- zusätzliche Datenbank-Indizes für häufige Multiplayer-Abfragen
+
+Bei 100 verbundenen Spielern bedeutet das ungefähr 20 kleine Live-State-Abfragen pro Sekunde,
+statt potenziell tausender Feld-/Spieler-Realtime-Nachrichten.
+
+7. „FELDER ÜBRIG“ GLOBAL
+Der Wert kommt aus games.explored_count.
+Jeder Suchvorgang erhöht zusätzlich field_version.
+
+Andere Clients übernehmen den Wert über den gemeinsamen Live-State.
+Sie müssen dafür nicht selbst klicken.
+
+8. GLOBALE POPUPS
+Realtime bleibt für schnelle Anzeige erhalten.
+Der Live-State dient zusätzlich als zuverlässiger Nachholmechanismus.
+
+Damit werden folgende Ereignisse robuster:
+- Schatzteil gefunden
+- Falle ausgelöst
+- Schatz unter Falle
+- einzigartige Technologie gesichert
+- Spiel gewonnen/verloren
+
+9. ANALYSEPREISE
+Jede Analysestufe hat weiterhin ihren eigenen Preis in der Schaltzentrale:
+- Stufe 1
+- Stufe 2
+- Stufe 3
+- Stufe 4
+- Stufe 5
+- Stufe 6+
+
+10. ZUM SPIELFELD
+Der Kartenbutton
+  ◎ Zum Spielfeld
+bleibt enthalten und zoomt auf das vollständige Spielraster zurück.
 
 INSTALLATION
-
-1. Inhalt der ZIP in dein bestehendes GitHub-Repository hochladen.
-2. Vorhandene Dateien ersetzen.
-3. .env.local NICHT hochladen.
-4. Supabase -> SQL Editor.
-5. NUR:
-   supabase/v6_15_1_migration.sql
+1. V6.16 NICHT vorher installieren.
+2. Inhalt dieser ZIP in dein bestehendes GitHub-Repository hochladen.
+3. Vorhandene Dateien ersetzen.
+4. .env.local NICHT hochladen.
+5. Supabase -> SQL Editor.
+6. NUR:
+   supabase/v6_16a_migration.sql
    einmal vollständig ausführen.
-6. Vercel deployt automatisch.
+7. Vercel deployt automatisch.
 
 VORAUSSETZUNG
-V6.15 muss bereits installiert sein.
+V6.15.1 muss bereits installiert sein.
 
-TESTEMPFEHLUNG
-
-A) Realtime Felder
-- Zwei Browser / zwei Spieler öffnen
-- Spieler A deckt Felder auf
-- Spieler B darf NICHT selbst klicken müssen
-- Feldzahl von A muss bei B automatisch steigen
-
-B) Exklusive Technologie
-- Spieler A kauft eine exklusive Fähigkeit
-- bei Spieler B muss Popup erscheinen
-
-C) Gewinn
-- Spiel mit zwei Spielern beenden
-- Gewinner und Verlierer müssen jeweils eine Endcard sehen
-
-D) Gleiches Spiel
-- Endcard -> „Gleiches Spiel nochmal“
-- neues Game kontrollieren
-
-E) Analyse
-- Analyse-Tech besitzen
-- manuell suchen
-- Hinweis kaufen
-- nochmal kaufen ohne neue Suche -> muss blockiert werden
-- neu suchen -> nächster kostenpflichtiger Hinweis möglich
-
-F) Namen
-- Lobby mehrfach neu öffnen
-- unterschiedliche vorgeschlagene Namen prüfen
+EMPFOHLENE TESTS
+A) Zwei Browser öffnen dasselbe Game.
+B) Spieler A deckt große Feldmengen auf.
+C) Spieler B klickt nichts:
+   Felder übrig / Ranking / Spielerwerte müssen trotzdem nachziehen.
+D) Beide Browser offen lassen und Schatz/Falle/exklusive Tech testen.
+E) Prüfen, ob Online-Spieler grün/„online“ angezeigt werden.
+F) Handy: HUD über Kartenrand prüfen.
+G) Neuer Nutzer: Tutorial starten und komplett durchlaufen.
