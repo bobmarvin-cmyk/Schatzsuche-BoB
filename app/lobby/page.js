@@ -4,10 +4,19 @@ import {supabase} from '../../lib/supabase-browser'
 import {formatGold,goldToUg} from '../../lib/gold'
 import FirstLoginHelp from '../../components/FirstLoginHelp'
 
+const NAME_LEFT=['Nebel','Nordlicht','Kompass','Atlas','Mond','Falken','Gold','Schatten','Fjord','Drachen','Wolken','Glut','Sternen','Wild','Dschungel','Wüsten']
+const NAME_RIGHT=['Jagd','Pfad','Quest','Rallye','Expedition','Mission','Odyssee','Spur','Fährte','Abenteuer','Challenge','Suche','Sprint','Reise','Geheimnis','Runde']
+function creativeGameName(){
+ const a=NAME_LEFT[Math.floor(Math.random()*NAME_LEFT.length)]
+ const b=NAME_RIGHT[Math.floor(Math.random()*NAME_RIGHT.length)]
+ return a+b
+}
+
+
 export default function Lobby(){
  const [games,setGames]=useState([]),[isAdmin,setIsAdmin]=useState(false),[authReady,setAuthReady]=useState(false)
  const [wallet,setWallet]=useState(null),[settings,setSettings]=useState(null)
- const [name,setName]=useState('Mein Spiel'),[msg,setMsg]=useState('')
+ const [name,setName]=useState('Neue Schatzsuche'),[msg,setMsg]=useState('')
  const [mode,setMode]=useState('random')
  const [lat,setLat]=useState('49.52'),[lon,setLon]=useState('7.14'),[label,setLabel]=useState('Zuhause')
  const [fields,setFields]=useState(100000),[cellSize,setCellSize]=useState(100)
@@ -18,6 +27,7 @@ export default function Lobby(){
  const [placeQuery,setPlaceQuery]=useState(''),[placeResults,setPlaceResults]=useState([]),[placeSearching,setPlaceSearching]=useState(false),[selectedPlaceLabel,setSelectedPlaceLabel]=useState('')
 
  useEffect(()=>{
+   setName(creativeGameName())
    init()
    const channel=supabase.channel('games-live')
     .on('postgres_changes',{event:'*',schema:'public',table:'games'},()=>loadGames()).subscribe()

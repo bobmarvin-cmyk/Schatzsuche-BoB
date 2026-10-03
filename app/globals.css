@@ -667,3 +667,29 @@ button:disabled{cursor:not-allowed;opacity:.45}
 }
 
 .selectedPlace{margin-top:7px;padding:6px 8px;border-radius:8px;background:#142a22;border:1px solid #315b49;font-size:11px}
+
+/* V6.15.1 – Analyse, globale Meldungen, Endcard */
+.analysisPurchaseBox{
+ margin-top:8px;padding:8px 10px;border-radius:10px;
+ background:#172239;border:1px solid #344967
+}
+.analysisPurchaseHead{
+ display:flex;align-items:center;justify-content:space-between;gap:10px
+}
+.analysisPurchaseHead .btn{flex:0 0 auto}
+.globalAchievementOverlay{
+ position:fixed;inset:0;z-index:10066;background:rgba(3,8,17,.66);
+ backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;padding:18px
+}
+.globalAchievementPopup{
+ width:min(410px,100%);text-align:center;background:#171d31;
+ border:1px solid #6d5ba3;border-radius:19px;padding:21px;
+ box-shadow:0 24px 80px rgba(0,0,0,.58)
+}
+.globalAchievementIcon{font-size:50px;margin-bottom:5px}
+.globalAchievementPopup h2{margin:5px 0 8px}
+@media(max-width:700px){
+ .analysisPurchaseHead{align-items:flex-start;flex-direction:column}
+ .analysisPurchaseHead .btn{width:100%}
+ .winnerActions{display:grid;grid-template-columns:1fr}
+}

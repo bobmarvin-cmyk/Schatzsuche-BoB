@@ -11,7 +11,7 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins')
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisBaseCost,setAnalysisBaseCost]=useState(5),[analysisBuying,setAnalysisBuying]=useState(false)
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now())
 
  useEffect(()=>{
@@ -25,11 +25,37 @@ export default function Game(){
    .on('postgres_changes',{event:'*',schema:'public',table:'game_players',filter:`game_id=eq.${id}`},()=>{loadPlayersOnly();loadCompetition()})
    .on('postgres_changes',{event:'*',schema:'public',table:'games',filter:`id=eq.${id}`},()=>{loadGameOnly();loadActiveGames()})
    .on('postgres_changes',{event:'*',schema:'public',table:'player_technologies',filter:`game_id=eq.${id}`},()=>{loadOwnedOnly();loadCompetition()})
-   .on('postgres_changes',{event:'INSERT',schema:'public',table:'game_events',filter:`game_id=eq.${id}`},payload=>{setGameEvent(payload.new);setTimeout(()=>setGameEvent(null),7000)})
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'game_events',filter:`game_id=eq.${id}`},payload=>handleRealtimeGameEvent(payload.new))
    .subscribe()
   const timer=setInterval(()=>setTick(t=>t+1),1000)
   return()=>{supabase.removeChannel(ch);clearInterval(timer);clearTimeout(viewportTimer.current)}
  },[id])
+
+ async function handleRealtimeGameEvent(evt){
+  if(!evt)return
+  if(evt.event_type==='game_won'){
+    const {data:{user:meNow}}=await supabase.auth.getUser()
+    const d=evt.details||{}
+    setWinnerCelebration({
+      won:meNow?.id===d.winner_id,
+      name:d.winner_name||'Spieler',
+      moves:Number(d.winner_moves_used||0),
+      opened:0,
+      share:Number(d.winner_share_bps||0),
+      talerGold:Number(d.winner_taler_gold_ug||0)
+    })
+    await Promise.all([loadGameOnly(),loadPlayersOnly(),loadCompetition(),loadActiveGames()])
+    return
+  }
+  if(evt.event_type==='exclusive_tech'){
+    const popup={type:'exclusive',message:evt.message||'Eine exklusive Fähigkeit wurde gesichert.'}
+    setGlobalPopup(popup)
+    setTimeout(()=>setGlobalPopup(current=>current===popup?null:current),4000)
+    return
+  }
+  setGameEvent(evt)
+  setTimeout(()=>setGameEvent(current=>current?.id===evt.id?null:current),7000)
+ }
 
  async function init(){
   const {data:{user}}=await supabase.auth.getUser()
@@ -151,13 +177,14 @@ export default function Game(){
  async function load(){
   const {data:{user}}=await supabase.auth.getUser()
   try{
-    const [g,p,t,w,gt,tech]=await Promise.all([
+    const [g,p,t,w,gt,tech,ps]=await Promise.all([
       supabase.from('games').select('*').eq('id',id).single(),
       supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,fields_revealed,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
       supabase.rpc('get_treasure_status_v610',{p_game_id:id}),
-      supabase.from('technologies').select('id,name,branch,cost,reveal_power_bonus,reward_bonus,analysis_level,capacity_bonus,regen_reduction,machine_auto_fields,exclusive_per_game,trap_type,trap_power,trap_limit,requires,description,sort_order,is_active').eq('is_active',true).order('sort_order',{ascending:true}).order('id',{ascending:true})
+      supabase.from('technologies').select('id,name,branch,cost,reveal_power_bonus,reward_bonus,analysis_level,capacity_bonus,regen_reduction,machine_auto_fields,exclusive_per_game,trap_type,trap_power,trap_limit,requires,description,sort_order,is_active').eq('is_active',true).order('sort_order',{ascending:true}).order('id',{ascending:true}),
+      supabase.from('platform_settings').select('analysis_hint_base_cost').eq('id',1).single()
     ])
 
     setGame(g.data)
@@ -166,6 +193,7 @@ export default function Game(){
     setWallet(w.data)
     setGoldTreasures(gt.data||[])
     setTechnologies(tech.data||[])
+    setAnalysisBaseCost(Number(ps.data?.analysis_hint_base_cost||5))
     loadActiveGames();loadOwnTraps();loadCompetition()
   }catch(err){
     setMsg('Fehler beim Laden der Karte: '+(err?.message||String(err)))
@@ -202,7 +230,7 @@ export default function Game(){
   setMsg('Suche läuft…')
   try{
     await supabase.rpc('set_machine_focus_v690',{p_game_id:id,p_x:x,p_y:y})
-    const {data,error}=await supabase.rpc('reveal_area_v614',{p_game_id:id,p_x:x,p_y:y})
+    const {data,error}=await supabase.rpc('reveal_area_v6151',{p_game_id:id,p_x:x,p_y:y})
     if(error){setMsg(error.message);return}
 
     setMsg(data?.message||'Gebiet untersucht')
@@ -222,9 +250,6 @@ export default function Game(){
     // Der Server schickt nicht mehr tausende Feldobjekte zurück.
     // Nur der sichtbare Ausschnitt wird einmal kompakt neu geladen.
     if(currentViewport.current)await loadVisibleFields(currentViewport.current)
-
-    const {data:hint}=await supabase.rpc('get_analysis_hint_v68',{p_game_id:id,p_x:x,p_y:y})
-    if(hint){setAnalysisHint(hint);setAnalysisFeatures([])}
 
     // Nur kleine Statusdaten nachladen. Die komplette Feldliste bleibt unangetastet.
     await Promise.all([loadPlayersOnly(),loadGameOnly(),loadGoldOnly()])
@@ -259,7 +284,7 @@ export default function Game(){
   machineBusy.current=true
   try{
     await supabase.rpc('machine_presence_v690',{p_game_id:id})
-    const {data,error}=await supabase.rpc('run_machines_game_v614',{p_game_id:id})
+    const {data,error}=await supabase.rpc('run_machines_game_v6151',{p_game_id:id})
     if(error){
       if(!error.message?.includes('Noch nicht fällig'))setMsg('Maschinen: '+error.message)
       return
@@ -283,6 +308,24 @@ export default function Game(){
   }finally{
     machineBusy.current=false
   }
+ }
+
+ async function buyAnalysis(){
+  if(analysisBuying)return
+  setAnalysisBuying(true);setMsg('Analyse läuft…')
+  const {data,error}=await supabase.rpc('buy_analysis_hint_v6151',{p_game_id:id})
+  setAnalysisBuying(false)
+  if(error){setMsg(error.message);return}
+  setAnalysisHint(data)
+  setMsg(`Analyse gekauft · ${Number(data?.cost||0).toFixed(2)} Taler`)
+  await loadPlayersOnly()
+ }
+
+ async function recreateSameGame(){
+  setMsg('Erzeuge neues Spiel mit gleichen Einstellungen…')
+  const {data,error}=await supabase.rpc('create_same_game_v6151',{p_game_id:id})
+  if(error){setMsg(error.message);return}
+  if(data)location.href='/game/'+data
  }
 
  async function buy(t){
@@ -354,7 +397,6 @@ export default function Game(){
  const rankTabs=[
   ['coins','💰 Taler'],
   ['tech_count','🧠 Ausbau'],
-  ['reveal_power','🔎 Suchfläche'],
   ['fields_revealed','🗺️ Felder'],
   ['treasure_share_bps','🧩 Schatz']
  ]
@@ -446,9 +488,14 @@ export default function Game(){
      <div className="mapLegend">{players.map(p=><div className="legendItem" key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.profiles?.display_name||'Spieler'}</div>)}</div>
     </div>
     {game&&<><div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name}</button>)}</>}</div><GameMap game={game} fields={fields} players={players} onReveal={reveal} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}/></>}
-    {analysisHint&&<div className="analysisHintBox compactAnalysisHint">
-      <strong>🧭 Analyse Stufe {analysisHint.level}</strong>
-      <div>{analysisHint.text}</div>
+    {Number(me?.analysis_level||0)>0&&<div className="analysisPurchaseBox">
+      <div className="analysisPurchaseHead">
+       <div><strong>🧭 Analyse Stufe {me.analysis_level}</strong><div className="small">Ein Hinweis pro neuer manueller Suchposition.</div></div>
+       <button className="btn" disabled={analysisBuying} onClick={buyAnalysis}>
+        {analysisBuying?'Analysiert…':`Hinweis kaufen · ${(Number(analysisBaseCost)*Number(me.analysis_level||1)).toFixed(2)} T`}
+       </button>
+      </div>
+      {analysisHint&&<div className="analysisHintBox compactAnalysisHint"><div>{analysisHint.text}</div><div className="small">Bezahlt: {Number(analysisHint.cost||0).toFixed(2)} Taler</div></div>}
     </div>}
     <p className="statusLine">{msg}</p>
    </section>
@@ -513,6 +560,16 @@ export default function Game(){
    </div>
   </div>}
 
+  {globalPopup&&<div className="globalAchievementOverlay" role="dialog" aria-modal="true">
+   <div className="globalAchievementPopup">
+    <div className="globalAchievementIcon">🔒⚡</div>
+    <div className="small">EINZIGARTIGE FÄHIGKEIT</div>
+    <h2>Technologie gesichert!</h2>
+    <p>{globalPopup.message}</p>
+    <button className="btn" onClick={()=>setGlobalPopup(null)}>Weiter</button>
+   </div>
+  </div>}
+
   {winnerCelebration&&<div className="winnerOverlay" role="dialog" aria-modal="true">
    <div className="winnerModal">
     <div className="winnerBurst">{winnerCelebration.won?'🏆':'🏁'}</div>
@@ -528,6 +585,7 @@ export default function Game(){
     {winnerCelebration.talerGold>0&&<div className="winnerGoldBonus">✨ Gewinnerbonus: {formatGold(winnerCelebration.talerGold)} aus den Taler des Siegers</div>}
     <div className="winnerActions">
       <a className="btn primary" href={'/archiv/'+id}>🏛️ Endstand ansehen</a>
+      <button className="btn" onClick={recreateSameGame}>🔁 Gleiches Spiel nochmal</button>
       <button className="btn" onClick={()=>setWinnerCelebration(null)}>Noch kurz hier bleiben</button>
     </div>
    </div>

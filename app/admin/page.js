@@ -88,6 +88,9 @@ export default function Admin(){
     await supabase.rpc('admin_set_winner_gold_factor_v613',{
       p_ug_per_1000:NUM(settings.winner_taler_gold_ug_per_1000)
     })
+    await supabase.rpc('admin_set_analysis_cost_v6151',{
+      p_base_cost:NUM(settings.analysis_hint_base_cost)
+    })
   }
   setSaving(false)
   setMsg(error?error.message:(data?.message||'Globale Einstellungen gespeichert.'))
@@ -204,6 +207,7 @@ export default function Admin(){
     <Field label="Max. Zugspeicher" value={settings.max_stored_moves_limit} onChange={v=>setSetting('max_stored_moves_limit',v)}/>
     <Field label="Taler pro leerem Feld" step="0.001" value={settings.exploration_reward} onChange={v=>setSetting('exploration_reward',v)}/>
     <Field label="Maschinen-Talerfaktor (1 = 100%)" step="0.05" value={settings.machine_reward_factor} onChange={v=>setSetting('machine_reward_factor',v)}/>
+    <Field label="Analyse-Grundpreis je Stufe (Taler)" step="0.1" value={settings.analysis_hint_base_cost} onChange={v=>setSetting('analysis_hint_base_cost',v)}/>
    </div>
   </section>
 
