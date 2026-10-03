@@ -502,3 +502,62 @@ button:disabled{cursor:not-allowed;opacity:.45}
     font-size:11px;
   }
 }
+
+/* V6.14 – Mobile HUD, Fallen, Chat-Drawer */
+.gameTopTitle{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mobileStatsToggle{display:none}
+.machineStatusCompact{
+ display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+ margin-top:6px;padding:5px 7px;border-radius:8px;
+ background:#15271f;border:1px solid #315c47;font-size:10px
+}
+.trapToolbar{
+ display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+ margin:6px 0;padding:6px 8px;border-radius:9px;
+ background:#241522;border:1px solid #633b59;font-size:11px
+}
+.globalGameEvent{
+ position:sticky;top:8px;z-index:45;margin:7px 0;padding:8px 10px;
+ border-radius:10px;background:#2b1f12;border:1px solid #705127;color:#f1d59a;
+ box-shadow:0 6px 20px rgba(0,0,0,.25)
+}
+.gameChatDrawer{margin-top:8px;border:1px solid #27374f;border-radius:10px;background:#101b2c;overflow:hidden}
+.chatToggle{
+ width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;
+ border:0;background:#15243a;color:#e6edf7;padding:8px 10px;font-weight:800;cursor:pointer
+}
+.unreadBadge{
+ min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#e05275;color:white;
+ display:inline-flex;align-items:center;justify-content:center;font-size:10px;margin-left:auto
+}
+.chatDrawerBody{padding:7px}
+.gameChatDrawer .chatMessages{height:150px;min-height:150px;margin:0 0 6px}
+.adminCheck{display:flex!important;align-items:center;gap:7px;padding-top:24px}
+
+@media(max-width:700px){
+ .mobileStatsToggle{display:inline-flex}
+ .gameTopPanel{
+   position:fixed;left:8px;right:8px;top:6px;z-index:80;
+   margin:0;border-radius:12px!important;padding:7px 8px;
+   max-height:72vh;overflow:auto
+ }
+ .gameTopPanel.mobileClosed .worldMeta,
+ .gameTopPanel.mobileClosed .gameStatsBody{display:none}
+ .gameTopPanel.mobileClosed{width:auto;right:auto;max-width:76vw}
+ .gameTopPanel.mobileClosed h1{margin:0;font-size:15px;max-width:48vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .gameTopPanel.mobileOpen .gameQuickStats{
+   grid-template-columns:repeat(2,minmax(0,1fr));
+ }
+ .gameTopPanel.mobileOpen .quickStat{padding:4px 5px}
+ .gameTopPanel.mobileOpen .quickStat span{font-size:7px}
+ .gameTopPanel.mobileOpen .quickStat strong{font-size:11px}
+ .machineStatusCompact{padding:4px 5px;font-size:9px}
+ .machineStatusCompact .miniBtn{font-size:9px;padding:4px 6px}
+ .gameLayout{margin-top:44px}
+ .gameChatDrawer{position:relative}
+ .gameChatDrawer .chatMessages{height:115px;min-height:115px}
+ .chatToggle{padding:6px 8px;font-size:12px}
+ .trapToolbar{font-size:10px;padding:5px 6px}
+}
+
+@media(max-width:700px){.gamePage{padding-top:48px}}

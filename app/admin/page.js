@@ -92,7 +92,7 @@ export default function Admin(){
 
  async function saveTech(t){
   setSaving(true);setMsg('')
-  const {data,error}=await supabase.rpc('admin_update_technology_v690',{
+  const {data,error}=await supabase.rpc('admin_update_technology_v614',{
     p_id:t.id,
     p_name:t.name,
     p_branch:t.branch,
@@ -104,6 +104,10 @@ export default function Admin(){
     p_capacity_bonus:NUM(t.capacity_bonus),
     p_regen_reduction:NUM(t.regen_reduction),
     p_machine_auto_fields:NUM(t.machine_auto_fields),
+    p_exclusive_per_game:!!t.exclusive_per_game,
+    p_trap_type:t.trap_type||'',
+    p_trap_power:NUM(t.trap_power),
+    p_trap_limit:NUM(t.trap_limit),
     p_requires:t.requires||[],
     p_sort_order:NUM(t.sort_order),
     p_is_active:!!t.is_active
@@ -226,6 +230,10 @@ export default function Admin(){
        <Field label="Zugspeicher-Bonus" value={t.capacity_bonus} onChange={v=>setTech(t.id,'capacity_bonus',v)}/>
        <Field label="Regeneration schneller (0,1 = 10%)" step="0.01" value={t.regen_reduction} onChange={v=>setTech(t.id,'regen_reduction',v)}/>
        <Field label="Maschinenfelder pro Takt" value={t.machine_auto_fields||0} onChange={v=>setTech(t.id,'machine_auto_fields',v)}/>
+       <label className="adminCheck"><input type="checkbox" checked={!!t.exclusive_per_game} onChange={e=>setTech(t.id,'exclusive_per_game',e.target.checked)}/> Exklusiv pro Game</label>
+       <Field label="Fallentyp (leer = keine)" type="text" value={t.trap_type||''} onChange={v=>setTech(t.id,'trap_type',v)}/>
+       <Field label="Fallenstärke" step="0.1" value={t.trap_power||0} onChange={v=>setTech(t.id,'trap_power',v)}/>
+       <Field label="Max. aktive Fallen" value={t.trap_limit||0} onChange={v=>setTech(t.id,'trap_limit',v)}/>
        <Field label="Sortierung" value={t.sort_order} onChange={v=>setTech(t.id,'sort_order',v)}/>
        <div className="adminField span2"><label>Voraussetzungen (IDs mit Komma)</label><input className="input" value={(t.requires||[]).join(', ')} onChange={e=>setTech(t.id,'requires',e.target.value.split(',').map(x=>x.trim()).filter(Boolean))}/></div>
        <div className="adminField span2"><label>Beschreibung im Spiel</label><textarea className="input adminTextarea" value={t.description||''} onChange={e=>setTech(t.id,'description',e.target.value)} maxLength={250}/></div>

@@ -73,6 +73,17 @@ function featureCollection(game,fields,players){
   }
 }
 
+
+function trapCollection(game,traps){
+  if(!game)return {type:'FeatureCollection',features:[]}
+  const g=geometry(game)
+  return {type:'FeatureCollection',features:(traps||[]).map(t=>{
+    const [w,s,e,n]=cellBounds(g,Number(t.x),Number(t.y),1)
+    return {type:'Feature',properties:{label:'🪤',trap_type:t.trap_type},
+      geometry:{type:'Polygon',coordinates:[[[w,s],[e,s],[e,n],[w,n],[w,s]]]}}
+  })}
+}
+
 function analysisCollection(h){
   if(!h?.lat||!h?.lon||!h?.radius_m)return {type:'FeatureCollection',features:[]}
   const steps=48,coords=[]
@@ -85,13 +96,16 @@ function analysisCollection(h){
   return {type:'FeatureCollection',features:[{type:'Feature',properties:{},geometry:{type:'Polygon',coordinates:[coords]}}]}
 }
 
-export default function GameMap({game,fields,players,onReveal,analysisHint,onViewportChange,analysisFocusToken,onAnalysisFeatures}){
+export default function GameMap({game,fields,players,onReveal,onTrapPlace,trapMode,ownTraps=[],analysisHint,onViewportChange,analysisFocusToken,onAnalysisFeatures}){
   const holder=useRef(null)
   const mapRef=useRef(null)
   const gameRef=useRef(game)
   const fieldsRef=useRef(fields)
   const playersRef=useRef(players)
   const onRevealRef=useRef(onReveal)
+  const onTrapPlaceRef=useRef(onTrapPlace)
+  const trapModeRef=useRef(trapMode)
+  const ownTrapsRef=useRef(ownTraps)
   const analysisRef=useRef(analysisHint)
   const viewportRef=useRef(onViewportChange)
   const analysisFeaturesRef=useRef(onAnalysisFeatures)
@@ -103,6 +117,9 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
   fieldsRef.current=fields
   playersRef.current=players
   onRevealRef.current=onReveal
+  onTrapPlaceRef.current=onTrapPlace
+  trapModeRef.current=trapMode
+  ownTrapsRef.current=ownTraps
   analysisRef.current=analysisHint
   viewportRef.current=onViewportChange
   analysisFeaturesRef.current=onAnalysisFeatures
@@ -151,8 +168,13 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
           }
           if(!map.getSource('analysis-zone')){
             map.addSource('analysis-zone',{type:'geojson',data:analysisCollection(analysisRef.current)})
-            map.addLayer({id:'analysis-zone-fill',type:'fill',source:'analysis-zone',paint:{'fill-color':'#f3c54b','fill-opacity':0.12}})
-            map.addLayer({id:'analysis-zone-line',type:'line',source:'analysis-zone',paint:{'line-color':'#f3c54b','line-opacity':0.9,'line-width':2,'line-dasharray':[2,2]}})
+            map.addLayer({id:'analysis-zone-fill',type:'fill',source:'analysis-zone',paint:{'fill-color':'#f3c54b','fill-opacity':0}})
+            map.addLayer({id:'analysis-zone-line',type:'line',source:'analysis-zone',paint:{'line-color':'#f3c54b','line-opacity':0,'line-width':0}})
+          }
+          if(!map.getSource('my-traps')){
+            map.addSource('my-traps',{type:'geojson',data:trapCollection(gameRef.current,ownTrapsRef.current)})
+            map.addLayer({id:'my-traps-fill',type:'fill',source:'my-traps',paint:{'fill-color':'#e05275','fill-opacity':0.45}})
+            map.addLayer({id:'my-traps-line',type:'line',source:'my-traps',paint:{'line-color':'#ff87a4','line-width':2}})
           }
           updateGridAndViewport()
         }
@@ -177,7 +199,7 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
           const cg=geometry(gameRef.current)
           const x=Math.floor((e.lngLat.lng-cg.west)*cg.metersLon/cg.cell)
           const y=Math.floor((cg.north-e.lngLat.lat)*METERS_PER_DEG_LAT/cg.cell)
-          if(x>=0&&y>=0&&x<cg.width&&y<cg.height)onRevealRef.current?.(x,y)
+          if(x>=0&&y>=0&&x<cg.width&&y<cg.height){if(trapModeRef.current)onTrapPlaceRef.current?.(x,y);else onRevealRef.current?.(x,y)}
         })
 
         function collectAnalysisFeatures(){
@@ -306,6 +328,12 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
 
   useEffect(()=>{
     const map=mapRef.current
+    const src=map?.getSource?.('my-traps')
+    if(src)src.setData(trapCollection(gameRef.current,ownTraps))
+  },[ownTraps])
+
+  useEffect(()=>{
+    const map=mapRef.current
     const h=analysisHint
     if(!map||!h?.lat||!h?.lon||!analysisFocusToken)return
     const focus=()=>{
@@ -315,6 +343,7 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
         const dLat=radius/METERS_PER_DEG_LAT
         const dLon=radius/metersLon
         map.fitBounds([[lon-dLon,lat-dLat],[lon+dLon,lat+dLat]],{padding:55,duration:650,maxZoom:17})
+        const oldCenter=map.getCenter(),oldZoom=map.getZoom()
         map.once('idle',()=>{
           try{
             const center=map.project([lon,lat])
@@ -335,6 +364,9 @@ export default function GameMap({game,fields,players,onReveal,analysisHint,onVie
             }
             analysisFeaturesRef.current?.(items)
           }catch{analysisFeaturesRef.current?.([])}
+          finally{
+            try{map.jumpTo({center:oldCenter,zoom:oldZoom})}catch{}
+          }
         })
       }catch{}
     }

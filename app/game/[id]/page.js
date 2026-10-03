@@ -11,8 +11,8 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([])
- const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null)
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null)
+ const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now())
 
  useEffect(()=>{
   init()
@@ -25,6 +25,7 @@ export default function Game(){
    .on('postgres_changes',{event:'*',schema:'public',table:'game_players',filter:`game_id=eq.${id}`},()=>loadPlayersOnly())
    .on('postgres_changes',{event:'*',schema:'public',table:'games',filter:`id=eq.${id}`},()=>{loadGameOnly();loadActiveGames()})
    .on('postgres_changes',{event:'*',schema:'public',table:'player_technologies',filter:`game_id=eq.${id}`},()=>loadOwnedOnly())
+   .on('postgres_changes',{event:'INSERT',schema:'public',table:'game_events',filter:`game_id=eq.${id}`},payload=>{setGameEvent(payload.new);setTimeout(()=>setGameEvent(null),7000)})
    .subscribe()
   const timer=setInterval(()=>setTick(t=>t+1),1000)
   return()=>{supabase.removeChannel(ch);clearInterval(timer);clearTimeout(viewportTimer.current)}
@@ -87,6 +88,37 @@ export default function Game(){
   ])
   setWallet(w.data);setGoldTreasures(gt.data||[])
  }
+ async function loadOwnTraps(){
+  const {data}=await supabase.rpc('get_my_traps_v614',{p_game_id:id})
+  if(data)setOwnTraps(data)
+ }
+
+ async function placeTrap(x,y){
+  if(!trapMode)return
+  const {data,error}=await supabase.rpc('place_trap_v614',{p_game_id:id,p_x:x,p_y:y,p_technology_id:trapMode})
+  if(error){setMsg('Falle: '+error.message);return}
+  setMsg(data?.message||'Falle platziert')
+  await loadOwnTraps()
+ }
+
+ function buildAnalysisClue(items){
+  const text=(items||[]).map(x=>(x.name+' '+x.kind).toLowerCase()).join(' ')
+  if(!text)return 'Die Kartenanalyse erkennt hier keine eindeutig benannten Landschaftsmerkmale.'
+  const water=/lake|water|river|reservoir|stream|see|fluss|bach|teich|meer|bay/.test(text)
+  const forest=/forest|wood|wald|nature|park/.test(text)
+  const urban=/city|town|village|residential|place|stadt|dorf|suburb/.test(text)
+  const road=/road|street|highway|straße|weg|motorway/.test(text)
+  if(water&&forest)return 'Der Schatz liegt in einer Umgebung mit Wasser und Wald bzw. Grünfläche.'
+  if(water&&urban)return 'Der Schatz liegt an oder nahe einem Gewässer in der Umgebung einer Siedlung.'
+  if(forest&&urban)return 'Der Schatz liegt in einem Wald- oder Grüngebiet nahe einer Stadt bzw. Siedlung.'
+  if(water)return 'Der Schatz liegt in oder unmittelbar bei einem Gewässer.'
+  if(forest)return 'Der Schatz liegt in einem Wald-, Park- oder größeren Grüngebiet.'
+  if(urban&&road)return 'Der Schatz liegt in einem bebauten Gebiet mit Straßen- bzw. Siedlungsstruktur.'
+  if(urban)return 'Der Schatz liegt in der Nähe einer Stadt, eines Ortes oder bebauten Gebiets.'
+  if(road)return 'Der Schatz liegt in einem Gebiet mit markanten Straßen oder Wegen.'
+  return 'Die Umgebung besitzt markante Kartenmerkmale: '+items.slice(0,3).map(x=>x.name).join(', ')+'.'
+ }
+
  async function loadActiveGames(){
   const {data}=await supabase.rpc('my_active_games_v613')
   if(data)setActiveGames(data)
@@ -120,7 +152,7 @@ export default function Game(){
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
       supabase.rpc('get_treasure_status_v610',{p_game_id:id}),
-      supabase.from('technologies').select('id,name,branch,cost,reveal_power_bonus,reward_bonus,analysis_level,capacity_bonus,regen_reduction,machine_auto_fields,requires,description,sort_order,is_active').eq('is_active',true).order('sort_order',{ascending:true}).order('id',{ascending:true})
+      supabase.from('technologies').select('id,name,branch,cost,reveal_power_bonus,reward_bonus,analysis_level,capacity_bonus,regen_reduction,machine_auto_fields,exclusive_per_game,trap_type,trap_power,trap_limit,requires,description,sort_order,is_active').eq('is_active',true).order('sort_order',{ascending:true}).order('id',{ascending:true})
     ])
 
     setGame(g.data)
@@ -129,7 +161,7 @@ export default function Game(){
     setWallet(w.data)
     setGoldTreasures(gt.data||[])
     setTechnologies(tech.data||[])
-    loadActiveGames()
+    loadActiveGames();loadOwnTraps()
   }catch(err){
     setMsg('Fehler beim Laden der Karte: '+(err?.message||String(err)))
   }
@@ -165,12 +197,13 @@ export default function Game(){
   setMsg('Suche läuft…')
   try{
     await supabase.rpc('set_machine_focus_v690',{p_game_id:id,p_x:x,p_y:y})
-    const {data,error}=await supabase.rpc('reveal_area_v613',{p_game_id:id,p_x:x,p_y:y})
+    const {data,error}=await supabase.rpc('reveal_area_v614',{p_game_id:id,p_x:x,p_y:y})
     if(error){setMsg(error.message);return}
 
     setMsg(data?.message||'Gebiet untersucht')
     handleGimmicks(data?.gimmicks)
     handleTreasure(data,'manual')
+    setSessionFields(v=>v+Number(data?.opened||0))
     if(data?.game_over){
       setWinnerCelebration({
         won:!!data.won,
@@ -221,7 +254,7 @@ export default function Game(){
   machineBusy.current=true
   try{
     await supabase.rpc('machine_presence_v690',{p_game_id:id})
-    const {data,error}=await supabase.rpc('run_machines_game_v613',{p_game_id:id})
+    const {data,error}=await supabase.rpc('run_machines_game_v614',{p_game_id:id})
     if(error){
       if(!error.message?.includes('Noch nicht fällig'))setMsg('Maschinen: '+error.message)
       return
@@ -229,6 +262,7 @@ export default function Game(){
     if(data?.message)setMsg(data.message)
     handleGimmicks(data?.gimmicks)
     handleTreasure(data,'machine')
+    setSessionFields(v=>v+Number(data?.opened||0))
     if(data?.opened>0&&currentViewport.current)await loadVisibleFields(currentViewport.current)
     await Promise.all([loadPlayersOnly(),loadGameOnly(),loadGoldOnly()])
     if(data?.game_over){
@@ -247,7 +281,7 @@ export default function Game(){
  }
 
  async function buy(t){
-  const {data,error}=await supabase.rpc('buy_technology',{p_game_id:id,p_technology_id:t.id})
+  const {data,error}=await supabase.rpc('buy_technology_v614',{p_game_id:id,p_technology_id:t.id})
   setMsg(error?error.message:(data?.message||'Erforscht'))
   await Promise.all([loadPlayersOnly(),loadOwnedOnly()])
  }
@@ -269,6 +303,9 @@ export default function Game(){
    const due=last+effectiveRegen*1000
    return Math.max(0,Math.ceil((due-Date.now())/1000))
  })()
+
+ const fieldsPerMinute=sessionFields/Math.max(1/60,(Date.now()-sessionStartedAt.current)/60000)
+ const trapTechs=technologies.filter(t=>owned.includes(t.id)&&t.trap_type)
 
  const secondsUntilMove=(()=>{
   if(!me||!game||Number(me.moves_left)>=cap)return null
@@ -304,6 +341,8 @@ export default function Game(){
   if(Number(t.capacity_bonus))effects.push(`+${t.capacity_bonus} Zugspeicher`)
   if(Number(t.regen_reduction))effects.push(`${Math.round(Number(t.regen_reduction)*100)}% schnellere Regeneration`)
   if(Number(t.machine_auto_fields))effects.push(`${Number(t.machine_auto_fields).toLocaleString('de-DE')} automatische Felder/Takt`)
+  if(t.exclusive_per_game)effects.push('🔒 exklusiv: nur 1 Spieler pro Game')
+  if(t.trap_type)effects.push(`🪤 ${t.trap_type} · Stärke ${Number(t.trap_power||0)} · max. ${Number(t.trap_limit||0)} aktiv`)
   return effects.join(' · ')||'Keine direkte Wirkung'
  }
 
@@ -324,15 +363,15 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container">
+ return <main className="container gamePage">
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
-  <div className="panel gameTopPanel"><h1>{game?.name||'Spiel'}</h1>
+  <div className={"panel gameTopPanel "+(statsOpen?"mobileOpen":"mobileClosed")}><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1><button className="miniBtn mobileStatsToggle" onClick={()=>setStatsOpen(v=>!v)}>📊 {statsOpen?"Weniger":"Werte"}</button></div>
    <div className="worldMeta">
     <span>📍 {game?.center_label||'Kartenmittelpunkt'} · {game?.cell_size_m||100} m pro Feld · echte Weltkarte</span>
     {game?.invite_code&&<span className="inviteChip">Einladungscode: <strong>{game.invite_code}</strong>{game.is_private?' · 🔒 privat':''}</span>}
    </div>
-   <div className="gameQuickStats">
+   <div className="gameStatsBody"><div className="gameQuickStats">
     {[
      [Number(me?.coins||0).toFixed(2),'Taler'],
      [`${me?.moves_left??0} / ${cap}`,'Züge'],
@@ -342,18 +381,17 @@ export default function Game(){
      ['Stufe '+(me?.analysis_level??0),'Analyse'],
      [machinePower>0?`${machinePower.toLocaleString('de-DE')} / ${secondsUntilMachine===null?'–':secondsUntilMachine+'s'}`:'0','Maschinenfelder / nächster Takt'],
      [`${Number(game?.gimmick_percent||0).toFixed(2)}% · ${Number(game?.gimmicks_found_count||0).toLocaleString('de-DE')}/${Number(game?.gimmick_target_count||0).toLocaleString('de-DE')}`,'Gimmicks'],
+     [fieldsPerMinute.toFixed(1),'Felder/Min'],
      [left.toLocaleString('de-DE'),'Felder übrig']
     ].map((v,i)=><div className="quickStat" key={i}><span>{v[1]}</span><strong>{v[0]}</strong></div>)}
    </div>
    <div className="regenBarText">Ungenutzte Züge werden bis zum Speicherlimit gesammelt; darüber hinaus verfallen sie.</div>
-   {machinePower>0&&<div className="machineStatus">
-    <div><strong>⚙️ Maschinen</strong> · arbeiten nur solange dieses Spiel sichtbar geöffnet ist.</div>
-    <div className="machineModeRow">
-     <span>Suchmodus:</span>
-     <button className={'miniBtn '+((me?.machine_mode||'focus')==='focus'?'active':'')} onClick={()=>setMachineMode('focus')}>📍 Letzte Suche</button>
-     <button className={'miniBtn '+(me?.machine_mode==='random'?'active':'')} onClick={()=>setMachineMode('random')}>🎲 Zufällig</button>
-    </div>
+   {machinePower>0&&<div className="machineStatusCompact">
+    <span>⚙️ {machinePower.toLocaleString('de-DE')}/Takt</span>
+    <button className={'miniBtn '+((me?.machine_mode||'focus')==='focus'?'active':'')} onClick={()=>setMachineMode('focus')}>📍 Fokus</button>
+    <button className={'miniBtn '+(me?.machine_mode==='random'?'active':'')} onClick={()=>setMachineMode('random')}>🎲 Zufall</button>
    </div>}
+   </div>
   </div>
 
   {game&&<details className={'panel compactTreasurePanel '+(game.game_type==='pay'?'goldGamePanel':'treasureGamePanel')}>
@@ -376,21 +414,19 @@ export default function Game(){
    </div>
   </details>}
 
+  {gameEvent&&<div className="globalGameEvent">📣 {gameEvent.message}</div>}
+
   <div className="gameLayout">
    <section className="panel">
     <div className="mapHeader"><div><h2>Weltkarte</h2><div className="small">Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.</div></div>
      <div className="mapLegend">{players.map(p=><div className="legendItem" key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.profiles?.display_name||'Spieler'}</div>)}</div>
     </div>
-    {game&&<GameMap game={game} fields={fields} players={players} onReveal={reveal} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={setAnalysisFeatures}/>}
+    {game&&<><div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name}</button>)}</>}</div><GameMap game={game} fields={fields} players={players} onReveal={reveal} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}/></>}
     {analysisHint&&<div className="analysisHintBox">
       <strong>🧭 Kartenanalyse Stufe {analysisHint.level}</strong>
-      <div>{analysisHint.text}</div>
-      <div className="analysisActions"><button className="btn" onClick={()=>setAnalysisFocusToken(v=>v+1)}>🗺️ Hinweisgebiet fokussieren</button></div>
-      {analysisFeatures.length>0&&<div className="mapFeatureBox">
-        <div className="small">Sichtbare Kartenmerkmale im Hinweisgebiet:</div>
-        <div className="mapFeatureTags">{analysisFeatures.map((f,i)=><span key={i}><b>{f.name}</b>{f.kind&&<small>{f.kind}</small>}</span>)}</div>
-      </div>}
-      <div className="small">Der gelb markierte Bereich ist absichtlich ungenau. Nutze echte Straßen, Orte, Gewässer und andere Kartenmerkmale zur Orientierung.</div>
+      <div>{analysisClue||'Analysiere den Kartenhintergrund, um einen Landschaftshinweis zu erhalten.'}</div>
+      <div className="analysisActions"><button className="btn" onClick={()=>setAnalysisFocusToken(v=>v+1)}>🌍 Kartenumgebung analysieren</button></div>
+      <div className="small">Die Analyse nennt Landschafts- und Siedlungsmerkmale, nicht die Position des Schatzes.</div>
     </div>}
     <p className="statusLine">{msg}</p>
    </section>
@@ -402,7 +438,7 @@ export default function Game(){
      const req=t.requires||[]
      const bought=has(t.id),unlocked=req.every(has),enough=Number(me?.coins||0)>=Number(t.cost)
      return <div key={t.id} className={'techCard '+(bought?'bought':unlocked?'available':'locked')}>
-      <strong>{bought?'✅ ':''}{t.name}</strong><div className="small">{techEffect(t)}</div>
+      <strong>{bought?'✅ ':''}{t.name}{t.exclusive_per_game?' 🔒':''}</strong><div className="small">{techEffect(t)}</div>
       <div className="small">Benötigt: {req.length?req.join(', '):'–'}</div>
       <div className="techBottom"><b>{Number(t.cost).toFixed(2)} T</b><button className="btn primary" disabled={bought||!unlocked||!enough} onClick={()=>buy(t)}>{bought?'Erforscht':'Erforschen'}</button></div>
      </div>
