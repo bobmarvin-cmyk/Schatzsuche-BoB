@@ -185,7 +185,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.16a.1</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.16a.2</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -242,7 +242,7 @@ export default function Admin(){
     <span>Plattformanteil: <b>{formatGold(settings.platform_revenue_ug)}</b></span>
    </div>
    {goldOverview&&<div className="goldOverviewGrid">
-    <div className="card"><div className="small">Bei Spielern aktuell</div><div className="stat">{formatGold(goldOverview.wallet_total_ug)}</div></div></div>
+    <div className="card"><div className="small">Bei Spielern aktuell</div><div className="stat">{formatGold(goldOverview.wallet_total_ug)}</div></div>
     <div className="card"><div className="small">Schatz-Auszahlungen gesamt</div><div className="stat">{formatGold(goldOverview.treasure_paid_ug)}</div></div>
     <div className="card"><div className="small">Community verteilt gesamt</div><div className="stat">{formatGold(goldOverview.community_paid_ug)}</div></div>
     <div className="card"><div className="small">Gewinner-Taler → Gold</div><div className="stat">{formatGold(goldOverview.winner_conversion_paid_ug)}</div></div>
