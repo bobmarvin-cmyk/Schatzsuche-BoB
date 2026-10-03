@@ -319,7 +319,9 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
           if(x1<x0||y1<y0)return
           const cols=x1-x0+1,rows=y1-y0+1
           const area=Math.max(1,cols*rows)
-          const step=Math.max(1,Math.ceil(Math.sqrt(area/TARGET_VISIBLE_BUCKETS)))
+          const explored=Number(gameRef.current?.explored_count||0)
+          const targetBuckets=explored>500000?350:explored>150000?500:explored>50000?700:TARGET_VISIBLE_BUCKETS
+          const step=Math.max(1,Math.ceil(Math.sqrt(area/targetBuckets)))
 
           // Kleiner Puffer verhindert eine neue DB-Abfrage bei minimalem Verschieben.
           const pad=Math.max(2,step*2)
@@ -329,7 +331,8 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
           })
 
           const visible=Math.max(cols,rows,1)
-          const gridStep=Math.max(1,Math.ceil(visible/100))
+          const gridTarget=Number(gameRef.current?.explored_count||0)>150000?55:100
+          const gridStep=Math.max(1,Math.ceil(visible/gridTarget))
           x0=Math.floor(x0/gridStep)*gridStep
           y0=Math.floor(y0/gridStep)*gridStep
           const features=[]

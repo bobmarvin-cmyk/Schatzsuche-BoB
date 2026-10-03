@@ -21,7 +21,7 @@ export default function Lobby(){
  const [lat,setLat]=useState('49.52'),[lon,setLon]=useState('7.14'),[label,setLabel]=useState('Zuhause')
  const [fields,setFields]=useState(100000),[cellSize,setCellSize]=useState(100)
  const [regen,setRegen]=useState(5),[capacity,setCapacity]=useState(4),[maxPlayers,setMaxPlayers]=useState(20)
- const [privateGame,setPrivateGame]=useState(false),[password,setPassword]=useState('')
+ const [privateGame,setPrivateGame]=useState(false),[password,setPassword]=useState(''),[startDelay,setStartDelay]=useState(0)
  const [inviteCode,setInviteCode]=useState(''),[joinPassword,setJoinPassword]=useState('')
  const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('10'),[sponsorGold,setSponsorGold]=useState('100'),[sponsorName,setSponsorName]=useState(''),[treasureCount,setTreasureCount]=useState(1),[gimmickPercent,setGimmickPercent]=useState(1),[gimmickWarn,setGimmickWarn]=useState(false),[privateJoinOpen,setPrivateJoinOpen]=useState(false)
  const [placeQuery,setPlaceQuery]=useState(''),[placeResults,setPlaceResults]=useState([]),[placeSearching,setPlaceSearching]=useState(false),[selectedPlaceLabel,setSelectedPlaceLabel]=useState('')
@@ -63,7 +63,7 @@ export default function Lobby(){
  }
  async function loadGames(){
    const {data,error}=await supabase.from('games')
-    .select('id,name,status,max_players,created_at,closed_at,close_reason,last_activity_at,width,height,center_label,cell_size_m,regen_seconds,max_stored_moves,is_private,game_type,entry_gold_ug,treasure_count,gold_prize_pool_ug,sponsor_name,sponsor_pool_ug,game_players(count)')
+    .select('id,name,status,max_players,created_at,closed_at,close_reason,last_activity_at,width,height,center_label,cell_size_m,regen_seconds,max_stored_moves,is_private,game_type,entry_gold_ug,treasure_count,gold_prize_pool_ug,sponsor_name,sponsor_pool_ug,start_at,game_players(count)')
     .eq('is_private',false).order('created_at',{ascending:false})
    if(error){setMsg(error.message);return}
    setGames(data||[])
@@ -128,6 +128,11 @@ export default function Lobby(){
     : ['create_game_v612',{...common,p_game_type:gameType,p_entry_gold_ug:entryUg}]
    const {data,error}=await supabase.rpc(request[0],request[1])
    if(error){setMsg(error.message);return}
+   if(Number(startDelay)>0){
+     const startAt=new Date(Date.now()+Number(startDelay)*60*1000).toISOString()
+     const {error:startError}=await supabase.rpc('set_game_start_v620',{p_game_id:data,p_start_at:startAt})
+     if(startError){setMsg('Spiel erstellt, Starttimer konnte aber nicht gesetzt werden: '+startError.message);return}
+   }
    await loadWallet()
    location.href='/game/'+data
  }
@@ -175,7 +180,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.19</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.20</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -308,6 +313,17 @@ export default function Lobby(){
       <div className="small">Erlaubt durch die Schaltzentrale: {settings?.min_regen_seconds||5}s bis {settings?.max_regen_seconds||3600}s.</div>
       <label>Maximal speicherbare Züge</label>
       <select className="input" value={capacity} onChange={e=>setCapacity(e.target.value)}>{[3,4,5,6,8,10].map(n=><option value={n} key={n}>{n}</option>)}</select>
+      <label>Gemeinsamer Spielstart</label>
+      <select className="input" value={startDelay} onChange={e=>setStartDelay(Number(e.target.value))}>
+       <option value="0">Sofort starten</option>
+       <option value="1">In 1 Minute</option>
+       <option value="3">In 3 Minuten</option>
+       <option value="5">In 5 Minuten</option>
+       <option value="10">In 10 Minuten</option>
+       <option value="15">In 15 Minuten</option>
+       <option value="30">In 30 Minuten</option>
+      </select>
+      <div className="small">Alle können vorher beitreten. Suche und Maschinen werden serverseitig erst beim gemeinsamen Start freigegeben.</div>
      </div>
     </div>
     <button className="btn primary wideOnMobile" onClick={createGame}>{gameType==='pay'?'Goldsuche erstellen & Einsatz zahlen':gameType==='sponsor'?'Sponsorspiel erstellen & Pool stiften':'Spiel erstellen'}</button>
@@ -337,6 +353,7 @@ export default function Lobby(){
        <div className="gameCardTop"><h3>{g.name}</h3><span className={'gameBadge '+(isPay?'gold':isSponsor?'sponsor':'')}>{isPay?'✨ GOLDGAME':isSponsor?'🤝 SPONSORSPIEL':'🧭 SCHATZSUCHE'}</span></div>
        <div className="small">{g.center_label||'Weltkarte'} · {(g.width*g.height).toLocaleString('de-DE')} Felder</div>
        <div className="small">{g.cell_size_m||100} m/Feld · Zug alle {g.regen_seconds||30}s · 🧩 {g.treasure_count||1} Schatzteil{Number(g.treasure_count||1)===1?'':'e'}</div>
+       {g.start_at&&new Date(g.start_at)>new Date()&&<div className="small tournamentCardStart">🏁 Gemeinsamer Start: {new Date(g.start_at).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</div>}
        {isPay&&<div className="payFacts">
         <span>Einsatz: <b>{formatGold(g.entry_gold_ug)}</b></span><span>Schätze: <b>{g.treasure_count}</b></span><span>Aktueller Pool: <b>{formatGold(g.gold_prize_pool_ug)}</b></span>
        </div>}

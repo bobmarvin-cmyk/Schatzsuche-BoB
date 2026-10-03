@@ -1061,3 +1061,60 @@ button:disabled{cursor:not-allowed;opacity:.45}
  .claimButtons button{min-height:48px;font-size:20px}
  .rewardHero{display:block}
 }
+
+
+/* =========================================================
+   V6.20 – Turnierstart / Bergung / Endgame-Performance
+   ========================================================= */
+.tournamentStartPanel{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:8px 0 10px;padding:9px 12px;
+  border:1px solid #44668b;border-radius:12px;
+  background:linear-gradient(135deg,rgba(20,39,64,.95),rgba(16,29,46,.95));
+}
+.tournamentStartPanel>strong{
+  font-size:24px;letter-spacing:.08em;color:#eaf3ff;
+}
+.tournamentStartPanel>small{
+  width:100%;color:#98aec5;
+}
+.tournamentCardStart{
+  color:#9ec9ff!important;
+  font-weight:800;
+}
+
+.claimMath{
+  margin:14px auto 10px;
+  width:max-content;
+  min-width:150px;
+  padding:12px 18px;
+  border:1px solid #496886;
+  border-radius:12px;
+  background:#182a42;
+  font-size:28px;
+  font-weight:900;
+  letter-spacing:.03em;
+}
+.claimMathInput{
+  max-width:180px;
+  margin:0 auto 10px;
+  text-align:center;
+  font-size:22px!important;
+  font-weight:900;
+}
+.claimRule{margin-top:12px}
+.claimInputArea{width:100%}
+.claimInputArea .claimInput{
+  position:relative;
+  z-index:2;
+}
+.claimInputArea .claimButtons{
+  position:relative;
+  z-index:2;
+}
+
+@media(max-width:700px){
+  .tournamentStartPanel{padding:7px 8px;gap:6px}
+  .tournamentStartPanel>strong{font-size:20px}
+  .claimMath{font-size:24px}
+}
