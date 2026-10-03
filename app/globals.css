@@ -377,3 +377,128 @@ button:disabled{cursor:not-allowed;opacity:.45}
 }
 
 .readOnlyLike{display:flex;align-items:center;min-height:39px;color:#cbd7e8}
+
+/* V6.13.1 – kompakter Chat + bessere mobile Werteübersicht */
+.gameChat{
+  margin-top:10px;
+  padding:10px 12px;
+}
+.gameChat h2{
+  font-size:17px;
+  margin:0 0 4px;
+}
+.chatMessages{
+  height:170px;
+  min-height:170px;
+  padding:7px;
+  gap:5px;
+  margin:6px 0;
+}
+.chatMessage{
+  padding:6px 8px;
+  font-size:12px;
+  max-width:76%;
+}
+.chatMeta{
+  font-size:9px;
+  margin-bottom:2px;
+}
+.chatForm{
+  gap:6px;
+}
+.chatForm .input{
+  padding:7px 9px;
+  min-height:36px;
+}
+.chatForm .btn{
+  min-height:36px;
+  padding:7px 11px;
+}
+
+@media(max-width:700px){
+  .gameTopPanel{
+    position:sticky;
+    top:0;
+    padding:8px 9px;
+  }
+  .gameTopPanel h1{
+    font-size:17px;
+    margin-bottom:4px;
+  }
+  .gameTopPanel .worldMeta{
+    font-size:10px;
+    line-height:1.25;
+    margin-bottom:6px;
+  }
+
+  .gameQuickStats{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:5px;
+    overflow:visible;
+    padding:0;
+  }
+  .quickStat{
+    min-width:0;
+    width:auto;
+    padding:5px 6px;
+    overflow:hidden;
+  }
+  .quickStat span{
+    font-size:8px;
+    line-height:1.1;
+    min-height:17px;
+  }
+  .quickStat strong{
+    font-size:12px;
+    line-height:1.15;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+
+  .gameTopPanel .regenBarText{
+    font-size:9px;
+    line-height:1.25;
+    margin-top:5px;
+  }
+  .machineStatus{
+    padding:6px 7px;
+    margin-top:6px;
+    font-size:10px;
+  }
+  .machineModeRow{
+    margin-top:5px;
+    gap:4px;
+  }
+  .machineModeRow .miniBtn{
+    font-size:10px;
+    padding:5px 7px;
+  }
+
+  .gameChat{
+    padding:8px 9px;
+    margin-top:8px;
+  }
+  .gameChat h2{
+    font-size:15px;
+  }
+  .chatMessages{
+    height:130px;
+    min-height:130px;
+    padding:6px;
+    gap:4px;
+  }
+  .chatMessage{
+    max-width:90%;
+    padding:5px 7px;
+    font-size:11px;
+  }
+  .chatForm{
+    grid-template-columns:1fr auto;
+  }
+  .chatForm .btn{
+    width:auto;
+    padding:6px 9px;
+    font-size:11px;
+  }
+}
