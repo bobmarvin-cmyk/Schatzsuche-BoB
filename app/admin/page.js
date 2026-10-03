@@ -185,7 +185,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.16a.5.1</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.17.1</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -232,7 +232,7 @@ export default function Admin(){
     <Field label="Max. Schätze" value={settings.max_treasures} onChange={v=>setSetting('max_treasures',v)}/>
     <Field label="Min. Goldgame-Einsatz (µg)" value={settings.min_entry_gold_ug} onChange={v=>setSetting('min_entry_gold_ug',v)}/>
     <Field label="Max. Goldgame-Einsatz (µg)" value={settings.max_entry_gold_ug} onChange={v=>setSetting('max_entry_gold_ug',v)}/>
-    <Field label="Referenzpreis Cent / 0,01 g" value={settings.gold_price_cents_per_001g} onChange={v=>setSetting('gold_price_cents_per_001g',v)}/>
+    <Field label="Referenzpreis Cent / 10 mg" value={settings.gold_price_cents_per_001g} onChange={v=>setSetting('gold_price_cents_per_001g',v)}/>
     <Field label="Gewinner-Gold µg / 1.000 Taler" value={settings.winner_taler_gold_ug_per_1000} onChange={v=>setSetting('winner_taler_gold_ug_per_1000',v)}/>
     <div className="adminField"><label>Aktuelle Umrechnung</label><div className="input readOnlyLike">1.000 Taler = {formatGold(settings.winner_taler_gold_ug_per_1000,6)}</div></div>
    </div>

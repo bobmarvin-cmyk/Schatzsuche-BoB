@@ -12,7 +12,7 @@ export default function Game(){
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[onlineIds,setOnlineIds]=useState([])
- const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0)
+ const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0)
 
  useEffect(()=>{
   init()
@@ -338,7 +338,7 @@ export default function Game(){
  async function loadVisibleFields(v){
   currentViewport.current=v
   const seq=++viewportSeq.current
-  const {data,error}=await supabase.rpc('get_visible_fields_v682',{
+  const {data,error}=await supabase.rpc('get_visible_fields_v617',{
    p_game_id:id,p_x0:v.x0,p_x1:v.x1,p_y0:v.y0,p_y1:v.y1,p_step:v.step||1
   })
   if(seq!==viewportSeq.current)return
@@ -426,16 +426,25 @@ export default function Game(){
   try{
     const {data,error}=await supabase.rpc('run_machines_game_v6151',{p_game_id:id})
     if(error){
-      if(!error.message?.includes('Noch nicht fällig'))setMsg('Maschinen: '+error.message)
+      if(!error.message?.includes('Noch nicht fällig')){
+        if(error.message?.includes('statement timeout'))setMsg('Maschinenlauf wurde übersprungen – nächster Mikrotakt folgt automatisch.')
+        else setMsg('Maschinen: '+error.message)
+      }
       return
     }
     if(data?.message)setMsg(data.message)
     handleGimmicks(data?.gimmicks)
     handleTreasure(data,'machine')
     setSessionFields(v=>v+Number(data?.opened||0))
-    if(data?.opened>0&&currentViewport.current)scheduleVisibleReload(250)
+    if(data?.opened>0&&currentViewport.current){
+      const now=Date.now()
+      if(now-lastMachineMapRefreshAt.current>3000){
+        lastMachineMapRefreshAt.current=now
+        scheduleVisibleReload(350)
+      }
+    }
     await loadGoldOnly()
-    setTimeout(()=>pollLiveState(),450)
+    setTimeout(()=>pollLiveState(),600)
     if(data?.game_over){
       setWinnerCelebration({
         won:!!data.won,
@@ -486,7 +495,7 @@ export default function Game(){
  const machinePower=technologies
    .filter(t=>owned.includes(t.id))
    .reduce((sum,t)=>sum+Number(t.machine_auto_fields||0),0)
- const machineBatchSize=Math.min(800,Math.max(0,machinePower))
+ const machineBatchSize=Math.min(150,Math.max(0,machinePower))
  const machineBatchInterval=machinePower>0
    ? Math.max(1,Math.round(effectiveRegen*(machineBatchSize/machinePower)))
    : effectiveRegen
@@ -570,7 +579,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.16a.5.1</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.17.1</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
