@@ -12,7 +12,7 @@ export default function Game(){
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[onlineIds,setOnlineIds]=useState([])
- const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false)
+ const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0)
 
  useEffect(()=>{
   init()
@@ -20,7 +20,7 @@ export default function Game(){
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'game_events',filter:`game_id=eq.${id}`},payload=>handleRealtimeGameEvent(payload.new))
    .subscribe()
   const timer=setInterval(()=>setTick(t=>t+1),1000)
-  const liveTimer=setInterval(()=>{if(document.visibilityState==='visible')pollLiveState()},5000)
+  const liveTimer=setInterval(()=>{if(document.visibilityState==='visible')pollLiveState()},7000)
   return()=>{supabase.removeChannel(ch);clearInterval(timer);clearInterval(liveTimer);clearTimeout(viewportTimer.current);clearTimeout(playerReloadTimer.current)}
  },[id])
 
@@ -31,11 +31,17 @@ export default function Game(){
   })
   presence
    .on('presence',{event:'sync'},()=>{
-     const state=presence.presenceState()
-     setOnlineIds(Object.keys(state||{}))
+     const next=Object.keys(presence.presenceState()||{}).sort()
+     setOnlineIds(prev=>prev.length===next.length&&prev.every((x,i)=>x===next[i])?prev:next)
    })
-   .on('presence',{event:'join'},()=>setOnlineIds(Object.keys(presence.presenceState()||{})))
-   .on('presence',{event:'leave'},()=>setOnlineIds(Object.keys(presence.presenceState()||{})))
+   .on('presence',{event:'join'},()=>{
+     const next=Object.keys(presence.presenceState()||{}).sort()
+     setOnlineIds(prev=>prev.length===next.length&&prev.every((x,i)=>x===next[i])?prev:next)
+   })
+   .on('presence',{event:'leave'},()=>{
+     const next=Object.keys(presence.presenceState()||{}).sort()
+     setOnlineIds(prev=>prev.length===next.length&&prev.every((x,i)=>x===next[i])?prev:next)
+   })
    .subscribe(async status=>{
      if(status==='SUBSCRIBED'){
        await presence.track({user_id:user.id,online_at:new Date().toISOString()})
@@ -85,7 +91,11 @@ export default function Game(){
  }
 
  async function pollLiveState(){
+  const now=Date.now()
   if(livePollBusy.current||joinState==='password'||joinState==='error')return
+  if(now-lastPollAt.current<4500)return
+  if(revealBusy.current||machineBusy.current)return
+  lastPollAt.current=now
   livePollBusy.current=true
   try{
     const {data}=await supabase.rpc('get_game_live_state_v616',{
@@ -94,18 +104,43 @@ export default function Game(){
     if(!data)return
 
     const fv=Number(data.field_version||0)
-    setGame(g=>g?{...g,explored_count:Number(data.explored_count||0),field_version:fv,status:data.status,winner_id:data.winner_id}:g)
+    setGame(g=>{
+      if(!g)return g
+      const explored=Number(data.explored_count||0)
+      if(Number(g.explored_count||0)===explored &&
+         Number(g.field_version||0)===fv &&
+         g.status===data.status &&
+         g.winner_id===data.winner_id)return g
+      return {...g,explored_count:explored,field_version:fv,status:data.status,winner_id:data.winner_id}
+    })
 
     if(Array.isArray(data.players)){
-      setPlayers(data.players)
-      setCompetition(data.players.map(p=>({
+      const pSig=data.players.map(p=>[
+        p.user_id,p.coins,p.moves_left,p.reveal_power,p.reward_multiplier,p.analysis_level,
+        p.player_color,p.move_capacity_bonus,p.regen_reduction,p.machine_last_run_at,
+        p.auto_focus_x,p.auto_focus_y,p.treasure_share_bps,p.treasure_parts_found,
+        p.machine_ticks_used,p.machine_mode,p.gimmick_reveal_bonus_pending,p.fields_revealed,
+        p.tech_count,p.profiles?.display_name,p.profiles?.avatar_path
+      ].join(':')).join('|')
+
+      if(pSig!==lastPlayersSig.current){
+        lastPlayersSig.current=pSig
+        setPlayers(data.players)
+      }
+
+      const comp=data.players.map(p=>({
         user_id:p.user_id,
         display_name:p.profiles?.display_name||'Spieler',
         coins:p.coins,
         fields_revealed:p.fields_revealed,
         treasure_share_bps:p.treasure_share_bps,
         tech_count:p.tech_count
-      })))
+      }))
+      const cSig=comp.map(p=>[p.user_id,p.display_name,p.coins,p.fields_revealed,p.treasure_share_bps,p.tech_count].join(':')).join('|')
+      if(cSig!==lastCompetitionSig.current){
+        lastCompetitionSig.current=cSig
+        setCompetition(comp)
+      }
     }
 
     if(fv!==lastFieldVersion.current){
@@ -287,12 +322,17 @@ export default function Game(){
   }
  }
 
- function scheduleVisibleReload(delay=120){
+ function scheduleVisibleReload(delay=220){
   clearTimeout(viewportTimer.current)
+  const now=Date.now()
+  const minGap=700
+  const wait=Math.max(delay,minGap-(now-lastVisibleReloadAt.current))
   viewportTimer.current=setTimeout(()=>{
    const v=currentViewport.current
-   if(v)loadVisibleFields(v)
-  },delay)
+   if(!v)return
+   lastVisibleReloadAt.current=Date.now()
+   loadVisibleFields(v)
+  },wait)
  }
 
  async function loadVisibleFields(v){
@@ -303,7 +343,20 @@ export default function Game(){
   })
   if(seq!==viewportSeq.current)return
   if(error){setMsg('Kartenausschnitt konnte nicht geladen werden: '+error.message);return}
-  setFields(data?.fields||[])
+  const next=data?.fields||[]
+  setFields(prev=>{
+    if(prev.length===next.length){
+      let same=true
+      for(let i=0;i<next.length;i++){
+        const a=prev[i],b=next[i]
+        if(a?.x!==b?.x||a?.y!==b?.y||a?.size!==b?.size||a?.discovered_by!==b?.discovered_by||a?.is_treasure!==b?.is_treasure){
+          same=false;break
+        }
+      }
+      if(same)return prev
+    }
+    return next
+  })
  }
 
  function handleViewport(v){
@@ -338,8 +391,9 @@ export default function Game(){
     // Nur der sichtbare Ausschnitt wird einmal kompakt neu geladen.
     if(currentViewport.current)await loadVisibleFields(currentViewport.current)
 
-    // Nur kleine Statusdaten nachladen. Die komplette Feldliste bleibt unangetastet.
-    await Promise.all([loadPlayersOnly(),loadGameOnly(),loadGoldOnly()])
+    // Gold ist nach eigenem Fund relevant; Spieler/Game kommen über den kompakten Live-State.
+    await loadGoldOnly()
+    setTimeout(()=>pollLiveState(),350)
   }finally{
     revealBusy.current=false
   }
@@ -370,7 +424,6 @@ export default function Game(){
   if(machineBusy.current||machinePower<=0||document.visibilityState!=='visible'||!document.hasFocus())return
   machineBusy.current=true
   try{
-    await supabase.rpc('machine_presence_v690',{p_game_id:id})
     const {data,error}=await supabase.rpc('run_machines_game_v6151',{p_game_id:id})
     if(error){
       if(!error.message?.includes('Noch nicht fällig'))setMsg('Maschinen: '+error.message)
@@ -380,8 +433,9 @@ export default function Game(){
     handleGimmicks(data?.gimmicks)
     handleTreasure(data,'machine')
     setSessionFields(v=>v+Number(data?.opened||0))
-    if(data?.opened>0&&currentViewport.current)await loadVisibleFields(currentViewport.current)
-    await Promise.all([loadPlayersOnly(),loadGameOnly(),loadGoldOnly()])
+    if(data?.opened>0&&currentViewport.current)scheduleVisibleReload(250)
+    await loadGoldOnly()
+    setTimeout(()=>pollLiveState(),450)
     if(data?.game_over){
       setWinnerCelebration({
         won:!!data.won,
@@ -512,7 +566,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.16a.2</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.16a.3</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>

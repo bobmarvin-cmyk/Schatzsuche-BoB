@@ -124,6 +124,7 @@ export default function GameMap({game,fields,players,onReveal,onTrapPlace,trapMo
   viewportRef.current=onViewportChange
   analysisFeaturesRef.current=onAnalysisFeatures
   mapModeRef.current=mapMode
+  const playerColorKey=players.map(p=>`${p.user_id}:${p.player_color||''}`).join('|')
 
   useEffect(()=>{
     if(!game||!holder.current||mapRef.current)return
@@ -292,7 +293,7 @@ export default function GameMap({game,fields,players,onReveal,onTrapPlace,trapMo
       if(src)src.setData(featureCollection(gameRef.current,fieldsRef.current,playersRef.current))
     }
     if(map.loaded())apply();else map.once('load',apply)
-  },[fields,players,game])
+  },[fields,playerColorKey,game?.id])
 
   useEffect(()=>{
     const map=mapRef.current
