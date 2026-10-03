@@ -486,11 +486,15 @@ export default function Game(){
  const machinePower=technologies
    .filter(t=>owned.includes(t.id))
    .reduce((sum,t)=>sum+Number(t.machine_auto_fields||0),0)
+ const machineBatchSize=Math.min(800,Math.max(0,machinePower))
+ const machineBatchInterval=machinePower>0
+   ? Math.max(1,Math.round(effectiveRegen*(machineBatchSize/machinePower)))
+   : effectiveRegen
  const secondsUntilMachine=(()=>{
    if(!me||!game||machinePower<=0)return null
    if((me.machine_mode||'focus')==='focus'&&(me.auto_focus_x==null||me.auto_focus_y==null))return null
    const last=new Date(me.machine_last_run_at||Date.now()).getTime()
-   const due=last+effectiveRegen*1000
+   const due=last+machineBatchInterval*1000
    return Math.max(0,Math.ceil((due-Date.now())/1000))
  })()
 
@@ -566,7 +570,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.16a.4</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.16a.5</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -590,7 +594,7 @@ export default function Game(){
    </div>
    <div className="regenBarText">Ungenutzte Züge werden bis zum Speicherlimit gesammelt; darüber hinaus verfallen sie.</div>
    {machinePower>0&&<div className="machineStatusCompact">
-    <span>⚙️ {machinePower.toLocaleString('de-DE')}/Takt</span>
+    <span>⚙️ {machinePower.toLocaleString('de-DE')}/Takt{machinePower>800?` · ${machineBatchSize}/Paket`:''}</span>
     <button className={'miniBtn '+((me?.machine_mode||'focus')==='focus'?'active':'')} onClick={()=>setMachineMode('focus')}>📍 Fokus</button>
     <button className={'miniBtn '+(me?.machine_mode==='random'?'active':'')} onClick={()=>setMachineMode('random')}>🎲 Zufall</button>
    </div>}
@@ -631,7 +635,7 @@ export default function Game(){
 
   <div className="gameLayout">
    <section className="panel gameMapPanel">
-    <div className="mapHeader"><div><h2>Weltkarte</h2><div className="small">Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.</div></div>
+    <div className="mapHeader"><div><h2>{game?.name||'Schatzsuche'}{game?.center_label?` · ${game.center_label}`:''}</h2><div className="small">Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.</div></div>
      <div className="mapLegend">{players.map(p=><div className={'legendItem '+(onlineIds.includes(p.user_id)?'online':'offline')} key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.profiles?.display_name||'Spieler'}{onlineIds.includes(p.user_id)&&<span className="onlineDot" title="online">●</span>}</div>)}</div>
     </div>
     {game&&<><div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name}</button>)}</>}</div><GameMap game={game} fields={fields} players={players} onReveal={reveal} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}

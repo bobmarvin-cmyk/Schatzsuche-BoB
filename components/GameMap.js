@@ -2,7 +2,7 @@
 import {useEffect,useRef,useState} from 'react'
 
 const METERS_PER_DEG_LAT=111320
-const TARGET_VISIBLE_BUCKETS=2600
+const TARGET_VISIBLE_BUCKETS=1400
 const MAP_STYLE='https://tiles.openfreemap.org/styles/liberty'
 const SATELLITE_STYLE={
   version:8,
