@@ -709,7 +709,9 @@ export default function Game(){
     if(currentViewport.current)scheduleVisibleReload(100)
   }
 
-  setTimeout(()=>loadPendingClaim(),500)
+  if(!(data?.retry_created&&['wrong','expired'].includes(data?.reason))){
+    setTimeout(()=>loadPendingClaim(),500)
+  }
  }
 
  function pressClaimKey(key){
@@ -728,7 +730,16 @@ export default function Game(){
   try{
     await supabase.rpc('set_machine_focus_v690',{p_game_id:id,p_x:x,p_y:y})
     const {data,error}=await supabase.rpc('reveal_area_v620',{p_game_id:id,p_x:x,p_y:y})
-    if(error){setMsg(error.message);return}
+    if(error){
+      const {data:rescue,error:rescueError}=await supabase.rpc('ensure_terrain_progress_v6245',{p_game_id:id})
+      if(!rescueError&&rescue?.granted){
+        setMsg(rescue.message||'🛟 Expeditionshilfe verfügbar.')
+        await loadPlayersOnly()
+      }else{
+        setMsg(error.message)
+      }
+      return
+    }
 
     setMsg(data?.message||'Gebiet untersucht')
     handleGimmicks(data?.gimmicks)
@@ -967,7 +978,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.24.4</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.24.5</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1166,8 +1177,11 @@ export default function Game(){
       {n==='1'?'▲':n==='2'?'●':n==='3'?'■':'◆'}
      </span>)}
     </div>
-    <div className="small muted">Beim nächsten Fehlversuch wird die Bergungsprüfung etwas leichter.</div>
-    <button className="btn primary" onClick={()=>setClaimResult(null)}>Verstanden</button>
+    <div className="small muted">Der Schatz bleibt auf diesem Feld. Dein nächster Bergungsversuch wird etwas leichter.</div>
+    <button className="btn primary" onClick={async()=>{
+      setClaimResult(null)
+      await loadPendingClaim()
+    }}>Verstanden · neuer Versuch</button>
    </div>
   </div>}
 
