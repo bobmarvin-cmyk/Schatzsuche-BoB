@@ -1785,3 +1785,65 @@ button:disabled{cursor:not-allowed;opacity:.45}
  .claimReverseMain{font-size:16px}
  .claimReverseExample{font-size:14px;gap:7px}
 }
+
+
+/* =========================================================
+   V6.25 – Jobs, Lobby-Sortierung, mobile Karte, Tutorialkarte
+   ========================================================= */
+.lobbySortBar{
+ display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 12px
+}
+.lobbySortBar .input{width:auto;min-width:170px;margin:0}
+.gameProgressLine{display:flex;align-items:center;gap:8px;margin:7px 0}
+.gameProgressLine>div{height:6px;flex:1;border-radius:999px;background:#1d2a3b;overflow:hidden}
+.gameProgressLine>div>span{display:block;height:100%;background:currentColor;opacity:.72}
+.gameProgressLine small{white-space:nowrap;color:#9eb0c4}
+.lobbySectionHead{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+
+.jobPanel{margin-top:10px}
+.jobPanelHead{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.jobChoices{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.jobStatus{
+ padding:5px 8px;border-radius:999px;border:1px solid #506783;
+ background:#101c2c;font-size:11px;font-weight:900;font-variant-numeric:tabular-nums
+}
+.jobStatus.ready{border-color:#3d7658;background:#122d22;color:#9ce7bd}
+
+.gameNamePoolGrid{
+ display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px
+}
+.gameNamePoolGrid textarea{min-height:180px;resize:vertical}
+
+.tutorialMapWorld{
+ position:relative;
+ background-image:
+   linear-gradient(rgba(4,12,22,.16),rgba(4,12,22,.16)),
+   url("https://tile.openstreetmap.org/6/33/21.png");
+ background-size:cover;
+ background-position:center;
+}
+.tutorialMapWorld .tutorialCell{
+ background:rgba(12,25,42,.62);
+ backdrop-filter:blur(.3px);
+}
+.tutorialMapWorld .tutorialCell.revealed{background:rgba(35,91,136,.48)}
+.tutorialMapAttribution{
+ margin-top:4px;text-align:right;font-size:8px;color:#8294aa
+}
+
+@media(max-width:700px){
+ .mapModeSwitch{
+   left:10px;
+   top:auto;
+   bottom:10px;
+ }
+ .lobbySortBar{display:grid;grid-template-columns:1fr 1fr}
+ .lobbySortBar .input,.lobbySortBar .btn{width:100%;min-width:0}
+ .lobbySortBar .btn{grid-column:1/-1}
+ .gameNamePoolGrid{grid-template-columns:1fr}
+}
+
+@media(max-width:700px){
+ .mapModeSwitch{padding:2px}
+ .mapModeSwitch .miniBtn{padding:6px 8px;font-size:11px}
+}

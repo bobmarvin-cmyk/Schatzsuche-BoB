@@ -4,7 +4,7 @@ import {useMemo,useState} from 'react'
 const modes=[
  {id:'standard',icon:'🧭',name:'Schatzsuche',text:'Klassisches Spiel ohne Gold-Einsatz. Taler, Technologien, Hinweise, Maschinen und Fallen entscheiden über deine Strategie.'},
  {id:'pay',icon:'✨',name:'Goldsuche',text:'Teilnehmer zahlen Goldstaub-Einsatz. Die Spielmechanik bleibt gleich, aber Gold wird nach den serverseitigen Regeln verteilt.'},
- {id:'sponsor',icon:'🤝',name:'Sponsorspiel',text:'Für Spieler kostenlos. Der Sponsor stiftet den Gold-Pool. Der Schatz wird erst nach bestandener Bergungsprüfung endgültig gewonnen.'}
+ {id:'sponsor',icon:'🤝',name:'Sponsorspiel',text:'Für Spieler kostenlos. Der Sponsor stiftet den Gold-Pool. Der Schatz wird erst nach bestandener Schatzsicherung endgültig gewonnen.'}
 ]
 
 const steps=[
@@ -15,7 +15,7 @@ const steps=[
  {title:'Fallen einsetzen',text:'Fallen dürfen auf unbekannte Felder. Sie bleiben aktiv, bis sie ausgelöst werden. Jede neue Platzierung kostet Taler.',action:'Falle für 2 T setzen'},
  {title:'Maschinen verstehen',text:'Maschinen arbeiten automatisch weiter, solange das Spiel aktiv ist. Sie sind Werkzeuge – die Karte bleibt serverautoritativ.',action:'Maschine simulieren'},
  {title:'Schatzteil entdecken',text:'Mehrere Schatzteile können zusammen den Gesamtschatz bilden. Dein Anteil entscheidet am Ende über die Wertung.',action:'Schatzteil suchen'},
- {title:'Bergungsprüfung',text:'Ein Fund ist noch nicht endgültig. Merke dir die Symbolfolge und bestätige sie. Im echten Spiel läuft dabei ein sichtbarer Timer.',action:'Bergung starten'},
+ {title:'Schatzsicherung',text:'Ein Fund ist noch nicht endgültig. Merke dir die Symbolfolge und bestätige sie. Im echten Spiel läuft dabei ein sichtbarer Timer.',action:'Schatz sichern'},
  {title:'Wertung & Abschluss',text:'Geschafft. Ranking, Schatzanteil und Spielmodus greifen jetzt zusammen. Du kannst das Tutorial wiederholen oder direkt in die Lobby wechseln.',action:'Fertig'}
 ]
 
@@ -72,7 +72,7 @@ export default function Tutorial(){
  }
 
  return <main className="container tutorialPage">
-  <div className="buildBadge">V6.24.5</div>
+  <div className="buildBadge">V6.25</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/hilfe">Hilfe</a></div>
 
   <section className="panel tutorialHero">
@@ -106,7 +106,7 @@ export default function Tutorial(){
      <span><small>Schatz</small><b>{claimPassed?'100%':treasureFound?'50%':'0%'}</b></span>
     </div>
 
-    <div className="tutorialMap tutorialMapLarge">
+    <div className="tutorialMap tutorialMapLarge tutorialMapWorld">
      {cells.map(i=><button key={i}
        className={'tutorialCell '+(revealed.includes(i)?'revealed ':'')+
         (machineCells.includes(i)?'machine ':'')+(trap===i?'trap ':'')+
@@ -116,6 +116,7 @@ export default function Tutorial(){
        {trap===i?'🪤':treasureFound&&i===29?'🧩':machineCells.includes(i)?'⚙️':revealed.includes(i)?'✓':''}
      </button>)}
     </div>
+    <div className="tutorialMapAttribution">Hintergrund: © OpenStreetMap-Mitwirkende · Raster = Spieloverlay</div>
 
     {analysis&&<div className="tutorialHint">
       <strong>🧭 Analyse-Hinweis</strong>
@@ -181,7 +182,7 @@ export default function Tutorial(){
     <div className="card"><strong>🌍 Terrain</strong><div className="small">Wald, Wasser, Siedlung, Acker oder andere reale Kartennutzung.</div></div>
     <div className="card"><strong>📡 Peilung</strong><div className="small">Neue Suchpunkte liefern weitere Richtungsinformationen.</div></div>
     <div className="card"><strong>🪤 Taktik</strong><div className="small">Fallen kosten beim Setzen Taler und sind damit eine bewusste Investition.</div></div>
-    <div className="card"><strong>🧗 Bergung</strong><div className="small">Der Schatz wird erst nach einer separaten, zeitlich begrenzten Prüfung gesichert.</div></div>
+    <div className="card"><strong>🔐 Schatzsicherung</strong><div className="small">Der Schatz wird erst nach einer separaten, zeitlich begrenzten Prüfung gesichert.</div></div>
    </div>
   </section>
  </main>

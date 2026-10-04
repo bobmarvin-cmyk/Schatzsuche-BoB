@@ -506,7 +506,7 @@ export default function GameMap({
 
           // Terrain wird clientseitig nur als Karten-Hintergrundinformation gelesen.
           // Die eigentliche Aufdeckung bleibt serverautoritativ.
-          // V6.24.5: mehr Kandidaten vermessen als nominelle Suchleistung.
+          // V6.25: mehr Kandidaten vermessen als nominelle Suchleistung.
           // Bereits belegte / gesperrte Felder dürfen den Zug nicht künstlich verkleinern.
           const nominal=Math.max(1,Number(terrainScanPowerRef.current||1))
           const target=Math.min(2400,Math.max(nominal,Math.ceil(nominal*2.25)))
@@ -701,14 +701,12 @@ export default function GameMap({
     <canvas ref={canvasRef} className="gameCanvasOverlay" aria-hidden="true"/>
     {mobileHud}
     <div className="mapModeSwitch">
-      <button type="button" className={'miniBtn '+(mapMode==='map'?'active':'')} onClick={()=>switchMapMode('map')}>🗺️ Karte</button>
-      <button type="button" className={'miniBtn '+(mapMode==='satellite'?'active':'')} onClick={()=>switchMapMode('satellite')}>🛰️ Satellit</button>
+      <button type="button" className="miniBtn active" title={mapMode==='map'?'Satellitenansicht':'Kartenansicht'}
+       onClick={()=>switchMapMode(mapMode==='map'?'satellite':'map')}>
+       {mapMode==='map'?'🛰️ Satellit':'🗺️ Karte'}
+      </button>
     </div>
     <button type="button" className="mapCenterBtn" onClick={centerOnGame}>◎ Zum Spielfeld</button>
-    <div className="mapRenderModeBadge">
-      {renderMode==='detail'?'▦ Lokal gerendert':'▧ Chunk-Übersicht'}
-      {gridStride>1?` · Raster ×${gridStride}`:''}
-    </div>
     {mapInfo&&<div className="mapInfoDock">{mapInfo}</div>}
     {status&&<div className="mapLoadingOverlay">{status}</div>}
   </div>

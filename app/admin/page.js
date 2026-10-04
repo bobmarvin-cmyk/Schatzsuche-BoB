@@ -27,6 +27,8 @@ export default function Admin(){
  const [passwordDraft,setPasswordDraft]=useState('')
  const [msg,setMsg]=useState('')
  const [saving,setSaving]=useState(false)
+ const [namePoolLeft,setNamePoolLeft]=useState('')
+ const [namePoolRight,setNamePoolRight]=useState('')
 
  useEffect(()=>{init()},[])
 
@@ -41,18 +43,21 @@ export default function Admin(){
  }
 
  async function load(){
-  const [{data:s,error:se},{data:t,error:te},{data:go,error:ge},{data:ag,error:ae},{data:games,error:gameErr},{data:bars}]=await Promise.all([
+  const [{data:s,error:se},{data:t,error:te},{data:go,error:ge},{data:ag,error:ae},{data:games,error:gameErr},{data:bars},{data:namePool,error:namePoolErr}]=await Promise.all([
     supabase.from('platform_settings').select('*').eq('id',1).single(),
     supabase.from('technologies').select('*').order('sort_order',{ascending:true}).order('id',{ascending:true}),
     supabase.rpc('admin_gold_overview_v613'),
     supabase.rpc('admin_get_auto_game_config_v6141'),
     supabase.rpc('admin_list_games_v615',{p_limit:200}),
-    supabase.rpc('admin_gold_bars_overview_v6211')
+    supabase.rpc('admin_gold_bars_overview_v6211'),
+    supabase.rpc('list_game_name_parts_v625')
   ])
-  if(se||te||ge||ae||gameErr){setMsg(se?.message||te?.message||ge?.message||ae?.message||gameErr?.message||'Fehler beim Laden');return}
+  if(se||te||ge||ae||gameErr||namePoolErr){setMsg(se?.message||te?.message||ge?.message||ae?.message||gameErr?.message||namePoolErr?.message||'Fehler beim Laden');return}
   setSettings(s);setTechs(t||[]);setGoldOverview(go||null);setAutoGame(ag||null);setAdminGames(games||[]);setBarOverview(bars||null)
   setBarSizesText((s?.allowed_bar_sizes_mg||[100,250,500,1000,2500,5000]).join(', '))
   setGeoGameId(current=>current||games?.[0]?.id||'')
+  setNamePoolLeft((namePool?.left||[]).join('\n'))
+  setNamePoolRight((namePool?.right||[]).join('\n'))
   await loadMembers(memberSearch)
  }
 
@@ -117,6 +122,32 @@ export default function Admin(){
   setSaving(false)
   setMsg(error?error.message:(data?.message||'Globale Einstellungen gespeichert.'))
   if(!error)await load()
+ }
+
+ async function saveJobSettings(){
+  setSaving(true);setMsg('')
+  const {data,error}=await supabase.rpc('admin_set_job_settings_v625',{
+    p_duration_seconds:NUM(settings.job_duration_seconds),
+    p_reward_taler:NUM(settings.job_reward_taler)
+  })
+  setSaving(false)
+  setMsg(error?error.message:(data?.message||'Jobwerte gespeichert.'))
+  if(!error)await load()
+ }
+
+ async function saveNamePool(){
+  const left=namePoolLeft.split(/\n|,/).map(x=>x.trim()).filter(Boolean)
+  const right=namePoolRight.split(/\n|,/).map(x=>x.trim()).filter(Boolean)
+  setSaving(true);setMsg('')
+  const {data,error}=await supabase.rpc('admin_replace_game_name_pool_v625',{
+    p_left:left,p_right:right
+  })
+  setSaving(false)
+  setMsg(error?error.message:'Namenspool gespeichert.')
+  if(!error&&data){
+    setNamePoolLeft((data.left||[]).join('\n'))
+    setNamePoolRight((data.right||[]).join('\n'))
+  }
  }
 
  function setAuto(key,value){setAutoGame(a=>({...a,[key]:value}))}
@@ -321,7 +352,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.24.5</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.25</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -331,8 +362,32 @@ export default function Admin(){
 
   {msg&&<div className="noticeBar">{msg}</div>}
   <nav className="adminJumpNav">
-   <a href="#admin-members">👥 Mitglieder</a><a href="#admin-games">🎮 Spiele</a><a href="#admin-geo">🌍 Geodaten</a><a href="#admin-auto">🤖 Auto</a><a href="#admin-economy">✨ Gold</a><a href="#admin-rules">⚙️ Regeln</a><a href="#admin-tech">🧠 Technologien</a>
+   <a href="#admin-members">👥 Mitglieder</a><a href="#admin-jobs">🧰 Jobs & Namen</a><a href="#admin-games">🎮 Spiele</a><a href="#admin-geo">🌍 Geodaten</a><a href="#admin-auto">🤖 Auto</a><a href="#admin-economy">✨ Gold</a><a href="#admin-rules">⚙️ Regeln</a><a href="#admin-tech">🧠 Technologien</a>
   </nav>
+
+  <section className="panel" id="admin-jobs">
+   <div className="sectionTitleRow">
+    <div>
+     <h2>🧰 Nebenjobs & Zufallsnamen</h2>
+     <p className="small">Notfall-Talerquelle und Namenspool für automatisch vorgeschlagene Spielnamen.</p>
+    </div>
+   </div>
+
+   <h3>Nebenjobs</h3>
+   <div className="adminGrid">
+    <Field label="Jobdauer (Sekunden)" value={settings.job_duration_seconds??180} onChange={v=>setSetting('job_duration_seconds',v)}/>
+    <Field label="Lohn pro Job (Taler)" step="0.01" value={settings.job_reward_taler??1} onChange={v=>setSetting('job_reward_taler',v)}/>
+   </div>
+   <button className="btn primary" disabled={saving} onClick={saveJobSettings}>Jobwerte speichern</button>
+
+   <h3 style={{marginTop:22}}>Zufallsnamen-Pool</h3>
+   <p className="small">Eine Zeile = ein Namensbaustein. Das Spiel kombiniert links + rechts, z. B. „Nebel“ + „Expedition“.</p>
+   <div className="gameNamePoolGrid">
+    <label className="adminField"><span>Erster Teil</span><textarea className="input" value={namePoolLeft} onChange={e=>setNamePoolLeft(e.target.value)}/></label>
+    <label className="adminField"><span>Zweiter Teil</span><textarea className="input" value={namePoolRight} onChange={e=>setNamePoolRight(e.target.value)}/></label>
+   </div>
+   <button className="btn primary" disabled={saving} onClick={saveNamePool}>Namenspool speichern</button>
+  </section>
 
   <section className="panel" id="admin-members">
    <div className="sectionTitleRow">

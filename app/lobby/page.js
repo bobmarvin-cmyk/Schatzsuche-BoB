@@ -4,11 +4,13 @@ import {supabase} from '../../lib/supabase-browser'
 import {formatGold,mgToUg} from '../../lib/gold'
 import FirstLoginHelp from '../../components/FirstLoginHelp'
 
-const NAME_LEFT=['Nebel','Nordlicht','Kompass','Atlas','Mond','Falken','Gold','Schatten','Fjord','Drachen','Wolken','Glut','Sternen','Wild','Dschungel','Wüsten']
-const NAME_RIGHT=['Jagd','Pfad','Quest','Rallye','Expedition','Mission','Odyssee','Spur','Fährte','Abenteuer','Challenge','Suche','Sprint','Reise','Geheimnis','Runde']
-function creativeGameName(){
- const a=NAME_LEFT[Math.floor(Math.random()*NAME_LEFT.length)]
- const b=NAME_RIGHT[Math.floor(Math.random()*NAME_RIGHT.length)]
+const FALLBACK_LEFT=['Nebel','Nordlicht','Kompass','Atlas','Mond','Falken','Gold','Schatten','Fjord','Drachen','Wolken','Glut','Sternen','Wild','Dschungel','Wüsten']
+const FALLBACK_RIGHT=['Jagd','Pfad','Quest','Rallye','Expedition','Mission','Odyssee','Spur','Fährte','Abenteuer','Challenge','Suche','Sprint','Reise','Geheimnis','Runde']
+function creativeGameName(pool){
+ const left=pool?.left?.length?pool.left:FALLBACK_LEFT
+ const right=pool?.right?.length?pool.right:FALLBACK_RIGHT
+ const a=left[Math.floor(Math.random()*left.length)]
+ const b=right[Math.floor(Math.random()*right.length)]
  return a+b
 }
 
@@ -25,9 +27,13 @@ export default function Lobby(){
  const [inviteCode,setInviteCode]=useState(''),[joinPassword,setJoinPassword]=useState('')
  const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('10'),[sponsorGold,setSponsorGold]=useState('100'),[sponsorName,setSponsorName]=useState(''),[treasureCount,setTreasureCount]=useState(1),[gimmickPercent,setGimmickPercent]=useState(1),[gimmickWarn,setGimmickWarn]=useState(false),[privateJoinOpen,setPrivateJoinOpen]=useState(false)
  const [placeQuery,setPlaceQuery]=useState(''),[placeResults,setPlaceResults]=useState([]),[placeSearching,setPlaceSearching]=useState(false),[selectedPlaceLabel,setSelectedPlaceLabel]=useState('')
+ const [namePool,setNamePool]=useState({left:FALLBACK_LEFT,right:FALLBACK_RIGHT})
+ const [sortMode,setSortMode]=useState('players')
+ const [sortDir,setSortDir]=useState('desc')
+ const [gameFilter,setGameFilter]=useState('all')
 
  useEffect(()=>{
-   setName(creativeGameName())
+   setName(creativeGameName(namePool))
    init()
    const channel=supabase.channel('games-live')
     .on('postgres_changes',{event:'*',schema:'public',table:'games'},()=>loadGames()).subscribe()
@@ -40,10 +46,18 @@ export default function Lobby(){
    await supabase.rpc('run_game_maintenance_v66')
    const {data:adminFlag}=await supabase.rpc('is_admin_v67')
    setIsAdmin(!!adminFlag)
-   await Promise.all([loadGames(),loadWallet(),loadSettings()])
+   await Promise.all([loadGames(),loadWallet(),loadSettings(),loadNamePool()])
    setAuthReady(true)
  }
 
+ async function loadNamePool(){
+   const {data,error}=await supabase.rpc('list_game_name_parts_v625')
+   if(!error&&data){
+     const pool={left:data.left||FALLBACK_LEFT,right:data.right||FALLBACK_RIGHT}
+     setNamePool(pool)
+     setName(current=>current==='Neue Schatzsuche'||!current?creativeGameName(pool):current)
+   }
+ }
  async function loadWallet(){
    const {data:{user}}=await supabase.auth.getUser()
    if(!user)return
@@ -62,9 +76,7 @@ export default function Lobby(){
    }
  }
  async function loadGames(){
-   const {data,error}=await supabase.from('games')
-    .select('id,name,status,max_players,created_at,closed_at,close_reason,last_activity_at,width,height,center_label,cell_size_m,regen_seconds,max_stored_moves,is_private,game_type,entry_gold_ug,treasure_count,gold_prize_pool_ug,sponsor_name,sponsor_pool_ug,start_at,game_players(count)')
-    .eq('is_private',false).order('created_at',{ascending:false})
+   const {data,error}=await supabase.rpc('get_lobby_games_v625')
    if(error){setMsg(error.message);return}
    setGames(data||[])
  }
@@ -163,6 +175,31 @@ export default function Lobby(){
  const platformPct=settings?settings.platform_share_bps/100:5
  const activeGames=games.filter(g=>g.status==='active')
  const closedGames=games.filter(g=>g.status!=='active')
+ function gameProgress(g){
+   const total=Math.max(1,Number(g.width||0)*Number(g.height||0))
+   return Math.min(1,Number(g.explored_count||0)/total)
+ }
+ function filterGame(g){
+   const total=Number(g.width||0)*Number(g.height||0)
+   if(gameFilter==='gold')return g.game_type==='pay'
+   if(gameFilter==='sponsor')return g.game_type==='sponsor'
+   if(gameFilter==='standard')return g.game_type==='standard'
+   if(gameFilter==='fast')return Number(g.regen_seconds||999)<=15&&total<=250000
+   if(gameFilter==='long')return Number(g.regen_seconds||0)>=60||total>=1000000
+   return true
+ }
+ function sortValue(g){
+   if(sortMode==='players')return Number(g.player_count||0)
+   if(sortMode==='progress')return gameProgress(g)
+   if(sortMode==='speed')return -Number(g.regen_seconds||0)
+   if(sortMode==='size')return Number(g.width||0)*Number(g.height||0)
+   if(sortMode==='created')return new Date(g.created_at||0).getTime()
+   return 0
+ }
+ const visibleActiveGames=activeGames.filter(filterGame).sort((a,b)=>{
+   const d=sortValue(a)-sortValue(b)
+   return sortDir==='asc'?d:-d
+ })
  const inactivityHours=settings?.game_inactivity_hours||24
  const retentionHours=settings?.closed_game_retention_hours||72
  const regenOptions=(()=>{
@@ -180,7 +217,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.24.5</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.25</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -195,7 +232,7 @@ export default function Lobby(){
 
   <div className="panel heroPanel">
    <div className="heroSplit">
-    <div><h1>Lobby</h1><p className="muted">Schatzsuchen und Sponsorspiele können kostenlos für Teilnehmer laufen. Sponsor-Pools werden vom Sponsor gestiftet; Gold-/Prämienfunktionen werden serverseitig geregelt.</p><p className="small">Spiele ohne Zug werden nach {inactivityHours} Stunden automatisch geschlossen. Die großen Live-Daten geschlossener Spiele werden nach {Math.round(retentionHours/24)} Tagen bereinigt; der Endstand bleibt dauerhaft in der Hall of Fame.</p></div>
+    <div><h1>Lobby</h1><p className="muted">Finde eine passende Runde oder starte deine eigene Schatzsuche. Schnelle Spiele, Langzeitrunden, Goldspiele und Sponsorspiele lassen sich unten gezielt filtern und sortieren.</p><p className="small">Spiele ohne Zug werden nach {inactivityHours} Stunden automatisch geschlossen. Die großen Live-Daten geschlossener Spiele werden nach {Math.round(retentionHours/24)} Tagen bereinigt; der Endstand bleibt dauerhaft in der Hall of Fame.</p></div>
     <div className="goldWalletCard">
      <div className="small">Goldstaub</div>
      <div className="goldBalance">✨ {formatGold(wallet?.balance_ug||0)}</div>
@@ -349,9 +386,9 @@ export default function Lobby(){
   <section className="panel activeGamesPanel">
    <div className="sectionTitleRow"><h2>Laufende öffentliche Spiele</h2><span className="gameCountBadge">{activeGames.length}</span></div>
    <div className="grid gameCards">
-    {activeGames.length===0&&<div className="muted">Momentan sind keine öffentlichen Spiele aktiv.</div>}
-    {activeGames.map(g=>{
-      const count=g.game_players?.[0]?.count||0
+    {visibleActiveGames.length===0&&<div className="muted">Für diesen Filter sind momentan keine Spiele verfügbar.</div>}
+    {visibleActiveGames.map(g=>{
+      const count=Number(g.player_count||0)
       const isPay=g.game_type==='pay'
       const isSponsor=g.game_type==='sponsor'
       return <div className={'card '+(isPay?'payGameCard':isSponsor?'sponsorGameCard':'')} key={g.id}>
@@ -366,6 +403,10 @@ export default function Lobby(){
         <span>Sponsor: <b>{g.sponsor_name||'Sponsor'}</b></span><span>Teilnahme: <b>kostenlos</b></span><span>Pool: <b>{formatGold(g.gold_prize_pool_ug)}</b></span>
        </div>}
        <div className="capacityLine"><span>👥 {count} / {g.max_players}</span><span>🟢 aktiv</span></div>
+       <div className="gameProgressLine">
+        <div><span style={{width:`${Math.round(gameProgress(g)*100)}%`}}/></div>
+        <small>{(gameProgress(g)*100).toFixed(1)} % erkundet</small>
+       </div>
        <button className={'btn '+(isPay?'goldBtn':'primary')+' wideOnMobile'} disabled={count>=g.max_players} onClick={()=>joinPublic(g)}>
         {count>=g.max_players?'Voll':isPay?`Beitreten · ${formatGold(g.entry_gold_ug)}`:isSponsor?'Kostenlos teilnehmen':'Beitreten'}
        </button>

@@ -53,7 +53,7 @@ export default function Praemien(){
  const sizes=settings?.allowed_bar_sizes_mg||[]
 
  return <main className="container rewardsPage">
-  <div className="buildBadge">V6.24.5</div>
+  <div className="buildBadge">V6.25</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a></div>
 
   <section className="panel rewardHero">
