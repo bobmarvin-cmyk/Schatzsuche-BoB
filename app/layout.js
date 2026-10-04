@@ -5,8 +5,13 @@ import {siteConfig} from '../lib/site-config'
 
 export const metadata={
   title:siteConfig.brandName,
-  description:'Multiplayer-Schatzsuche auf einer echten Weltkarte',
-  viewport:'width=device-width, initial-scale=1, maximum-scale=5'
+  description:'Multiplayer-Schatzsuche auf einer echten Weltkarte'
+}
+
+export const viewport={
+  width:'device-width',
+  initialScale:1,
+  maximumScale:5
 }
 
 export default function RootLayout({children}){
