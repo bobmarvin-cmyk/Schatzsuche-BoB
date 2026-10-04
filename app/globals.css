@@ -1213,3 +1213,112 @@ button:disabled{cursor:not-allowed;opacity:.45}
  .deductionClueList{max-height:240px}
  .deductionClue{font-size:10px}
 }
+
+
+/* =========================================================
+   V6.21.1 – ruhige Karte / Geodatenprüfer / Goldschmelze
+   ========================================================= */
+.mapRenderModeBadge{
+  position:absolute;
+  left:10px;
+  bottom:10px;
+  z-index:7;
+  padding:5px 8px;
+  border-radius:999px;
+  background:rgba(11,20,34,.88);
+  border:1px solid rgba(121,150,181,.35);
+  color:#b9c9da;
+  font-size:9px;
+  font-weight:800;
+  pointer-events:none;
+  backdrop-filter:blur(4px);
+}
+
+.geoInspectorResult{margin-top:10px}
+.smallStat{font-size:13px!important;word-break:break-word}
+.adminProfileList{margin-top:12px}
+.adminProfileList summary{cursor:pointer;font-weight:900}
+.smelterAdminBox{
+  margin:12px 0;
+  padding:12px;
+  border:1px solid #624f22;
+  border-radius:12px;
+  background:linear-gradient(135deg,rgba(57,43,16,.55),rgba(23,27,37,.9));
+}
+.smelterAdminBox h3{margin-top:0}
+.smelterStats{margin-top:8px}
+
+.barSizeGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(115px,1fr));
+  gap:8px;
+  margin-top:12px;
+}
+.barSmeltCard{
+  min-height:110px;
+  border:1px solid #6a5623;
+  border-radius:13px;
+  background:linear-gradient(150deg,#3f3216,#211d14);
+  color:#f6e5a6;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  cursor:pointer;
+}
+.barSmeltCard:hover:not(:disabled){transform:translateY(-1px);border-color:#aa8730}
+.barSmeltCard:disabled{opacity:.42;cursor:not-allowed}
+.barIcon{font-size:27px;color:#e7be48;text-shadow:0 2px 10px rgba(231,190,72,.25)}
+.barIcon.big{font-size:40px}
+.barSmeltCard small{color:#bda968}
+
+.myBarsGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:9px;
+}
+.digitalBar{
+  padding:11px;
+  border:1px solid #66521f;
+  border-radius:12px;
+  background:linear-gradient(145deg,#3a2f16,#1d1b17);
+}
+.digitalBar.remelted,.digitalBar.cancelled{opacity:.5}
+.digitalBar.redeemed{border-color:#44715f}
+.digitalBarFace{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  margin-bottom:7px;
+}
+.digitalBarFace>div{display:flex;flex-direction:column}
+.digitalBarFace strong{font-size:19px}
+.digitalBarFace small{font-size:8px;color:#b8a56b;letter-spacing:.05em}
+.barActions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.smelterFlow{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:7px;
+}
+.smelterFlow>div{
+  min-height:82px;
+  border:1px solid #344b65;
+  border-radius:10px;
+  padding:8px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+}
+.smelterFlow strong{font-size:20px;color:#e6bd49}
+.smelterFlow span{font-size:9px;color:#a8b7c8}
+
+@media(max-width:700px){
+  .mapRenderModeBadge{bottom:7px;left:7px;font-size:8px}
+  .barSizeGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .myBarsGrid{grid-template-columns:1fr}
+  .smelterFlow{grid-template-columns:1fr 1fr}
+  .smelterFlow>div{min-height:68px}
+}

@@ -50,29 +50,46 @@ function cellBounds(g,x,y,size=1){
   return [west,south,east,north]
 }
 
-function featureCollection(game,fields,players){
+function featureCollection(game,fields,players,mode='detail'){
   if(!game)return {type:'FeatureCollection',features:[]}
   const g=geometry(game)
   const colors={}
   players.forEach((p,i)=>{
     colors[p.user_id]=p.player_color||['#3b82f6','#22c55e','#a855f7','#ef4444'][i%4]
   })
+
+  if(mode==='overview'){
+    return {
+      type:'FeatureCollection',
+      features:fields.map(f=>{
+        const size=Math.max(1,Number(f.size||1))
+        const [w,s,e,n]=cellBounds(g,Number(f.x),Number(f.y),size)
+        return {
+          type:'Feature',
+          properties:{
+            color:f.is_treasure?'#f4c542':(colors[f.discovered_by]||'#3b82f6'),
+            aggregated:size>1
+          },
+          geometry:{type:'Point',coordinates:[(w+e)/2,(s+n)/2]}
+        }
+      })
+    }
+  }
+
   return {
     type:'FeatureCollection',
-    features:fields.map(f=>{
-      const [w,s,e,n]=cellBounds(g,Number(f.x),Number(f.y),Number(f.size||1))
+    features:fields.filter(f=>Number(f.size||1)===1).map(f=>{
+      const [w,s,e,n]=cellBounds(g,Number(f.x),Number(f.y),1)
       return {
         type:'Feature',
         properties:{
-          color:f.is_treasure?'#f4c542':(colors[f.discovered_by]||'#3b82f6'),
-          aggregated:Number(f.size||1)>1
+          color:f.is_treasure?'#f4c542':(colors[f.discovered_by]||'#3b82f6')
         },
         geometry:{type:'Polygon',coordinates:[[[w,s],[e,s],[e,n],[w,n],[w,s]]]}
       }
     })
   }
 }
-
 
 function trapCollection(game,traps){
   if(!game)return {type:'FeatureCollection',features:[]}
@@ -142,8 +159,10 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
   const viewportRef=useRef(onViewportChange)
   const analysisFeaturesRef=useRef(onAnalysisFeatures)
   const mapModeRef=useRef('map')
+  const renderModeRef=useRef('overview')
   const [status,setStatus]=useState('Karte wird geladen…')
   const [mapMode,setMapMode]=useState('map')
+  const [renderMode,setRenderMode]=useState('overview')
 
   gameRef.current=game
   fieldsRef.current=fields
@@ -194,9 +213,18 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
             fitted=true
           }
           if(!map.getSource('explored')){
-            map.addSource('explored',{type:'geojson',data:featureCollection(gameRef.current,fieldsRef.current,playersRef.current)})
+            map.addSource('explored',{type:'geojson',data:featureCollection(gameRef.current,fieldsRef.current,playersRef.current,renderModeRef.current)})
             map.addLayer({id:'explored-fill',type:'fill',source:'explored',paint:{'fill-color':['get','color'],'fill-opacity':0.62}})
             map.addLayer({id:'explored-outline',type:'line',source:'explored',paint:{'line-color':'#ffffff','line-opacity':0.28,'line-width':0.7}})
+            map.addLayer({
+              id:'explored-overview',type:'circle',source:'explored',
+              paint:{
+                'circle-color':['get','color'],
+                'circle-opacity':0.72,
+                'circle-radius':4,
+                'circle-stroke-width':0
+              }
+            })
           }
           if(!map.getSource('grid')){
             map.addSource('grid',{type:'geojson',data:{type:'FeatureCollection',features:[]}})
@@ -310,6 +338,19 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
           if(!map.getSource('grid'))return
           const cg=geometry(gameRef.current)
           const b=map.getBounds()
+          const zoom=map.getZoom()
+
+          // Hysterese: hineinzoomen -> Detail ab 12; herauszoomen -> Übersicht erst unter 11.
+          let mode=renderModeRef.current
+          if(mode==='overview'&&zoom>=12)mode='detail'
+          else if(mode==='detail'&&zoom<11)mode='overview'
+
+          if(mode!==renderModeRef.current){
+            renderModeRef.current=mode
+            setRenderMode(mode)
+            const src=map.getSource('explored')
+            if(src)src.setData(featureCollection(gameRef.current,fieldsRef.current,playersRef.current,mode))
+          }
 
           let x0=Math.max(0,Math.floor((b.getWest()-cg.west)*cg.metersLon/cg.cell))
           let x1=Math.min(cg.width-1,Math.ceil((b.getEast()-cg.west)*cg.metersLon/cg.cell))
@@ -320,30 +361,29 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
           const cols=x1-x0+1,rows=y1-y0+1
           const area=Math.max(1,cols*rows)
           const explored=Number(gameRef.current?.explored_count||0)
-          const targetBuckets=explored>500000?350:explored>150000?500:explored>50000?700:TARGET_VISIBLE_BUCKETS
-          const step=Math.max(1,Math.ceil(Math.sqrt(area/targetBuckets)))
 
-          // Kleiner Puffer verhindert eine neue DB-Abfrage bei minimalem Verschieben.
-          const pad=Math.max(2,step*2)
+          // Detailmodus fragt echte Einzelzellen ab. Übersicht darf serverseitig aggregieren,
+          // zeichnet diese Aggregate aber nur als gleich große Punkte – nie als scheinbar größere Felder.
+          const targetBuckets=explored>500000?300:explored>150000?450:explored>50000?650:900
+          const step=mode==='detail'?1:Math.max(2,Math.ceil(Math.sqrt(area/targetBuckets)))
+
+          const pad=mode==='detail'?2:Math.max(2,step*2)
           viewportRef.current?.({
             x0:Math.max(0,x0-pad),x1:Math.min(cg.width-1,x1+pad),
             y0:Math.max(0,y0-pad),y1:Math.min(cg.height-1,y1+pad),step
           })
 
-          const visible=Math.max(cols,rows,1)
-          const gridTarget=Number(gameRef.current?.explored_count||0)>150000?55:100
-          const gridStep=Math.max(1,Math.ceil(visible/gridTarget))
-          x0=Math.floor(x0/gridStep)*gridStep
-          y0=Math.floor(y0/gridStep)*gridStep
           const features=[]
-
-          for(let x=x0;x<=x1;x+=gridStep){
-            const lon=cg.west+x*cg.cell/cg.metersLon
-            features.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:[[lon,cg.south],[lon,cg.north]]}})
-          }
-          for(let y=y0;y<=y1;y+=gridStep){
-            const lat=cg.north-y*cg.cell/METERS_PER_DEG_LAT
-            features.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:[[cg.west,lat],[cg.east,lat]]}})
+          if(mode==='detail'){
+            // Immer das echte Raster. Keine zoomabhängig größeren Gitterzellen mehr.
+            for(let x=x0;x<=x1+1;x++){
+              const lon=cg.west+x*cg.cell/cg.metersLon
+              features.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:[[lon,cg.south],[lon,cg.north]]}})
+            }
+            for(let y=y0;y<=y1+1;y++){
+              const lat=cg.north-y*cg.cell/METERS_PER_DEG_LAT
+              features.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:[[cg.west,lat],[cg.east,lat]]}})
+            }
           }
           map.getSource('grid').setData({type:'FeatureCollection',features})
         }
@@ -365,7 +405,7 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
     if(!map)return
     const apply=()=>{
       const src=map.getSource('explored')
-      if(src)src.setData(featureCollection(gameRef.current,fieldsRef.current,playersRef.current))
+      if(src)src.setData(featureCollection(gameRef.current,fieldsRef.current,playersRef.current,renderModeRef.current))
     }
     if(map.loaded())apply();else map.once('load',apply)
   },[fields,playerColorKey,game?.id])
@@ -471,6 +511,9 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
       <button type="button" className={'miniBtn '+(mapMode==='satellite'?'active':'')} onClick={()=>switchMapMode('satellite')}>🛰️ Satellit</button>
     </div>
     <button type="button" className="mapCenterBtn" onClick={centerOnGame}>◎ Zum Spielfeld</button>
+    <div className="mapRenderModeBadge">
+      {renderMode==='detail'?'▦ Echtes Raster':'◉ Ruhige Übersicht'}
+    </div>
     {status&&<div className="mapLoadingOverlay">{status}</div>}
   </div>
 }

@@ -1,67 +1,105 @@
-SCHATZSUCHE ONLINE V6.21 – DEDUKTIONSSUCHE
+SCHATZSUCHE ONLINE V6.21.1
+Ruhige Karte + Geodatenprüfer + Goldbarrenschmelze
 
 VORAUSSETZUNG
-V6.20.2 ist installiert.
+V6.21 ist installiert.
 
 INSTALLATION
 1. ZIP-Inhalt in GitHub ersetzen.
 2. Supabase -> SQL Editor.
 3. NUR:
-   supabase/v6_21_migration.sql
+   supabase/v6_21_1_migration.sql
    einmal ausführen.
-4. Alte Migrationen NICHT erneut ausführen.
+4. Keine ältere Migration erneut ausführen.
 5. Vercel deployen lassen.
-6. Version V6.21 prüfen.
+6. Version V6.21.1 prüfen.
 
-NEU: SCHATZPROFIL
-Jedes offene Schatzteil besitzt serverseitig ein Profil aus realen/geometrischen Merkmalen:
-- Karten-Sektor
-- Quadrant
-- Entfernung zum Kartenmittelpunkt
-- Entfernung zur nächsten Spielfeldgrenze
-- Terrain des Schatzfelds, sobald kartografisch bekannt
-- Entfernung zu bekannten Wasserflächen
-- Entfernung zu bekannten Waldflächen
-- Entfernung zu bekannten Siedlungs-/Nutzflächen
-- Entfernung zu bekannten Verkehrsflächen
+1) RUHIGE KARTE / FESTES RASTER
+Das echte Spielfeldraster verändert seine Geometrie nicht mehr.
 
-Die exakte Schatzkoordinate wird dem Browser dabei nicht offengelegt.
+Detailmodus:
+- ab Zoom 12
+- echte 1x1-Spielzellen
+- echte Feldgrenzen
+- Viewport wird mit step=1 geladen
 
-NEU: PERSÖNLICHES HINWEISBUCH
-Gekaufte Analysen werden dauerhaft pro Spieler und Schatzteil gespeichert.
-Dadurch können Hinweise tatsächlich kombiniert werden.
+Übersichtsmodus:
+- beim Herauszoomen erst unter Zoom 11 (Hysterese)
+- keine scheinbar vergrößerten Rasterfelder
+- aggregierte DB-Daten werden als gleich große Übersichtspunkte dargestellt
+- keine Gitterlinien
+- erheblich weniger Geometrie
 
-ANALYSE-STUFEN
-Stufe 1: Sektor + danach Grobpeilungen
-Stufe 2: zusätzlicher Zentrumring
-Stufe 3: Terrain bzw. Randlage
-Stufe 4: präzisere Peilungen von selbst gewählten Suchpunkten
-Stufe 5: Umgebung / bekannte Geodaten
-Stufe 6: einmalige Präzisionszone; danach weitere Peilungen
+Dadurch bleibt die Karte ruhig. Die serverseitige Aggregation darf weiter Leistung sparen,
+verändert aber optisch nicht mehr die Größe eines Spielfeldes.
 
-WICHTIG
-Feste Profilhinweise werden nicht endlos erneut verkauft.
-Nach den verfügbaren einmaligen Profilinformationen erzeugen neue Analysen Peilungen
-vom aktuellen, selbst gewählten Suchpunkt. Dadurch wird Triangulation zu einer
-zentralen Spielerfähigkeit.
+2) GEODATEN- & HINTERGRUNDPRÜFER IN DER SCHALTZENTRALE
+Neue Sektion „🌍 Geodaten“.
 
-TERRAIN-DATEN
-V6.21 nutzt die bereits vorhandenen Terrain-Klassifizierungen des Spiels.
-Nicht kartierte Merkmale werden nicht erfunden. Wenn die Terrainlage des Schatzfelds
-noch unbekannt ist, liefert die Analyse stattdessen eine sichere geometrische Randlage.
+Pro Spiel + Rasterfeld X/Y zeigt sie:
+- reale Kartenkoordinate
+- gecachtes Terrain
+- erforscht / unerforscht
+- Abstand zu bekanntem Wasser
+- Abstand zu bekanntem Wald
+- Abstand zu Siedlungs-/Nutzflächen
+- Abstand zu Verkehrsflächen
+- Anzahl gecachter Terrainfelder
 
-BERGUNG / NEUVERSTECKEN
-Scheitert eine Bergungsprüfung und wird der Schatz neu platziert:
-- altes Schatzprofil wird gelöscht
-- alte Hinweise zu diesem Schatzteil werden gelöscht
-- dafür bezahlte Taler werden den Spielern vollständig erstattet
-- die neue Position erhält beim nächsten Analysieren ein neues Profil
+Nur für Admin sichtbar:
+- Abstand zum nächsten offenen Schatz
+- Nummer des nächsten Schatzteils
+- komplette serverseitige Schatzprofile
+- Sektor / Quadrant
+- Zentrum- und Randdistanz
+- Terrain- und Umgebungswerte
 
-WARUM DAS SPIELERISCH WICHTIG IST
-Der optimale Ablauf ist nun:
-Information beschaffen -> Hinweise kombinieren -> Messpunkte strategisch wählen ->
-triangulieren -> Suchraum reduzieren -> Schatz entdecken -> Bergungsprüfung bestehen.
+Damit kann die Spielleitung Deduktionshinweise direkt gegen die zugrunde liegenden Daten prüfen.
 
-V6.21 ist damit bewusst als Deduktions-/Geschicklichkeitssystem aufgebaut.
-Die rechtliche Einordnung realer Einsätze oder Auszahlungen bleibt trotzdem eine
-separate rechtliche Frage und wird durch die Software allein nicht garantiert.
+3) GOLD BAR SMELTER
+Neue technische Goldbarrenschmelze unter /praemien.
+
+Spieler können freies Gold in digitale Barren gießen:
+- 100 mg
+- 250 mg
+- 500 mg
+- 1.000 mg
+- 2.500 mg
+- 5.000 mg
+(Standardgrößen; in der Schaltzentrale änderbar)
+
+Beim Gießen:
+- exakt dieselbe Goldmenge wird aus dem Wallet gebunden
+- kein Zufallsfaktor
+- keine Schmelzgebühr
+- jeder Barren bekommt eine eindeutige BOB-Seriennummer
+
+Solange der Barren den Status „minted“ hat:
+- kann er kostenlos wieder zu Goldstaub eingeschmolzen werden
+- dabei wird exakt die gebundene Menge zurückgebucht
+
+4) PHYSISCHE AUSGABE
+Digitale Schmelze und reale Ausgabe sind getrennt.
+
+platform_settings:
+- smelting_enabled: digitale Barren gießen
+- redemptions_enabled: physische Ausgabe anfordern
+
+Physische Ausgabe bleibt standardmäßig AUS.
+Wenn redemptions_enabled aktiviert wird, kann ein frei verfügbarer digitaler Barren
+in eine Ausgabeforderung überführt werden.
+
+5) SCHALTZENTRALE GOLD
+Neu:
+- Schmelze an/aus
+- physische Ausgabe an/aus
+- erlaubte Barrengrößen in mg
+- Statistik zu digitalen Barren
+- Statistik zu angefragten Ausgaben
+- Statistik zu ausgegebenen Barren
+
+RECHTLICHER HINWEIS
+V6.21/V6.21.1 gestaltet die Schatzsuche technisch wesentlich stärker als
+Deduktions-/Geschicklichkeitssystem. Das ist keine automatische behördliche oder
+gerichtliche Einstufung. Reale Kauf-, Rücktausch- oder Sachpreisfunktionen sollten
+vor öffentlicher Freischaltung separat rechtlich geprüft werden.

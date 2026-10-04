@@ -12,6 +12,13 @@ export default function Admin(){
  const [goldOverview,setGoldOverview]=useState(null)
  const [autoGame,setAutoGame]=useState(null)
  const [adminGames,setAdminGames]=useState([])
+ const [geoGameId,setGeoGameId]=useState('')
+ const [geoX,setGeoX]=useState('0')
+ const [geoY,setGeoY]=useState('0')
+ const [geoResult,setGeoResult]=useState(null)
+ const [treasureProfiles,setTreasureProfiles]=useState([])
+ const [barOverview,setBarOverview]=useState(null)
+ const [barSizesText,setBarSizesText]=useState('')
  const [msg,setMsg]=useState('')
  const [saving,setSaving]=useState(false)
 
@@ -28,15 +35,18 @@ export default function Admin(){
  }
 
  async function load(){
-  const [{data:s,error:se},{data:t,error:te},{data:go,error:ge},{data:ag,error:ae},{data:games,error:gameErr}]=await Promise.all([
+  const [{data:s,error:se},{data:t,error:te},{data:go,error:ge},{data:ag,error:ae},{data:games,error:gameErr},{data:bars}]=await Promise.all([
     supabase.from('platform_settings').select('*').eq('id',1).single(),
     supabase.from('technologies').select('*').order('sort_order',{ascending:true}).order('id',{ascending:true}),
     supabase.rpc('admin_gold_overview_v613'),
     supabase.rpc('admin_get_auto_game_config_v6141'),
-    supabase.rpc('admin_list_games_v615',{p_limit:200})
+    supabase.rpc('admin_list_games_v615',{p_limit:200}),
+    supabase.rpc('admin_gold_bars_overview_v6211')
   ])
   if(se||te||ge||ae||gameErr){setMsg(se?.message||te?.message||ge?.message||ae?.message||gameErr?.message||'Fehler beim Laden');return}
-  setSettings(s);setTechs(t||[]);setGoldOverview(go||null);setAutoGame(ag||null);setAdminGames(games||[])
+  setSettings(s);setTechs(t||[]);setGoldOverview(go||null);setAutoGame(ag||null);setAdminGames(games||[]);setBarOverview(bars||null)
+  setBarSizesText((s?.allowed_bar_sizes_mg||[100,250,500,1000,2500,5000]).join(', '))
+  setGeoGameId(current=>current||games?.[0]?.id||'')
  }
 
  function setSetting(key,value){
@@ -151,6 +161,36 @@ export default function Admin(){
   if(!error)await load()
  }
 
+ async function analyzeGeoField(){
+  if(!geoGameId)return
+  setSaving(true);setMsg('')
+  const [{data:field,error:fe},{data:profiles,error:pe}]=await Promise.all([
+    supabase.rpc('admin_analyze_field_v6211',{
+      p_game_id:geoGameId,p_x:NUM(geoX),p_y:NUM(geoY)
+    }),
+    supabase.rpc('admin_get_treasure_profiles_v6211',{p_game_id:geoGameId})
+  ])
+  setSaving(false)
+  if(fe||pe){setMsg(fe?.message||pe?.message||'Analyse fehlgeschlagen');return}
+  setGeoResult(field||null)
+  setTreasureProfiles(profiles||[])
+ }
+
+ async function saveSmelter(){
+  const sizes=barSizesText.split(',')
+    .map(v=>Number(v.trim()))
+    .filter(v=>Number.isFinite(v)&&v>0)
+  setSaving(true);setMsg('')
+  const {data,error}=await supabase.rpc('admin_set_smelter_settings_v6211',{
+    p_smelting_enabled:!!settings.smelting_enabled,
+    p_redemptions_enabled:!!settings.redemptions_enabled,
+    p_allowed_sizes_mg:sizes
+  })
+  setSaving(false)
+  setMsg(error?error.message:(data?.message||'Schmelze gespeichert'))
+  if(!error)await load()
+ }
+
  async function saveTech(t){
   setSaving(true);setMsg('')
   const {data,error}=await supabase.rpc('admin_update_technology_v614',{
@@ -185,7 +225,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.21</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.21.1</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -195,8 +235,53 @@ export default function Admin(){
 
   {msg&&<div className="noticeBar">{msg}</div>}
   <nav className="adminJumpNav">
-   <a href="#admin-games">🎮 Spiele</a><a href="#admin-auto">🤖 Auto</a><a href="#admin-economy">✨ Gold</a><a href="#admin-rules">⚙️ Regeln</a><a href="#admin-tech">🧠 Technologien</a>
+   <a href="#admin-games">🎮 Spiele</a><a href="#admin-geo">🌍 Geodaten</a><a href="#admin-auto">🤖 Auto</a><a href="#admin-economy">✨ Gold</a><a href="#admin-rules">⚙️ Regeln</a><a href="#admin-tech">🧠 Technologien</a>
   </nav>
+
+  <section className="panel" id="admin-geo">
+   <h2>🌍 Geodaten- & Hinweisprüfer</h2>
+   <p className="small">Prüft exakt die Hintergrundinformationen, auf denen die Deduktionshinweise beruhen. Nur in der Schaltzentrale werden Schatzdistanzen und Schatzprofile offen gezeigt.</p>
+   <div className="adminGrid">
+    <label className="adminField"><span>Spiel</span>
+     <select className="input" value={geoGameId} onChange={e=>{setGeoGameId(e.target.value);setGeoResult(null);setTreasureProfiles([])}}>
+      <option value="">Spiel wählen…</option>
+      {adminGames.map(g=><option key={g.id} value={g.id}>{g.name} · {g.status}</option>)}
+     </select>
+    </label>
+    <Field label="Raster X" value={geoX} onChange={setGeoX}/>
+    <Field label="Raster Y" value={geoY} onChange={setGeoY}/>
+   </div>
+   <button className="btn primary" disabled={saving||!geoGameId} onClick={analyzeGeoField}>🔎 Feld & Schatzprofil analysieren</button>
+
+   {geoResult&&<div className="geoInspectorResult">
+    <div className="goldOverviewGrid">
+     <div className="card"><div className="small">Feld</div><div className="stat">{geoResult.x} / {geoResult.y}</div></div>
+     <div className="card"><div className="small">Koordinate</div><div className="stat smallStat">{geoResult.lat}, {geoResult.lon}</div></div>
+     <div className="card"><div className="small">Terrain</div><div className="stat smallStat">{geoResult.terrain_label||geoResult.terrain_type}</div></div>
+     <div className="card"><div className="small">Erforscht</div><div className="stat">{geoResult.explored?'Ja':'Nein'}</div></div>
+     <div className="card"><div className="small">Wasser</div><div className="stat">{geoResult.nearest_water_m==null?'–':Math.round(geoResult.nearest_water_m)+' m'}</div></div>
+     <div className="card"><div className="small">Wald</div><div className="stat">{geoResult.nearest_forest_m==null?'–':Math.round(geoResult.nearest_forest_m)+' m'}</div></div>
+     <div className="card"><div className="small">Siedlung/Nutzung</div><div className="stat">{geoResult.nearest_urban_m==null?'–':Math.round(geoResult.nearest_urban_m)+' m'}</div></div>
+     <div className="card"><div className="small">Verkehr</div><div className="stat">{geoResult.nearest_road_m==null?'–':Math.round(geoResult.nearest_road_m)+' m'}</div></div>
+     <div className="card"><div className="small">Nächster offener Schatz</div><div className="stat">{geoResult.nearest_open_treasure_m==null?'–':Math.round(geoResult.nearest_open_treasure_m)+' m'}</div><div className="small">Teil #{geoResult.nearest_open_treasure_no||'–'}</div></div>
+     <div className="card"><div className="small">Terrain-Cache</div><div className="stat">{Number(geoResult.cached_terrain_cells||0).toLocaleString('de-DE')}</div></div>
+    </div>
+   </div>}
+
+   {treasureProfiles.length>0&&<details className="adminProfileList" open>
+    <summary>🧩 Server-Schatzprofile ({treasureProfiles.length})</summary>
+    <div className="grid">
+     {treasureProfiles.map(t=><div className="card" key={t.treasure_id}>
+      <strong>Schatz #{t.treasure_no} · X {t.x} / Y {t.y}</strong>
+      <div className="small">Sektor: {t.sector} · Quadrant: {t.quadrant}</div>
+      <div className="small">Zentrum: {Math.round(Number(t.center_distance_m||0))} m · Rand: {Math.round(Number(t.edge_distance_m||0))} m</div>
+      <div className="small">Terrain: {t.terrain_type||'noch unbekannt'}</div>
+      <div className="small">Wasser {t.nearest_water_m==null?'–':Math.round(t.nearest_water_m)+' m'} · Wald {t.nearest_forest_m==null?'–':Math.round(t.nearest_forest_m)+' m'}</div>
+      <div className="small">Siedlung {t.nearest_urban_m==null?'–':Math.round(t.nearest_urban_m)+' m'} · Verkehr {t.nearest_road_m==null?'–':Math.round(t.nearest_road_m)+' m'}</div>
+     </div>)}
+    </div>
+   </details>}
+  </section>
 
   <section className="panel" id="admin-rules">
    <h2>🎮 Spielgrenzen</h2>
@@ -240,6 +325,20 @@ export default function Admin(){
    <div className="adminReadOnly">
     <span>Community-Reserve: <b>{formatGold(settings.community_reserve_ug)}</b></span>
     <span>Plattformanteil: <b>{formatGold(settings.platform_revenue_ug)}</b></span>
+   </div>
+   <div className="smelterAdminBox">
+    <h3>🔥 Goldbarrenschmelze</h3>
+    <div className="adminGrid">
+     <label className="adminToggle"><input type="checkbox" checked={!!settings.smelting_enabled} onChange={e=>setSetting('smelting_enabled',e.target.checked)}/><span>Digitale Barren gießen erlauben</span></label>
+     <label className="adminToggle"><input type="checkbox" checked={!!settings.redemptions_enabled} onChange={e=>setSetting('redemptions_enabled',e.target.checked)}/><span>Physische Barren-/Prämienausgabe freigeben</span></label>
+     <label className="adminField span2"><span>Erlaubte Barrengrößen in mg (Komma getrennt)</span><input className="input" value={barSizesText} onChange={e=>setBarSizesText(e.target.value)}/></label>
+    </div>
+    <button className="btn" disabled={saving} onClick={saveSmelter}>Schmelze speichern</button>
+    {barOverview&&<div className="adminReadOnly smelterStats">
+     <span>Digitale Barren: <b>{barOverview.minted_count}</b> · {Number(barOverview.minted_mg||0).toLocaleString('de-DE')} mg</span>
+     <span>Ausgabe angefragt: <b>{barOverview.requested_count}</b> · {Number(barOverview.requested_mg||0).toLocaleString('de-DE')} mg</span>
+     <span>Ausgegeben: <b>{barOverview.redeemed_count}</b> · {Number(barOverview.redeemed_mg||0).toLocaleString('de-DE')} mg</span>
+    </div>}
    </div>
    {goldOverview&&<div className="goldOverviewGrid">
     <div className="card"><div className="small">Bei Spielern aktuell</div><div className="stat">{formatGold(goldOverview.wallet_total_ug)}</div></div>
