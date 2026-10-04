@@ -126,9 +126,11 @@ export default function Admin(){
 
  async function saveJobSettings(){
   setSaving(true);setMsg('')
-  const {data,error}=await supabase.rpc('admin_set_job_settings_v625',{
-    p_duration_seconds:NUM(settings.job_duration_seconds),
-    p_reward_taler:NUM(settings.job_reward_taler)
+  const {data,error}=await supabase.rpc('admin_set_job_settings_v6252',{
+    p_bottles_duration_seconds:NUM(settings.job_bottles_duration_seconds??180),
+    p_bottles_reward_taler:NUM(settings.job_bottles_reward_taler??1),
+    p_scrap_duration_seconds:NUM(settings.job_scrap_duration_seconds??900),
+    p_scrap_reward_taler:NUM(settings.job_scrap_reward_taler??7)
   })
   setSaving(false)
   setMsg(error?error.message:(data?.message||'Jobwerte gespeichert.'))
@@ -352,7 +354,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.25.1</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.25.2</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -374,9 +376,21 @@ export default function Admin(){
    </div>
 
    <h3>Nebenjobs</h3>
-   <div className="adminGrid">
-    <Field label="Jobdauer (Sekunden)" value={settings.job_duration_seconds??180} onChange={v=>setSetting('job_duration_seconds',v)}/>
-    <Field label="Lohn pro Job (Taler)" step="0.01" value={settings.job_reward_taler??1} onChange={v=>setSetting('job_reward_taler',v)}/>
+   <div className="adminJobCards">
+    <div className="adminJobCard">
+     <strong>♻️ Pfandflaschen sammeln</strong>
+     <div className="adminGrid">
+      <Field label="Dauer (Sekunden)" value={settings.job_bottles_duration_seconds??180} onChange={v=>setSetting('job_bottles_duration_seconds',v)}/>
+      <Field label="Lohn (Taler)" step="0.01" value={settings.job_bottles_reward_taler??1} onChange={v=>setSetting('job_bottles_reward_taler',v)}/>
+     </div>
+    </div>
+    <div className="adminJobCard">
+     <strong>🔩 Altmetall suchen</strong>
+     <div className="adminGrid">
+      <Field label="Dauer (Sekunden)" value={settings.job_scrap_duration_seconds??900} onChange={v=>setSetting('job_scrap_duration_seconds',v)}/>
+      <Field label="Lohn (Taler)" step="0.01" value={settings.job_scrap_reward_taler??7} onChange={v=>setSetting('job_scrap_reward_taler',v)}/>
+     </div>
+    </div>
    </div>
    <button className="btn primary" disabled={saving} onClick={saveJobSettings}>Jobwerte speichern</button>
 

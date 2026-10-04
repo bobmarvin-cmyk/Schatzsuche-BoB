@@ -1,5 +1,5 @@
 'use client'
-import {useMemo,useState} from 'react'
+import {useEffect,useMemo,useRef,useState} from 'react'
 
 const modes=[
  {id:'standard',icon:'🧭',name:'Schatzsuche',text:'Klassisches Spiel ohne Gold-Einsatz. Taler, Technologien, Hinweise, Maschinen und Fallen entscheiden über deine Strategie.'},
@@ -20,6 +20,7 @@ const steps=[
 ]
 
 export default function Tutorial(){
+ const tutorialMapHolder=useRef(null),tutorialMapRef=useRef(null)
  const [step,setStep]=useState(0)
  const [mode,setMode]=useState('standard')
  const [revealed,setRevealed]=useState([12])
@@ -71,8 +72,25 @@ export default function Tutorial(){
   setClaimPassed(true);setRanking(true);setStep(8)
  }
 
+ useEffect(()=>{
+  if(!tutorialMapHolder.current||tutorialMapRef.current)return
+  let cancelled=false
+  ;(async()=>{
+   try{
+    const maplibregl=await import('maplibre-gl')
+    if(cancelled||!tutorialMapHolder.current)return
+    tutorialMapRef.current=new maplibregl.Map({
+     container:tutorialMapHolder.current,
+     style:'https://tiles.openfreemap.org/styles/liberty',
+     center:[7.12,49.52],zoom:12.5,interactive:false,attributionControl:false,maxPitch:0
+    })
+   }catch{}
+  })()
+  return()=>{cancelled=true;try{tutorialMapRef.current?.remove()}catch{};tutorialMapRef.current=null}
+ },[])
+
  return <main className="container tutorialPage">
-  <div className="buildBadge">V6.25.1</div>
+  <div className="buildBadge">V6.25.2</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/hilfe">Hilfe</a></div>
 
   <section className="panel tutorialHero">
@@ -107,6 +125,7 @@ export default function Tutorial(){
     </div>
 
     <div className="tutorialMap tutorialMapLarge tutorialMapWorld">
+     <div ref={tutorialMapHolder} className="tutorialRealMap" aria-hidden="true"/>
      {cells.map(i=><button key={i}
        className={'tutorialCell '+(revealed.includes(i)?'revealed ':'')+
         (machineCells.includes(i)?'machine ':'')+(trap===i?'trap ':'')+
@@ -116,7 +135,7 @@ export default function Tutorial(){
        {trap===i?'🪤':treasureFound&&i===29?'🧩':machineCells.includes(i)?'⚙️':revealed.includes(i)?'✓':''}
      </button>)}
     </div>
-    <div className="tutorialMapAttribution">Hintergrund: © OpenStreetMap-Mitwirkende · Raster = Spieloverlay</div>
+    <div className="tutorialMapAttribution">Echte Kartenbasis: OpenFreeMap / OpenStreetMap · Raster = Spieloverlay</div>
 
     {analysis&&<div className="tutorialHint">
       <strong>🧭 Analyse-Hinweis</strong>

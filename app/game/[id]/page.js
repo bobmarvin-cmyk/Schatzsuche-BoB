@@ -11,7 +11,7 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [mapChunks,setMapChunks]=useState([]),[mapRenderMode,setMapRenderMode]=useState('overview'),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false),[claimTimeLeft,setClaimTimeLeft]=useState(null),[claimResult,setClaimResult]=useState(null),[job,setJob]=useState(null),[jobBusy,setJobBusy]=useState(false)
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false),[claimTimeLeft,setClaimTimeLeft]=useState(null),[claimResult,setClaimResult]=useState(null),[job,setJob]=useState(null),[jobBusy,setJobBusy]=useState(false),[jobSettings,setJobSettings]=useState({bottlesSeconds:180,bottlesReward:1,scrapSeconds:900,scrapReward:7})
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0),chunkSummaryRef=useRef(new Map()),chunkPayloadRef=useRef(new Map()),chunkSinceRef=useRef(null),chunkSyncPromiseRef=useRef(null)
 
  useEffect(()=>{
@@ -378,7 +378,7 @@ export default function Game(){
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
       supabase.rpc('get_treasure_status_v610',{p_game_id:id}),
       supabase.rpc('get_active_technologies_v6241'),
-      supabase.from('platform_settings').select('analysis_price_l1,analysis_price_l2,analysis_price_l3,analysis_price_l4,analysis_price_l5,analysis_price_l6').eq('id',1).single()
+      supabase.from('platform_settings').select('analysis_price_l1,analysis_price_l2,analysis_price_l3,analysis_price_l4,analysis_price_l5,analysis_price_l6,job_bottles_duration_seconds,job_bottles_reward_taler,job_scrap_duration_seconds,job_scrap_reward_taler').eq('id',1).single()
     ])
 
     if(g.error)throw g.error
@@ -418,6 +418,12 @@ export default function Game(){
       4:Number(ps.data?.analysis_price_l4||20),
       5:Number(ps.data?.analysis_price_l5||25),
       6:Number(ps.data?.analysis_price_l6||30)
+    })
+    setJobSettings({
+      bottlesSeconds:Number(ps.data?.job_bottles_duration_seconds||180),
+      bottlesReward:Number(ps.data?.job_bottles_reward_taler||1),
+      scrapSeconds:Number(ps.data?.job_scrap_duration_seconds||900),
+      scrapReward:Number(ps.data?.job_scrap_reward_taler||7)
     })
     loadActiveGames();loadOwnTraps();loadCompetition();loadPendingClaim();loadAnalysisClues();loadJob()
   }catch(err){
@@ -1006,7 +1012,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.25.1</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.25.2</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1106,21 +1112,25 @@ export default function Game(){
         {terrainInfo&&<b>{terrainInfo.label}</b>}
        </div>
       </>}/></>}
-    <div className="panel jobPanel">
-      <div className="jobPanelHead">
-       <div>
-        <strong>🧰 Nebenjob</strong>
-        <div className="small">Wenn die Karte festhängt oder dir Taler für Gelände fehlen: tausche Zeit gegen Taler.</div>
-       </div>
-       {job&&<span className={'jobStatus '+(jobReady?'ready':'')}>{jobReady?'✓ fertig':`⏱ ${Math.floor(jobSecondsLeft/60)}:${String(jobSecondsLeft%60).padStart(2,'0')}`}</span>}
+    <details className="panel jobPanel compactJobPanel">
+      <summary className="compactJobSummary">
+       <span><strong>🧰 Nebenjobs</strong><small>Zeit gegen Taler</small></span>
+       {job&&<span className={'jobStatus '+(jobReady?'ready':'')}>{jobReady?'✓ Lohn bereit':`⏱ ${Math.floor(jobSecondsLeft/60)}:${String(jobSecondsLeft%60).padStart(2,'0')}`}</span>}
+       {!job&&<span className="compactJobChevron">⌄</span>}
+      </summary>
+      <div className="compactJobBody">
+       {!job&&<div className="jobChoices jobChoiceCards">
+        <button className="jobChoiceBtn" disabled={jobBusy||waitingForStart} onClick={()=>startJob('bottles')}>
+         <span>♻️</span><div><strong>Pfandflaschen sammeln</strong><small>{Math.round(jobSettings.bottlesSeconds/60)} Min. · +{Number(jobSettings.bottlesReward).toFixed(2)} Taler</small></div>
+        </button>
+        <button className="jobChoiceBtn" disabled={jobBusy||waitingForStart} onClick={()=>startJob('scrap')}>
+         <span>🔩</span><div><strong>Altmetall suchen</strong><small>{Math.round(jobSettings.scrapSeconds/60)} Min. · +{Number(jobSettings.scrapReward).toFixed(2)} Taler</small></div>
+        </button>
+       </div>}
+       {job&&!jobReady&&<div className="jobRunningLine"><span>{job.job_type==='bottles'?'♻️ Pfandflaschen':'🔩 Altmetall'}</span><strong>{Math.floor(jobSecondsLeft/60)}:{String(jobSecondsLeft%60).padStart(2,'0')}</strong><small>+{Number(job.reward_taler||0).toFixed(2)} Taler</small></div>}
+       {job&&jobReady&&<button className="btn primary compactClaimJob" disabled={jobBusy} onClick={claimJob}>💰 Lohn abholen · +{Number(job.reward_taler||0).toFixed(2)} Taler</button>}
       </div>
-      {!job&&<div className="jobChoices">
-       <button className="btn" disabled={jobBusy||waitingForStart} onClick={()=>startJob('bottles')}>♻️ Pfandflaschen sammeln</button>
-       <button className="btn" disabled={jobBusy||waitingForStart} onClick={()=>startJob('scrap')}>🔩 Altmetall ausgraben</button>
-      </div>}
-      {job&&!jobReady&&<div className="small">Job läuft im Spiel weiter. Danach kannst du den Lohn abholen.</div>}
-      {job&&jobReady&&<button className="btn primary" disabled={jobBusy} onClick={claimJob}>💰 Lohn abholen · +{Number(job.reward_taler||0).toFixed(2)} T</button>}
-    </div>
+    </details>
 
     {Number(me?.analysis_level||0)>0&&<div className="analysisPurchaseBox deductionPanel">
       <div className="analysisPurchaseHead">

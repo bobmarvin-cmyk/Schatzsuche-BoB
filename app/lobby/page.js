@@ -217,7 +217,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.25.1</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.25.2</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -385,6 +385,27 @@ export default function Lobby(){
 
   <section className="panel activeGamesPanel">
    <div className="sectionTitleRow"><h2>Laufende öffentliche Spiele</h2><span className="gameCountBadge">{activeGames.length}</span></div>
+   <div className="lobbyFilterBar">
+    <div className="lobbyFilterChips">
+     {[
+      ['all','Alle'],['fast','⚡ Schnell'],['long','🧭 Langzeit'],
+      ['standard','Standard'],['gold','✨ Gold'],['sponsor','🤝 Sponsor']
+     ].map(([value,label])=><button type="button" key={value}
+       className={'filterChip '+(gameFilter===value?'active':'')}
+       onClick={()=>setGameFilter(value)}>{label}</button>)}
+    </div>
+    <div className="lobbySortControls">
+     <select className="input" value={sortMode} onChange={e=>setSortMode(e.target.value)}>
+      <option value="players">Spieler</option>
+      <option value="progress">Fortschritt</option>
+      <option value="speed">Spieltempo</option>
+      <option value="size">Kartengröße</option>
+      <option value="created">Neueste</option>
+     </select>
+     <button type="button" className="miniBtn sortDirectionBtn"
+      onClick={()=>setSortDir(d=>d==='asc'?'desc':'asc')}>{sortDir==='asc'?'↑':'↓'}</button>
+    </div>
+   </div>
    <div className="grid gameCards">
     {visibleActiveGames.length===0&&<div className="muted">Für diesen Filter sind momentan keine Spiele verfügbar.</div>}
     {visibleActiveGames.map(g=>{

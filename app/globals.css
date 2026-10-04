@@ -1847,3 +1847,28 @@ button:disabled{cursor:not-allowed;opacity:.45}
  .mapModeSwitch{padding:2px}
  .mapModeSwitch .miniBtn{padding:6px 8px;font-size:11px}
 }
+
+/* V6.25.2 */
+.lobbyFilterBar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 14px;padding:9px;border:1px solid #2d405a;border-radius:11px;background:#0f1928}
+.lobbyFilterChips{display:flex;gap:6px;flex-wrap:wrap}
+.filterChip{border:1px solid #39506f;background:#152238;color:#cbd8e8;border-radius:999px;padding:7px 10px;font-size:12px;font-weight:800;cursor:pointer}
+.filterChip.active{background:#27486e;border-color:#74a2d8;color:#fff}
+.lobbySortControls{display:flex;gap:6px;align-items:center;min-width:205px}.lobbySortControls .input{margin:0;min-height:34px;padding:6px 8px}.sortDirectionBtn{min-width:36px;height:34px;padding:0;font-size:17px}
+
+.mapModeSwitch{left:8px!important;top:8px!important;bottom:auto!important;padding:0!important;background:transparent!important;backdrop-filter:none!important}
+.mapModeIconBtn{width:30px;height:30px;padding:0;display:grid;place-items:center;border-radius:50%;border:1px solid rgba(255,255,255,.45);background:rgba(9,17,29,.78);color:#fff;font-size:14px;line-height:1;box-shadow:0 2px 8px rgba(0,0,0,.28);cursor:pointer}
+
+.compactJobPanel{padding:0!important;overflow:hidden}.compactJobPanel>summary{list-style:none;cursor:pointer}.compactJobPanel>summary::-webkit-details-marker{display:none}
+.compactJobSummary{display:flex;align-items:center;gap:8px;padding:8px 10px;min-height:42px}.compactJobSummary>span:first-child{display:flex;flex-direction:column;gap:1px;flex:1}.compactJobSummary small{font-size:10px;color:#8fa3ba;font-weight:500}.compactJobChevron{font-size:15px;color:#93a8c1}
+.compactJobBody{padding:8px 10px 10px;border-top:1px solid #25374d}.jobChoiceCards{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.jobChoiceBtn{display:flex;align-items:center;gap:8px;text-align:left;padding:8px 9px;border-radius:9px;border:1px solid #344a66;background:#121f31;color:#e5edf7;cursor:pointer}.jobChoiceBtn>span{font-size:20px}.jobChoiceBtn div{display:flex;flex-direction:column;gap:2px}.jobChoiceBtn small{font-size:10px;color:#9cafc3}
+.jobRunningLine{display:grid;grid-template-columns:1fr auto;gap:3px 10px;align-items:center}.jobRunningLine small{grid-column:1/-1;color:#9cafc3}.compactClaimJob{padding:7px 10px}
+.adminJobCards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}.adminJobCard{padding:10px;border:1px solid #31455f;border-radius:10px;background:#101a29}
+
+.tutorialMapWorld{position:relative;background:none!important;overflow:hidden}.tutorialRealMap{position:absolute;inset:0;z-index:0}
+.tutorialMapWorld .tutorialCell{position:relative;z-index:2;background:rgba(12,25,42,.42)!important;backdrop-filter:none!important}.tutorialMapWorld .tutorialCell.revealed{background:rgba(35,91,136,.40)!important}
+
+@media(max-width:700px){
+ .lobbyFilterBar{display:block;padding:8px}.lobbyFilterChips{display:flex;overflow-x:auto;flex-wrap:nowrap;padding-bottom:5px}.filterChip{flex:0 0 auto}.lobbySortControls{min-width:0;width:100%;margin-top:5px}.lobbySortControls .input{flex:1;width:auto}
+ .mapModeIconBtn{width:27px;height:27px;font-size:12px}.jobChoiceCards{grid-template-columns:1fr}.adminJobCards{grid-template-columns:1fr}
+}
