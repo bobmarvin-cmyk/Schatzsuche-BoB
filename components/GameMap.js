@@ -365,14 +365,26 @@ export default function GameMap({
       ctx.moveTo(xFor(startX),py)
       ctx.lineTo(xFor(endX),py)
     }
-    ctx.strokeStyle=renderModeRef.current==='detail'?'rgba(230,238,248,.24)':'rgba(230,238,248,.16)'
-    ctx.lineWidth=basePx>=8?0.65:0.45
+    ctx.strokeStyle=renderModeRef.current==='detail'?'rgba(235,242,250,.42)':'rgba(235,242,250,.30)'
+    ctx.lineWidth=basePx>=8?0.85:0.65
     ctx.stroke()
 
-    // Spielgebietsrand
-    ctx.strokeStyle='rgba(238,244,251,.42)'
-    ctx.lineWidth=0.9
-    ctx.strokeRect(nw.x,nw.y,se.x-nw.x,se.y-nw.y)
+    // Spielgebietsrand: immer klar erkennbar, unabhängig vom Zoom.
+    const bx=Math.min(nw.x,se.x)
+    const by=Math.min(nw.y,se.y)
+    const bw=Math.abs(se.x-nw.x)
+    const bh=Math.abs(se.y-nw.y)
+
+    // dunkler Schatten/Kontrast unter der hellen Linie
+    ctx.strokeStyle='rgba(4,10,18,.78)'
+    ctx.lineWidth=4
+    ctx.strokeRect(bx,by,bw,bh)
+
+    // eigentliche deutlich sichtbare Spielfeldkante
+    ctx.strokeStyle='rgba(248,250,252,.94)'
+    ctx.lineWidth=1.8
+    ctx.strokeRect(bx,by,bw,bh)
+
     ctx.restore()
   }
 

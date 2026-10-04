@@ -1,34 +1,21 @@
-SCHATZSUCHE ONLINE V6.23.2 – MAP VISIBILITY HOTFIX
+SCHATZSUCHE ONLINE V6.23.3 – RASTER-KONTRAST HOTFIX
 
 VORAUSSETZUNG
-V6.23.1 ist installiert.
+V6.23.2 installiert.
 
-INSTALLATION
 KEIN SQL.
 
-1. ZIP-Inhalt in GitHub ersetzen.
-2. Keine Supabase-Migration ausführen.
-3. Vercel deployen lassen.
-4. Version V6.23.2 prüfen.
+ÄNDERUNGEN
+- innere Rasterlinien etwas kräftiger
+- Raster bleibt transparent genug für die Hintergrundkarte
+- Spielfeld-Außenkante jetzt sehr deutlich
+- Außenkante wird zweistufig gezeichnet:
+  1. dunkle 4px Kontrastkante
+  2. helle 1,8px Hauptlinie darüber
+- dadurch bleibt die Grenze auf heller wie dunkler Kartenfläche sichtbar
 
-FIX
-V6.23.1 konnte die Hintergrundkarte optisch zu stark abdunkeln.
-V6.23.2 ändert ausschließlich die Darstellung:
-
-- Canvas explizit transparent
-- Coverage-Flächen sehr viel schwächer
-- Spielerfarben im Detail halbtransparent
-- Rasterlinien hell statt dunkel
-- deutlich größere optische Rasterabstände beim starken Herauszoomen
-- weniger Moiré-/Netzmuster
-- Spielfeldrand dezenter
-- MapLibre-Basiskarte bleibt voll sichtbar
-
-Die V6.23-Architektur bleibt gleich:
-- lokales Canvas
-- 64x64-Chunks
-- Versions-Deltas
-- RLE-Kompression
-- serverautoritatives Aufdecken
-
-KEIN SQL erforderlich.
+INSTALLATION
+ZIP-Inhalt in GitHub ersetzen.
+Keine Supabase-Migration ausführen.
+Vercel deployen lassen.
+Version V6.23.3 prüfen.
