@@ -180,7 +180,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.23.6</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.24</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -205,8 +205,12 @@ export default function Lobby(){
   </div>
 
   <div className="lobbyColumns">
-   <section className="panel createGamePanel">
-    <h2>Neues Spiel</h2>
+   <details className="panel createGamePanel createGameDetails">
+    <summary className="createGameSummary">
+     <span><b>➕ Neues Spiel erstellen</b><small>Spielmodus, Karte und Regeln konfigurieren</small></span>
+     <span className="createGameChevron">⌄</span>
+    </summary>
+    <div className="createGameBody">
     <div className="gameTypeSwitch">
      <button type="button" className={'typeBtn '+(gameType==='standard'?'active':'')} onClick={()=>setGameType('standard')}>🧭 Schatzsuche</button>
      <button type="button" className={'typeBtn gold '+(gameType==='pay'?'active':'')} onClick={()=>setGameType('pay')}>✨ Goldsuche</button>
@@ -327,7 +331,8 @@ export default function Lobby(){
      </div>
     </div>
     <button className="btn primary wideOnMobile" onClick={createGame}>{gameType==='pay'?'Goldsuche erstellen & Einsatz zahlen':gameType==='sponsor'?'Sponsorspiel erstellen & Pool stiften':'Spiel erstellen'}</button>
-   </section>
+    </div>
+   </details>
 
    <details className="panel privateJoinPanel" open={privateJoinOpen} onToggle={e=>setPrivateJoinOpen(e.currentTarget.open)}>
     <summary><span>🔒 Privatem Spiel beitreten</span><span className="small">{privateJoinOpen?'Schließen':'Code eingeben'}</span></summary>
@@ -341,8 +346,8 @@ export default function Lobby(){
 
   {msg&&<div className="noticeBar">{msg}</div>}
 
-  <section className="panel">
-   <h2>Laufende öffentliche Spiele</h2>
+  <section className="panel activeGamesPanel">
+   <div className="sectionTitleRow"><h2>Laufende öffentliche Spiele</h2><span className="gameCountBadge">{activeGames.length}</span></div>
    <div className="grid gameCards">
     {activeGames.length===0&&<div className="muted">Momentan sind keine öffentlichen Spiele aktiv.</div>}
     {activeGames.map(g=>{
@@ -369,8 +374,9 @@ export default function Lobby(){
    </div>
   </section>
 
-  <section className="panel closedGamesPanel">
-   <h2>Geschlossene Spiele</h2>
+  <details className="panel closedGamesPanel lobbyArchiveDetails">
+   <summary><span><b>🗂️ Geschlossene Spiele</b><small>{closedGames.length} Einträge</small></span><span>⌄</span></summary>
+   <div className="lobbyArchiveBody">
    <p className="small">Die Live-Einträge werden nach {Math.round(retentionHours/24)} Tagen bereinigt. Endkarte und Endstand bleiben dauerhaft in der Hall of Fame erhalten.</p>
    <div className="grid gameCards">
     {closedGames.length===0&&<div className="muted">Keine kürzlich geschlossenen Spiele.</div>}
@@ -382,7 +388,8 @@ export default function Lobby(){
       <a className="btn closedResultBtn" href={'/archiv/'+g.id}>🏁 Endstand</a>
     </div>)}
    </div>
-  </section>
+   </div>
+  </details>
  </main>
   {gimmickWarn&&<div className="gimmickOverlay" role="dialog" aria-modal="true">
    <div className="gimmickModal">

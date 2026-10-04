@@ -11,7 +11,7 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [mapChunks,setMapChunks]=useState([]),[mapRenderMode,setMapRenderMode]=useState('overview'),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false)
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false),[claimTimeLeft,setClaimTimeLeft]=useState(null)
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0),chunkSummaryRef=useRef(new Map()),chunkPayloadRef=useRef(new Map()),chunkSinceRef=useRef(null),chunkSyncPromiseRef=useRef(null)
 
  useEffect(()=>{
@@ -271,6 +271,7 @@ export default function Game(){
     return
   }
   setMsg(data?.message||'Falle platziert')
+  await loadPlayersOnly()
   const traps=await loadOwnTraps()
   const tech=technologies.find(t=>t.id===selectedTrap)
   const active=traps.filter(t=>t.technology_id===selectedTrap).length
@@ -349,7 +350,7 @@ export default function Game(){
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
       supabase.rpc('get_treasure_status_v610',{p_game_id:id}),
-      supabase.from('technologies').select('id,name,branch,cost,reveal_power_bonus,reward_bonus,analysis_level,capacity_bonus,regen_reduction,machine_auto_fields,exclusive_per_game,trap_type,trap_power,trap_limit,requires,description,sort_order,is_active').eq('is_active',true).order('sort_order',{ascending:true}).order('id',{ascending:true}),
+      supabase.from('technologies').select('id,name,branch,cost,reveal_power_bonus,reward_bonus,analysis_level,capacity_bonus,regen_reduction,machine_auto_fields,exclusive_per_game,trap_type,trap_power,trap_limit,trap_place_cost,requires,description,sort_order,is_active').eq('is_active',true).order('sort_order',{ascending:true}).order('id',{ascending:true}),
       supabase.from('platform_settings').select('analysis_price_l1,analysis_price_l2,analysis_price_l3,analysis_price_l4,analysis_price_l5,analysis_price_l6').eq('id',1).single()
     ])
 
@@ -576,16 +577,33 @@ export default function Game(){
     })
     setClaimStarted(prev=>prev||!!data.started_at)
     setClaimChallenge(prev=>{
-      if(prev&&pendingClaim?.id===data.id)return prev
+      if(prev&&prev.id===data.id)return {...prev,expires_at:data.expires_at||prev.expires_at}
       return data.started_at?{
+        id:data.id,
         challenge_type:data.challenge_type,
-        expression:data.expression||null
+        display_code:data.display_code||null,
+        expires_at:data.expires_at||null
       }:null
     })
     return data
   }
+  setPendingClaim(null)
+  setClaimStarted(false)
+  setClaimChallenge(null)
+  setClaimInput('')
+  setClaimShow(false)
+  setClaimTimeLeft(null)
   return null
  }
+
+ useEffect(()=>{
+  if(!claimStarted||!claimChallenge?.expires_at){
+    setClaimTimeLeft(null)
+    return
+  }
+  const left=Math.max(0,Math.ceil((new Date(claimChallenge.expires_at).getTime()-Date.now())/1000))
+  setClaimTimeLeft(left)
+ },[tick,claimStarted,claimChallenge?.expires_at])
 
  async function startClaimChallenge(){
   if(!pendingClaim||claimResolving||claimStarted)return
@@ -599,7 +617,7 @@ export default function Game(){
   if(['memory_forward','memory_reverse','memory_swap'].includes(data?.challenge_type)){
     setClaimShow(true)
     clearTimeout(claimTimerRef.current)
-    claimTimerRef.current=setTimeout(()=>setClaimShow(false),4500)
+    claimTimerRef.current=setTimeout(()=>setClaimShow(false),6500)
   }else{
     setClaimShow(false)
   }
@@ -615,11 +633,17 @@ export default function Game(){
   setClaimResolving(false)
   if(error){setMsg('Bergung: '+error.message);return}
 
+  if(data?.retryable){
+    setMsg(data?.message||'Eingabe noch nicht vollständig')
+    return
+  }
+
   setPendingClaim(null)
   setClaimInput('')
   setClaimShow(false)
   setClaimStarted(false)
   setClaimChallenge(null)
+  setClaimTimeLeft(null)
   setMsg(data?.message||'Bergungsprüfung beendet')
 
   if(data?.passed){
@@ -903,7 +927,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.23.6</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.24</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -985,7 +1009,7 @@ export default function Game(){
     <div className="mapHeader"><div><h2>{game?.name||'Schatzsuche'}{game?.center_label?` · ${game.center_label}`:''}</h2><div className="small">Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.</div></div>
      <div className="mapLegend">{players.map(p=><div className={'legendItem '+(onlineIds.includes(p.user_id)?'online':'offline')} key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.profiles?.display_name||'Spieler'}{onlineIds.includes(p.user_id)&&<span className="onlineDot" title="online">●</span>}</div>)}</div>
     </div>
-    {game&&<><div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name}</button>)}{trapMode&&<button className="miniBtn trapCancelBtn" onClick={()=>setTrapMode(null)}>✕ Fallenmodus beenden</button>}</>}</div><GameMap game={game} mapChunks={mapChunks} mapRenderMode={mapRenderMode} players={players} onReveal={reveal} onTerrainReveal={terrainReveal} onTerrainBatch={cacheTerrainBatch} terrainScanPower={Number(me?.reveal_power||1)+Number(me?.gimmick_reveal_bonus_pending||0)} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}
+    {game&&<><div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name} · {Number(t.trap_place_cost||0).toFixed(1)} T</button>)}{trapMode&&<button className="miniBtn trapCancelBtn" onClick={()=>setTrapMode(null)}>✕ Fallenmodus beenden</button>}</>}</div><GameMap game={game} mapChunks={mapChunks} mapRenderMode={mapRenderMode} players={players} onReveal={reveal} onTerrainReveal={terrainReveal} onTerrainBatch={cacheTerrainBatch} terrainScanPower={Number(me?.reveal_power||1)+Number(me?.gimmick_reveal_bonus_pending||0)} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}
       mobileHud={<div className="mobileMapHud">
        {[
         [Number(me?.coins||0).toFixed(1),'Taler'],
@@ -1094,10 +1118,13 @@ export default function Game(){
     <div className="claimIcon">🧗</div>
     <div className="small">SCHATZ ENTDECKT · NOCH NICHT GEBORGEN</div>
     <h2>Bergungsprüfung</h2>
+    {claimStarted&&claimTimeLeft!==null&&<div className={'claimCountdown '+(claimTimeLeft<=20?'urgent':'')}>
+      ⏱️ {Math.floor(claimTimeLeft/60)}:{String(claimTimeLeft%60).padStart(2,'0')}
+    </div>}
     {Number(pendingClaim.amount_ug||0)>0&&<div className="claimPrize">✨ möglicher Fund: {formatGold(pendingClaim.amount_ug)}</div>}
 
     {!claimStarted&&<>
-      <p>Die Aufgabe startet erst, wenn du bereit bist. Danach hast du 90 Sekunden und genau einen Versuch.</p>
+      <p>Die Aufgabe startet erst, wenn du bereit bist. Danach hast du 120 Sekunden. Die Symbolfolge bleibt zunächst 6,5 Sekunden sichtbar.</p>
       <button className="btn primary" disabled={claimResolving} onClick={startClaimChallenge}>
        {claimResolving?'Startet…':'Bergung starten'}
       </button>
@@ -1124,7 +1151,7 @@ export default function Game(){
        : <ClaimSymbolInput value={claimInput} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
     </>}
 
-    {claimStarted&&<div className="small claimRule">Ein Versuch · maximal 90 Sekunden. Bei Fehlschlag wird der Schatz neu versteckt.</div>}
+    {claimStarted&&<div className="small claimRule">Ein bestätigter Versuch · maximal 120 Sekunden. Kontrolliere deine sechs Symbole vor dem Absenden.</div>}
    </div>
   </div>}
 
