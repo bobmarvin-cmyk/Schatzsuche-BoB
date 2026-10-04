@@ -1,112 +1,168 @@
-SCHATZSUCHE ONLINE V6.22 – CHUNK MAP
+SCHATZSUCHE ONLINE V6.23 – LOCAL CANVAS / VERSIONED CHUNKS
 
 VORAUSSETZUNG
-V6.21.1 ist installiert.
+V6.22 ist installiert.
 
 INSTALLATION
 1. ZIP-Inhalt in GitHub ersetzen.
 2. Supabase -> SQL Editor.
 3. NUR:
-   supabase/v6_22_migration.sql
+   supabase/v6_23_migration.sql
    einmal ausführen.
-4. Keine alte Migration erneut ausführen.
+4. Keine ältere Migration erneut ausführen.
 5. Vercel deployen lassen.
-6. Version V6.22 prüfen.
+6. Version V6.23 prüfen.
 
-ZIEL
-Die Karte soll bei sehr großen Multiplayer-Spielen ruhig, verständlich und
-trafficarm bleiben. Das echte Spielfeldraster darf sich beim Zoomen optisch
-niemals vergrößern oder verkleinern.
+WARUM V6.23
+Die Karte war bisher gleichzeitig:
+- Hintergrundkarte
+- Rasterrenderer
+- explored_fields-Renderer
+- Multiplayer-Synchronisation
 
-1) ZWEI KLAR GETRENNTE KARTENEBENEN
+Bei großen Spielen bedeutete das zu viel GeoJSON, zu viele Polygone und zu häufige
+Viewport-Abfragen.
 
-NAHANSICHT / EINZELZELLEN
-- ab ca. Zoom 12.25
-- ausschließlich echte 1x1-Spielzellen
-- kein Aggregat wird als Spielfeld dargestellt
-- Raster wird lokal im Browser berechnet
-- Rasterlinien verursachen keinen Datenbank-Traffic
-- exakte Felder kommen über get_map_cells_v622
+V6.23 trennt Darstellung und Serverzustand konsequent:
 
-ÜBERSICHT / COVERAGE
-- beim Herauszoomen unter ca. Zoom 11.25
-- keine scheinbar größeren Spielfelder
-- feste Flächen-Chunks zeigen nur den Erkundungsgrad eines Gebietes
-- Transparenz = ungefährer Coverage-Anteil
-- Farbe = dominanter Spieler in diesem Gebiet
-- Chunkgröße bleibt während des gesamten Spiels konstant
-- Chunks werden über get_map_chunks_v622 geladen
+BROWSER
+- MapLibre = nur Hintergrundkarte + wenige Speziallayer
+- Canvas = Raster, erforschte Bereiche, Spielerfarben
+- Klickkoordinate wird lokal berechnet
+- lokaler Chunkcache
 
-Die Lücke zwischen 11.25 und 12.25 ist Absicht (Hysterese).
-Dadurch springt die Darstellung beim Zoomen nicht ständig zwischen Modi.
+SERVER
+- bleibt alleinige Wahrheit über explored_fields
+- liefert nur Chunk-Versionen und kompakte Detaildaten
+- entscheidet weiterhin über tatsächliche Aufdeckung, Schatzfund, Gimmicks, Terrain usw.
 
-2) FESTE CHUNKGRÖSSE
-Die Übersicht verwendet pro Spiel eine konstante Chunkgröße:
-max(32 Felder, archive_step * 4).
+1) KEINE EXPLORED-FIELD-GEOJSON-POLYGONE MEHR
+MapLibre bekommt keine einzelnen erforschten Spielfelder mehr.
 
-Bei riesigen Karten werden Chunks automatisch größer, aber NICHT zoomabhängig.
-Die Chunkgröße ändert sich also niemals, nur weil der Spieler hinein- oder
-herauszoomt.
+Das Canvas zeichnet:
+- Raster
+- Spielerfarben
+- belegte Felder
+- Übersichtsdichte
 
-3) WENIGER TRAFFIC
-Übersicht:
-- nutzt die bereits vorhandene komprimierte game_archive_cell_counts-Struktur
-- typischerweise nur wenige hundert Coverage-Flächen für die komplette Karte
-- gesamte Übersicht wird im Browser gecacht
-- bei unverändertem field_version kein neuer Request nötig
+Dadurch müssen nicht tausende Polygon-Features von MapLibre verwaltet werden.
 
-Nahansicht:
-- nur sichtbarer Bereich
-- Viewport wird auf stabile 64x64-Kachelgrenzen geschnappt
-- kleine Kartenbewegungen treffen dadurch denselben Cache
-- Cache hält bis zu 24 Detailausschnitte
-- frische Detaildaten werden kurzfristig wiederverwendet
+2) RASTER KOMPLETT LOKAL
+Das Raster benötigt keinerlei Supabase-Request.
 
-4) KEINE REQUESTS WÄHREND DER BEWEGUNG
-Die Karte löst Datenanforderungen nur nach MapLibre "moveend" aus.
-Ein separater zoomend-Request wurde entfernt.
-Der vorhandene Debounce im Game-Client bleibt bestehen.
+Wenn echte Einzelzellen groß genug sind:
+- jede Feldlinie wird gezeichnet
 
-5) SERVER-RPCS
-get_map_chunks_v622(...)
-- kompakte feste Coverage-Chunks
-- Coverage-Wert 0..1
-- dominante Spieler-ID
-- explored_count
-- feste Chunkgröße
+Wenn Felder beim Herauszoomen unter Pixelgröße fallen:
+- jede 2./4./8./16... Linie wird als Hauptraster gezeichnet
+- das Raster verschwindet also NICHT
+- im Badge steht z. B. „Raster ×8“
+- die tatsächliche Feldgröße im Spiel ändert sich niemals
 
-get_map_cells_v622(...)
-- echte einzelne explored_fields
-- size ist immer 1
-- Sicherheitsgrenze: max. 60.000 Rasterpositionen pro Detailabfrage
-- bei zu weitem Detailausschnitt fordert die UI weiteres Hineinzoomen an
+Die Umschaltung Detail/Übersicht hängt nicht mehr an einer festen Zoomzahl,
+sondern an der tatsächlichen Pixelgröße eines Spielfeldes auf dem jeweiligen Gerät.
 
-6) DARSTELLUNG
-Übersicht:
-- halbtransparente zusammenhängende Coverage-Flächen
-- keine großen Pseudo-Zellen
-- keine Rasterlinien
-- kein Punktwolken-Look
+3) FESTE 64x64 SERVER-CHUNKS
+Ein Server-Chunk enthält 64 x 64 = 4.096 mögliche Felder.
 
-Nah:
-- normale Spielfeldfarben
-- echtes Raster
-- echte Zellgrenzen
+game_map_chunks_v623 speichert nur:
+- cx / cy
+- Version
+- Anzahl erforschter Felder
+- Änderungszeit
 
-Damit gilt visuell immer:
-SPIELFELD = SPIELFELD.
-Eine Coverage-Fläche ist nur eine Übersicht über viele echte Spielfelder.
+game_map_chunk_players_v623 hält die kompakten Spieleranteile für die Übersicht.
 
-7) V6.21.1-FUNKTIONEN BLEIBEN ERHALTEN
+4) EINMAL INITIAL + DANACH NUR DELTAS
+get_map_chunk_changes_v623(...)
+
+Beim ersten Laden:
+- kleine Chunk-Landkarte des laufenden Spiels
+
+Danach:
+- Browser sendet den Zeitpunkt des letzten Abgleichs
+- Server gibt ausschließlich seitdem veränderte Chunks zurück
+
+Ein großes Multiplayer-Spiel benötigt deshalb nicht nach jedem Maschinenlauf
+erneut die komplette Kartenübersicht.
+
+Zusätzlich wird alle ca. 4 Sekunden ein sehr kleiner Änderungsabgleich gemacht,
+solange die Seite sichtbar ist.
+
+5) DETAILDATEN NUR FÜR SICHTBARE, GEÄNDERTE CHUNKS
+get_map_chunk_payloads_v623(...)
+
+Der Browser merkt sich:
+Chunk 7:12 Version 44
+
+Server meldet später:
+Chunk 7:12 Version 45
+
+Nur dann wird genau dieser Chunk neu geladen.
+
+Beim Verschieben der Karte werden bereits bekannte Chunks direkt aus dem
+Browsercache verwendet.
+
+6) RLE STATT FELD-JSON
+Detaildaten werden nicht mehr so übertragen:
+
+{x:123,y:456,user_id:...}
+{x:124,y:456,user_id:...}
+{x:125,y:456,user_id:...}
+
+Stattdessen als Runs:
+[Startindex, Länge]
+
+Beispiel:
+[128, 27]
+
+bedeutet 27 aufeinanderfolgende belegte Felder innerhalb des 64x64-Chunks.
+
+Zusammenhängende Suchflächen werden dadurch sehr kompakt übertragen.
+
+7) SERVER BLEIBT AUTORITATIV
+Der Browser darf niemals selbst entscheiden, dass ein Feld wirklich aufgedeckt ist.
+
+Der Spieler klickt lokal auf ein Rasterfeld.
+Der Server verarbeitet weiterhin reveal_area_v620.
+Erst die serverseitig akzeptierten explored_fields tauchen beim nächsten Chunk-Abgleich auf.
+
+Damit können zwei Spieler gleichzeitig dasselbe Gebiet anklicken, ohne dass der Client
+die Wahrheit über den Spielzustand bestimmt.
+
+8) TERRAIN-TRAFFIC EBENFALLS REDUZIERT
+Bisher konnte ein großer manueller Suchzug bis zu ca. 1.500 komplette JSON-Feldobjekte
+für Terrain an Supabase senden.
+
+V6.23 komprimiert zusammenhängende gleichartige Terrainfelder als:
+[Startindex, Länge, Terrain-Typ, Label]
+
+Neue RPC:
+cache_terrain_runs_v623(...)
+
+Die Terrainklassifizierung wird zusätzlich lokal im Browser gecacht.
+
+9) CACHE-INVALIDIERUNG
+INSERT explored_fields:
+- nur betroffene 64x64-Chunks erhalten eine neue Version
+
+UPDATE explored_fields:
+- betroffene Chunks werden ebenfalls invalidiert
+- wichtig z. B. wenn ein Schatz nach einer misslungenen Bergung neu versteckt wird
+
+10) BESTEHENDE FUNKTIONEN
+Unverändert erhalten:
 - Deduktionssuche
+- Terrain-Technologien
 - Geodatenprüfer
 - Bergungsprüfung
-- Sponsor-Spiele
+- Sponsor-/Goldspiele
 - Turnierstart
+- Maschinen
 - Goldbarrenschmelze
-- Terrain-Technologien
-- Maschinen-Stabilisierung
+- Chat / Ranking / Hall of Fame
 
-HINWEIS
-V6.22 ersetzt nur die Karten-Datenpipeline. Die zugrunde liegenden
-explored_fields und Spielkoordinaten bleiben unverändert.
+HINWEIS ZUR MIGRATION
+Für aktuell aktive bestehende Spiele wird die neue 64x64-Chunkstruktur EINMAL aus
+explored_fields aufgebaut. Das ist ein einmaliger Migrationsaufwand.
+Neue Aufdeckungen werden danach inkrementell gepflegt.
