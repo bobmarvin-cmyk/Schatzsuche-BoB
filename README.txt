@@ -1,13 +1,24 @@
-SCHATZSUCHE ONLINE V6.23.5 – NEXT.JS VIEWPORT HOTFIX
+SCHATZSUCHE ONLINE V6.23.6 – TUTORIAL-RASTER HOTFIX
 
 KEIN SQL.
 
-ÄNDERUNG
-Next.js erwartet viewport nicht mehr innerhalb des metadata-Exports.
-app/layout.js verwendet jetzt einen separaten export const viewport.
+Problem:
+Das simulierte 5x5-Tutorialfeld hatte für den gesamten Rasterblock
+aspect-ratio: 1.55. Ein 5x5-Raster ist geometrisch quadratisch.
+Je nach Browserbreite, Zoom und Display-Skalierung konnten die Zellen
+dadurch stark gestaucht erscheinen.
+
+Fix:
+- Gesamtkarte bekommt keine erzwungene 1.55-Form mehr.
+- Jede der 25 Zellen hat aspect-ratio: 1 / 1.
+- Grid-Spalten nutzen minmax(0,1fr).
+- Buttons haben padding:0, min-width:0 und min-height:0.
+- Breite wird responsiv auf maximal 560px begrenzt.
+- Mobile bleibt ebenfalls quadratisch.
+- Schriftgröße passt sich responsiv an.
 
 INSTALLATION
-1. ZIP-Inhalt in GitHub ersetzen.
-2. Keine Supabase-Migration ausführen.
-3. Vercel neu deployen lassen.
-4. Version V6.23.5 prüfen.
+ZIP-Inhalt in GitHub ersetzen.
+Kein Supabase-SQL ausführen.
+Vercel deployen lassen.
+Version V6.23.6 prüfen.

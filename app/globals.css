@@ -804,8 +804,35 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .tutorialHud span{background:#16253a;border:1px solid #304760;border-radius:8px;padding:5px;text-align:center}
 .tutorialHud small,.tutorialHud b{display:block}
 .tutorialHud small{font-size:8px;color:#91a6bf}.tutorialHud b{font-size:14px}
-.tutorialMap{display:grid;grid-template-columns:repeat(5,1fr);gap:3px;aspect-ratio:1.55;background:#07111f;padding:5px;border-radius:12px}
-.tutorialCell{border:1px solid #26384f;background:#101b2c;border-radius:5px;color:white;font-size:20px;cursor:pointer}
+.tutorialMap{
+ display:grid;
+ grid-template-columns:repeat(5,minmax(0,1fr));
+ gap:4px;
+ width:min(100%,560px);
+ margin:0 auto;
+ background:#07111f;
+ padding:5px;
+ border-radius:12px;
+ box-sizing:border-box;
+}
+.tutorialCell{
+ aspect-ratio:1 / 1;
+ width:100%;
+ min-width:0;
+ min-height:0;
+ padding:0;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ border:1px solid #334a65;
+ background:#101b2c;
+ border-radius:5px;
+ color:white;
+ font-size:clamp(13px,2.2vw,20px);
+ line-height:1;
+ cursor:pointer;
+ box-sizing:border-box;
+}
 .tutorialCell.revealed{background:#2c5782}.tutorialCell.trap{background:#51263f}.tutorialCell.treasure{background:#66561d}
 .tutorialCoach{align-self:start}.tutorialCallout{padding:10px;border-radius:9px;background:#1a304c;border:1px solid #395b83}
 .tutorialTechCard{display:grid;gap:3px;margin-top:12px;padding:10px;border-radius:9px;background:#16253a;border:1px solid #304760}
@@ -813,7 +840,7 @@ button:disabled{cursor:not-allowed;opacity:.45}
 .tutorialRanking{margin-top:9px;padding:9px;border-radius:8px;background:#111d30;border:1px solid #30445d}
 .tutorialRanking>div{display:flex;justify-content:space-between;padding-top:5px}.tutorialOnline{font-size:9px;color:#63d391}
 .tutorialActions{display:flex;gap:7px;flex-wrap:wrap}
-@media(max-width:760px){.tutorialLayout{grid-template-columns:1fr}.tutorialHero{align-items:flex-start}.tutorialMap{aspect-ratio:1.2}}
+@media(max-width:760px){.tutorialLayout{grid-template-columns:1fr}.tutorialHero{align-items:flex-start}.tutorialMap{width:min(100%,500px)}}
 
 /* V6.16a.1 visibility hotfix */
 .buildBadge{
@@ -1504,4 +1531,11 @@ button:disabled{cursor:not-allowed;opacity:.45}
  .memberAdminList{max-height:260px}
  .memberPasswordRow{display:grid;grid-template-columns:1fr}
  .compactAdminGrid{grid-template-columns:1fr 1fr}
+}
+
+
+/* V6.23.6 – Tutorial-Raster geräteunabhängig quadratisch */
+@supports not (aspect-ratio:1 / 1){
+ .tutorialCell{position:relative}
+ .tutorialCell::before{content:"";display:block;padding-top:100%}
 }
