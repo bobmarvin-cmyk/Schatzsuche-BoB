@@ -72,7 +72,7 @@ export default function Tutorial(){
  }
 
  return <main className="container tutorialPage">
-  <div className="buildBadge">V6.24.3</div>
+  <div className="buildBadge">V6.24.4</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/hilfe">Hilfe</a></div>
 
   <section className="panel tutorialHero">

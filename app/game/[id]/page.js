@@ -967,7 +967,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.24.3</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.24.4</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1185,7 +1185,7 @@ export default function Game(){
     {Number(pendingClaim.amount_ug||0)>0&&<div className="claimPrize">✨ möglicher Fund: {formatGold(pendingClaim.amount_ug)}</div>}
 
     {!claimStarted&&<>
-      <p>Die Aufgabe startet erst, wenn du bereit bist. Danach hast du 120 Sekunden. Die Symbolfolge bleibt zunächst 6,5 Sekunden sichtbar.</p>
+      <p>Die Aufgabe startet erst, wenn du bereit bist. Danach startet der Countdown. Je nach bisheriger Bergungsstufe bekommst du 5 oder 6 Symbole und etwas mehr oder weniger Zeit.</p>
       <button className="btn primary" disabled={claimResolving} onClick={startClaimChallenge}>
        {claimResolving?'Startet…':'Bergung starten'}
       </button>
@@ -1222,7 +1222,7 @@ export default function Game(){
        : <ClaimSymbolInput value={claimInput} count={Number(claimChallenge?.symbol_count||6)} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
     </>}
 
-    {claimStarted&&<div className="small claimRule">Ein bestätigter Versuch · maximal 120 Sekunden. Kontrolliere deine sechs Symbole vor dem Absenden.</div>}
+    {claimStarted&&<div className="small claimRule">Ein bestätigter Versuch. Kontrolliere deine Symbolfolge vor dem Absenden.</div>}
    </div>
   </div>}
 

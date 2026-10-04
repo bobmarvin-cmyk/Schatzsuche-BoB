@@ -1,27 +1,26 @@
-SCHATZSUCHE ONLINE V6.24.3 – BERGUNGS-UX HOTFIX
+SCHATZSUCHE ONLINE V6.24.4 – BERGUNGS-HOTFIX
 
-KEIN SQL.
+FEHLER GEFUNDEN
+V6.24.2 machte die Bergung nach mehreren Fehlversuchen absichtlich leichter:
+ab Stufe 2 werden nur noch 5 Symbole verwendet.
 
-ÄNDERUNG
-Die Rückwärts-Bergung war mit „von rechts nach links“ zu leicht zu überlesen.
+In resolve_treasure_claim_v620 war aber noch eine alte Prüfung:
+length(display_code) <> 6
 
-Jetzt erscheint bei einer Rückwärts-Aufgabe ein großer eigener Warnblock:
+Damit wurden 5-Symbol-Prüfungen serverseitig als inkonsistent abgewiesen.
 
-⚠️ RÜCKWÄRTS!
-LETZTES SYMBOL ZUERST
-
-Zusätzlich wird ein Beispiel gezeigt:
-▲ ● ■ ◆  →  ◆ ■ ● ▲
-
-Darunter steht nochmals:
-„Merken wie angezeigt – bei der Eingabe hinten anfangen.“
-
-Normale Aufgaben heißen nun bewusst:
-✓ NORMAL EINGEBEN
-„genau so eingeben, wie angezeigt“
+FIX
+- 5 und 6 Symbole sind jetzt gültig
+- erwartete Eingabelänge entspricht exakt der erzeugten Aufgabe
+- bestehende laufende 5-Symbol-Claims müssen NICHT gelöscht werden
+- adaptive Bergung bleibt vollständig erhalten
+- richtige Lösung nach Fehlversuch bleibt erhalten
+- auffällige Rückwärts-Anzeige bleibt erhalten
 
 INSTALLATION
-ZIP in GitHub ersetzen.
-Kein Supabase-SQL ausführen.
-Vercel neu deployen.
-Version V6.24.3 prüfen.
+1. ZIP in GitHub ersetzen.
+2. Supabase SQL Editor:
+   NUR supabase/v6_24_4_hotfix.sql
+   einmal ausführen.
+3. Vercel neu deployen.
+4. Version V6.24.4 prüfen.
