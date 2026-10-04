@@ -350,9 +350,29 @@ export default function Game(){
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
       supabase.rpc('get_treasure_status_v610',{p_game_id:id}),
-      supabase.from('technologies').select('id,name,branch,cost,reveal_power_bonus,reward_bonus,analysis_level,capacity_bonus,regen_reduction,machine_auto_fields,exclusive_per_game,trap_type,trap_power,trap_limit,trap_place_cost,requires,description,sort_order,is_active').eq('is_active',true).order('sort_order',{ascending:true}).order('id',{ascending:true}),
+      supabase.rpc('get_active_technologies_v6241'),
       supabase.from('platform_settings').select('analysis_price_l1,analysis_price_l2,analysis_price_l3,analysis_price_l4,analysis_price_l5,analysis_price_l6').eq('id',1).single()
     ])
+
+    if(g.error)throw g.error
+    if(p.error)throw p.error
+    if(t.error)throw t.error
+    if(w.error)throw w.error
+    if(gt.error)throw gt.error
+    if(ps.error)throw ps.error
+
+    if(tech.error){
+      // Notfall-Fallback: selbst wenn die neue RPC wegen eines noch nicht
+      // aktualisierten Schema-Caches nicht erreichbar ist, bleiben die
+      // Technologien im Spiel sichtbar.
+      const fallback=await supabase.from('technologies')
+        .select('id,name,branch,cost,reveal_power_bonus,reward_bonus,analysis_level,capacity_bonus,regen_reduction,machine_auto_fields,exclusive_per_game,trap_type,trap_power,trap_limit,requires,description,sort_order,is_active')
+        .eq('is_active',true)
+        .order('sort_order',{ascending:true})
+        .order('id',{ascending:true})
+      if(fallback.error)throw fallback.error
+      tech.data=(fallback.data||[]).map(x=>({...x,trap_place_cost:0}))
+    }
 
     setGame(g.data)
     lastFieldVersion.current=Number(g.data?.field_version||0)
@@ -361,6 +381,9 @@ export default function Game(){
     setWallet(w.data)
     setGoldTreasures(gt.data||[])
     setTechnologies(tech.data||[])
+    if((tech.data||[]).length===0){
+      setMsg('Technologien konnten nicht geladen werden – bitte Seite neu laden.')
+    }
     setAnalysisPrices({
       1:Number(ps.data?.analysis_price_l1||5),
       2:Number(ps.data?.analysis_price_l2||10),
@@ -927,7 +950,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.24</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.24.1</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1131,14 +1154,16 @@ export default function Game(){
     </>}
 
     {claimStarted&&claimChallenge?.challenge_type==='memory_forward'&&<>
-      <p>Merke dir die Symbolfolge und gib sie danach in derselben Reihenfolge ein.</p>
+      <div className="claimRuleBadge">→ NORMALE REIHENFOLGE</div>
+      <p>Merke dir die Symbolfolge und gib sie danach <strong>genau von links nach rechts</strong> ein.</p>
       {claimShow
        ? <div className="claimSequence">{String(claimChallenge.display_code||'').split('').map((n,i)=><span className={'claimKey k'+n} key={i}>{n==='1'?'▲':n==='2'?'●':n==='3'?'■':'◆'}</span>)}</div>
        : <ClaimSymbolInput value={claimInput} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
     </>}
 
     {claimStarted&&claimChallenge?.challenge_type==='memory_reverse'&&<>
-      <p>Merke dir die Folge. Danach musst du sie <strong>rückwärts</strong> eingeben.</p>
+      <div className="claimRuleBadge reverse">← RÜCKWÄRTS EINGEBEN</div>
+      <p>Merke dir die Folge. Danach musst du sie <strong>von rechts nach links</strong> eingeben.</p>
       {claimShow
        ? <div className="claimSequence">{String(claimChallenge.display_code||'').split('').map((n,i)=><span className={'claimKey k'+n} key={i}>{n==='1'?'▲':n==='2'?'●':n==='3'?'■':'◆'}</span>)}</div>
        : <ClaimSymbolInput value={claimInput} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
