@@ -1335,3 +1335,14 @@ button:disabled{cursor:not-allowed;opacity:.45}
   pointer-events:none;
   display:block;
 }
+
+
+/* V6.23.2 – Canvas darf die Basiskarte niemals abdunkeln */
+.gameCanvasOverlay{
+  background:transparent !important;
+  opacity:1;
+  mix-blend-mode:normal;
+}
+.worldMapShell .maplibregl-canvas{
+  opacity:1 !important;
+}

@@ -230,6 +230,10 @@ export default function GameMap({
     const ctx=canvas.getContext('2d',{alpha:true})
     if(!ctx)return
 
+    // Canvas bleibt vollständig transparent; nur Raster/Belegung werden darübergelegt.
+    ctx.globalCompositeOperation='source-over'
+    ctx.globalAlpha=1
+
     const dpr=Math.min(2,window.devicePixelRatio||1)
     const width=canvas.width/dpr
     const height=canvas.height/dpr
@@ -282,7 +286,7 @@ export default function GameMap({
         const px=xFor(x),py=yFor(y)
         const pw=wCells*cellPxX,ph=hCells*cellPxY
         const color=colors[c.dominant_user_id]||'#3b82f6'
-        ctx.fillStyle=hexToRgba(color,0.08+coverage*0.52)
+        ctx.fillStyle=hexToRgba(color,0.025+coverage*0.20)
         ctx.fillRect(px,py,pw,ph)
       }
     }else{
@@ -292,7 +296,7 @@ export default function GameMap({
         if(chunkX>vx1||chunkX+CHUNK<vx0||chunkY>vy1||chunkY+CHUNK<vy0)continue
 
         for(const group of c.groups||[]){
-          ctx.fillStyle=hexToRgba(colors[group.user_id]||'#3b82f6',0.66)
+          ctx.fillStyle=hexToRgba(colors[group.user_id]||'#3b82f6',0.34)
           for(const run of group.runs||[]){
             let idx=Number(run?.[0]||0)
             let left=Number(run?.[1]||0)
@@ -315,7 +319,7 @@ export default function GameMap({
         }
 
         if(c.treasure_runs?.length){
-          ctx.fillStyle='rgba(244,197,66,.92)'
+          ctx.fillStyle='rgba(244,197,66,.72)'
           for(const run of c.treasure_runs){
             let idx=Number(run?.[0]||0)
             let left=Number(run?.[1]||0)
@@ -342,7 +346,7 @@ export default function GameMap({
     // bleibt dabei unverändert.
     const basePx=Math.max(.01,Math.min(Math.abs(cellPxX),Math.abs(cellPxY)))
     let stride=1
-    while(basePx*stride<7&&stride<4096)stride*=2
+    while(basePx*stride<15&&stride<4096)stride*=2
     if(stride!==gridStrideRef.current){gridStrideRef.current=stride;setGridStride(stride)}
 
     const startX=Math.max(0,Math.floor(vx0/stride)*stride)
@@ -361,13 +365,13 @@ export default function GameMap({
       ctx.moveTo(xFor(startX),py)
       ctx.lineTo(xFor(endX),py)
     }
-    ctx.strokeStyle=renderModeRef.current==='detail'?'rgba(18,34,56,.58)':'rgba(20,38,61,.38)'
-    ctx.lineWidth=basePx>=8?0.8:0.65
+    ctx.strokeStyle=renderModeRef.current==='detail'?'rgba(230,238,248,.24)':'rgba(230,238,248,.16)'
+    ctx.lineWidth=basePx>=8?0.65:0.45
     ctx.stroke()
 
     // Spielgebietsrand
-    ctx.strokeStyle='rgba(238,244,251,.62)'
-    ctx.lineWidth=1.2
+    ctx.strokeStyle='rgba(238,244,251,.42)'
+    ctx.lineWidth=0.9
     ctx.strokeRect(nw.x,nw.y,se.x-nw.x,se.y-nw.y)
     ctx.restore()
   }
