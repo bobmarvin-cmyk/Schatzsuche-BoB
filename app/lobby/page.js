@@ -184,8 +184,8 @@ export default function Lobby(){
    if(gameFilter==='gold')return g.game_type==='pay'
    if(gameFilter==='sponsor')return g.game_type==='sponsor'
    if(gameFilter==='standard')return g.game_type==='standard'
-   if(gameFilter==='fast')return Number(g.regen_seconds||999)<=15&&total<=250000
-   if(gameFilter==='long')return Number(g.regen_seconds||0)>=60||total>=1000000
+   if(gameFilter==='fast')return Number(g.regen_seconds||999)<=30
+   if(gameFilter==='slow')return Number(g.regen_seconds||0)>30
    return true
  }
  function sortValue(g){
@@ -217,7 +217,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.25.2</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.25.3</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -388,8 +388,8 @@ export default function Lobby(){
    <div className="lobbyFilterBar">
     <div className="lobbyFilterChips">
      {[
-      ['all','Alle'],['fast','⚡ Schnell'],['long','🧭 Langzeit'],
-      ['standard','Standard'],['gold','✨ Gold'],['sponsor','🤝 Sponsor']
+      ['all','Alle'],['gold','✨ Gold'],['sponsor','🤝 Sponsor'],
+      ['standard','Standard'],['fast','⚡ Schnell'],['slow','🐢 Langsam']
      ].map(([value,label])=><button type="button" key={value}
        className={'filterChip '+(gameFilter===value?'active':'')}
        onClick={()=>setGameFilter(value)}>{label}</button>)}
