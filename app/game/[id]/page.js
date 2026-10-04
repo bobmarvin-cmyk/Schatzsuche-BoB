@@ -9,12 +9,16 @@ import GameChat from '../../../components/GameChat'
 export default function Game(){
  const {id}=useParams()
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
- const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
+ const [fields,setFields]=useState([]),[chunks,setChunks]=useState([]),[mapRenderMode,setMapRenderMode]=useState('overview'),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false)
- const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0)
+ const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0),mapCacheRef=useRef(new Map()),overviewLoadedVersionRef=useRef(-1)
 
  useEffect(()=>{
+  mapCacheRef.current.clear()
+  overviewLoadedVersionRef.current=-1
+  setFields([])
+  setChunks([])
   init()
   const ch=supabase.channel('game-'+id)
    .on('postgres_changes',{event:'INSERT',schema:'public',table:'game_events',filter:`game_id=eq.${id}`},payload=>handleRealtimeGameEvent(payload.new))
@@ -153,7 +157,12 @@ export default function Game(){
 
     if(fv!==lastFieldVersion.current){
       lastFieldVersion.current=fv
-      if(currentViewport.current)scheduleVisibleReload(80)
+      for(const key of [...mapCacheRef.current.keys()]){
+        if(String(key).startsWith(`overview:${id}:`))mapCacheRef.current.delete(key)
+      }
+      if(currentViewport.current)scheduleVisibleReload(
+        currentViewport.current.mode==='detail'?100:450
+      )
     }
 
     for(const evt of (data.events||[])){
@@ -375,34 +384,78 @@ export default function Game(){
  }
 
  async function loadVisibleFields(v){
+  if(!v)return
   currentViewport.current=v
   const seq=++viewportSeq.current
-  const {data,error}=await supabase.rpc('get_visible_fields_v617',{
-   p_game_id:id,p_x0:v.x0,p_x1:v.x1,p_y0:v.y0,p_y1:v.y1,p_step:v.step||1
+  const mode=v.mode||'overview'
+  setMapRenderMode(mode)
+
+  if(mode==='overview'){
+    const version=Math.max(Number(game?.field_version||0),Number(lastFieldVersion.current||0))
+    const cacheKey=`overview:${id}:${version}`
+    const cached=mapCacheRef.current.get(cacheKey)
+    if(cached){
+      if(seq!==viewportSeq.current)return
+      setChunks(cached)
+      setFields([])
+      return
+    }
+
+    const {data,error}=await supabase.rpc('get_map_chunks_v622',{
+      p_game_id:id,
+      p_x0:0,p_x1:Math.max(0,Number(game?.width||1)-1),
+      p_y0:0,p_y1:Math.max(0,Number(game?.height||1)-1)
+    })
+    if(seq!==viewportSeq.current)return
+    if(error){setMsg('Kartenübersicht konnte nicht geladen werden: '+error.message);return}
+    const next=data?.chunks||[]
+    mapCacheRef.current.clear()
+    mapCacheRef.current.set(cacheKey,next)
+    overviewLoadedVersionRef.current=version
+    setChunks(next)
+    setFields([])
+    return
+  }
+
+  const x0=Number(v.x0||0),x1=Number(v.x1||0),y0=Number(v.y0||0),y1=Number(v.y1||0)
+  const cacheKey=`detail:${id}:${x0}:${x1}:${y0}:${y1}`
+  const cached=mapCacheRef.current.get(cacheKey)
+  if(cached&&Date.now()-cached.at<2500){
+    if(seq!==viewportSeq.current)return
+    setFields(cached.fields)
+    setChunks([])
+    return
+  }
+
+  const {data,error}=await supabase.rpc('get_map_cells_v622',{
+    p_game_id:id,p_x0:x0,p_x1:x1,p_y0:y0,p_y1:y1
   })
   if(seq!==viewportSeq.current)return
-  if(error){setMsg('Kartenausschnitt konnte nicht geladen werden: '+error.message);return}
-  const next=data?.fields||[]
-  setFields(prev=>{
-    if(prev.length===next.length){
-      let same=true
-      for(let i=0;i<next.length;i++){
-        const a=prev[i],b=next[i]
-        if(a?.x!==b?.x||a?.y!==b?.y||a?.size!==b?.size||a?.discovered_by!==b?.discovered_by||a?.is_treasure!==b?.is_treasure){
-          same=false;break
-        }
-      }
-      if(same)return prev
+  if(error){
+    if(error.message?.includes('Nahansicht zu groß')){
+      setMsg('Für Einzelzellen bitte etwas näher hineinzoomen.')
+      setMapRenderMode('overview')
+      return
     }
-    return next
-  })
+    setMsg('Kartenausschnitt konnte nicht geladen werden: '+error.message)
+    return
+  }
+
+  const next=data?.fields||[]
+  mapCacheRef.current.set(cacheKey,{at:Date.now(),fields:next})
+  if(mapCacheRef.current.size>24){
+    const first=mapCacheRef.current.keys().next().value
+    mapCacheRef.current.delete(first)
+  }
+  setFields(next)
+  setChunks([])
  }
 
  function handleViewport(v){
   currentViewport.current=v
-  scheduleVisibleReload(100)
+  setMapRenderMode(v?.mode||'overview')
+  scheduleVisibleReload(v?.mode==='detail'?120:300)
  }
-
 
  function terrainRequirement(type){
   if(type==='forest')return {tech:'ter2',name:'🌲 Waldkunde'}
@@ -778,7 +831,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.21.1</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.22</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -860,7 +913,7 @@ export default function Game(){
     <div className="mapHeader"><div><h2>{game?.name||'Schatzsuche'}{game?.center_label?` · ${game.center_label}`:''}</h2><div className="small">Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.</div></div>
      <div className="mapLegend">{players.map(p=><div className={'legendItem '+(onlineIds.includes(p.user_id)?'online':'offline')} key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.profiles?.display_name||'Spieler'}{onlineIds.includes(p.user_id)&&<span className="onlineDot" title="online">●</span>}</div>)}</div>
     </div>
-    {game&&<><div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name}</button>)}{trapMode&&<button className="miniBtn trapCancelBtn" onClick={()=>setTrapMode(null)}>✕ Fallenmodus beenden</button>}</>}</div><GameMap game={game} fields={fields} players={players} onReveal={reveal} onTerrainReveal={terrainReveal} onTerrainBatch={cacheTerrainBatch} terrainScanPower={Number(me?.reveal_power||1)+Number(me?.gimmick_reveal_bonus_pending||0)} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}
+    {game&&<><div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name}</button>)}{trapMode&&<button className="miniBtn trapCancelBtn" onClick={()=>setTrapMode(null)}>✕ Fallenmodus beenden</button>}</>}</div><GameMap game={game} fields={fields} chunks={chunks} mapRenderMode={mapRenderMode} players={players} onReveal={reveal} onTerrainReveal={terrainReveal} onTerrainBatch={cacheTerrainBatch} terrainScanPower={Number(me?.reveal_power||1)+Number(me?.gimmick_reveal_bonus_pending||0)} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}
       mobileHud={<div className="mobileMapHud">
        {[
         [Number(me?.coins||0).toFixed(1),'Taler'],

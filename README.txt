@@ -1,105 +1,112 @@
-SCHATZSUCHE ONLINE V6.21.1
-Ruhige Karte + Geodatenprüfer + Goldbarrenschmelze
+SCHATZSUCHE ONLINE V6.22 – CHUNK MAP
 
 VORAUSSETZUNG
-V6.21 ist installiert.
+V6.21.1 ist installiert.
 
 INSTALLATION
 1. ZIP-Inhalt in GitHub ersetzen.
 2. Supabase -> SQL Editor.
 3. NUR:
-   supabase/v6_21_1_migration.sql
+   supabase/v6_22_migration.sql
    einmal ausführen.
-4. Keine ältere Migration erneut ausführen.
+4. Keine alte Migration erneut ausführen.
 5. Vercel deployen lassen.
-6. Version V6.21.1 prüfen.
+6. Version V6.22 prüfen.
 
-1) RUHIGE KARTE / FESTES RASTER
-Das echte Spielfeldraster verändert seine Geometrie nicht mehr.
+ZIEL
+Die Karte soll bei sehr großen Multiplayer-Spielen ruhig, verständlich und
+trafficarm bleiben. Das echte Spielfeldraster darf sich beim Zoomen optisch
+niemals vergrößern oder verkleinern.
 
-Detailmodus:
-- ab Zoom 12
-- echte 1x1-Spielzellen
-- echte Feldgrenzen
-- Viewport wird mit step=1 geladen
+1) ZWEI KLAR GETRENNTE KARTENEBENEN
 
-Übersichtsmodus:
-- beim Herauszoomen erst unter Zoom 11 (Hysterese)
-- keine scheinbar vergrößerten Rasterfelder
-- aggregierte DB-Daten werden als gleich große Übersichtspunkte dargestellt
-- keine Gitterlinien
-- erheblich weniger Geometrie
+NAHANSICHT / EINZELZELLEN
+- ab ca. Zoom 12.25
+- ausschließlich echte 1x1-Spielzellen
+- kein Aggregat wird als Spielfeld dargestellt
+- Raster wird lokal im Browser berechnet
+- Rasterlinien verursachen keinen Datenbank-Traffic
+- exakte Felder kommen über get_map_cells_v622
 
-Dadurch bleibt die Karte ruhig. Die serverseitige Aggregation darf weiter Leistung sparen,
-verändert aber optisch nicht mehr die Größe eines Spielfeldes.
+ÜBERSICHT / COVERAGE
+- beim Herauszoomen unter ca. Zoom 11.25
+- keine scheinbar größeren Spielfelder
+- feste Flächen-Chunks zeigen nur den Erkundungsgrad eines Gebietes
+- Transparenz = ungefährer Coverage-Anteil
+- Farbe = dominanter Spieler in diesem Gebiet
+- Chunkgröße bleibt während des gesamten Spiels konstant
+- Chunks werden über get_map_chunks_v622 geladen
 
-2) GEODATEN- & HINTERGRUNDPRÜFER IN DER SCHALTZENTRALE
-Neue Sektion „🌍 Geodaten“.
+Die Lücke zwischen 11.25 und 12.25 ist Absicht (Hysterese).
+Dadurch springt die Darstellung beim Zoomen nicht ständig zwischen Modi.
 
-Pro Spiel + Rasterfeld X/Y zeigt sie:
-- reale Kartenkoordinate
-- gecachtes Terrain
-- erforscht / unerforscht
-- Abstand zu bekanntem Wasser
-- Abstand zu bekanntem Wald
-- Abstand zu Siedlungs-/Nutzflächen
-- Abstand zu Verkehrsflächen
-- Anzahl gecachter Terrainfelder
+2) FESTE CHUNKGRÖSSE
+Die Übersicht verwendet pro Spiel eine konstante Chunkgröße:
+max(32 Felder, archive_step * 4).
 
-Nur für Admin sichtbar:
-- Abstand zum nächsten offenen Schatz
-- Nummer des nächsten Schatzteils
-- komplette serverseitige Schatzprofile
-- Sektor / Quadrant
-- Zentrum- und Randdistanz
-- Terrain- und Umgebungswerte
+Bei riesigen Karten werden Chunks automatisch größer, aber NICHT zoomabhängig.
+Die Chunkgröße ändert sich also niemals, nur weil der Spieler hinein- oder
+herauszoomt.
 
-Damit kann die Spielleitung Deduktionshinweise direkt gegen die zugrunde liegenden Daten prüfen.
+3) WENIGER TRAFFIC
+Übersicht:
+- nutzt die bereits vorhandene komprimierte game_archive_cell_counts-Struktur
+- typischerweise nur wenige hundert Coverage-Flächen für die komplette Karte
+- gesamte Übersicht wird im Browser gecacht
+- bei unverändertem field_version kein neuer Request nötig
 
-3) GOLD BAR SMELTER
-Neue technische Goldbarrenschmelze unter /praemien.
+Nahansicht:
+- nur sichtbarer Bereich
+- Viewport wird auf stabile 64x64-Kachelgrenzen geschnappt
+- kleine Kartenbewegungen treffen dadurch denselben Cache
+- Cache hält bis zu 24 Detailausschnitte
+- frische Detaildaten werden kurzfristig wiederverwendet
 
-Spieler können freies Gold in digitale Barren gießen:
-- 100 mg
-- 250 mg
-- 500 mg
-- 1.000 mg
-- 2.500 mg
-- 5.000 mg
-(Standardgrößen; in der Schaltzentrale änderbar)
+4) KEINE REQUESTS WÄHREND DER BEWEGUNG
+Die Karte löst Datenanforderungen nur nach MapLibre "moveend" aus.
+Ein separater zoomend-Request wurde entfernt.
+Der vorhandene Debounce im Game-Client bleibt bestehen.
 
-Beim Gießen:
-- exakt dieselbe Goldmenge wird aus dem Wallet gebunden
-- kein Zufallsfaktor
-- keine Schmelzgebühr
-- jeder Barren bekommt eine eindeutige BOB-Seriennummer
+5) SERVER-RPCS
+get_map_chunks_v622(...)
+- kompakte feste Coverage-Chunks
+- Coverage-Wert 0..1
+- dominante Spieler-ID
+- explored_count
+- feste Chunkgröße
 
-Solange der Barren den Status „minted“ hat:
-- kann er kostenlos wieder zu Goldstaub eingeschmolzen werden
-- dabei wird exakt die gebundene Menge zurückgebucht
+get_map_cells_v622(...)
+- echte einzelne explored_fields
+- size ist immer 1
+- Sicherheitsgrenze: max. 60.000 Rasterpositionen pro Detailabfrage
+- bei zu weitem Detailausschnitt fordert die UI weiteres Hineinzoomen an
 
-4) PHYSISCHE AUSGABE
-Digitale Schmelze und reale Ausgabe sind getrennt.
+6) DARSTELLUNG
+Übersicht:
+- halbtransparente zusammenhängende Coverage-Flächen
+- keine großen Pseudo-Zellen
+- keine Rasterlinien
+- kein Punktwolken-Look
 
-platform_settings:
-- smelting_enabled: digitale Barren gießen
-- redemptions_enabled: physische Ausgabe anfordern
+Nah:
+- normale Spielfeldfarben
+- echtes Raster
+- echte Zellgrenzen
 
-Physische Ausgabe bleibt standardmäßig AUS.
-Wenn redemptions_enabled aktiviert wird, kann ein frei verfügbarer digitaler Barren
-in eine Ausgabeforderung überführt werden.
+Damit gilt visuell immer:
+SPIELFELD = SPIELFELD.
+Eine Coverage-Fläche ist nur eine Übersicht über viele echte Spielfelder.
 
-5) SCHALTZENTRALE GOLD
-Neu:
-- Schmelze an/aus
-- physische Ausgabe an/aus
-- erlaubte Barrengrößen in mg
-- Statistik zu digitalen Barren
-- Statistik zu angefragten Ausgaben
-- Statistik zu ausgegebenen Barren
+7) V6.21.1-FUNKTIONEN BLEIBEN ERHALTEN
+- Deduktionssuche
+- Geodatenprüfer
+- Bergungsprüfung
+- Sponsor-Spiele
+- Turnierstart
+- Goldbarrenschmelze
+- Terrain-Technologien
+- Maschinen-Stabilisierung
 
-RECHTLICHER HINWEIS
-V6.21/V6.21.1 gestaltet die Schatzsuche technisch wesentlich stärker als
-Deduktions-/Geschicklichkeitssystem. Das ist keine automatische behördliche oder
-gerichtliche Einstufung. Reale Kauf-, Rücktausch- oder Sachpreisfunktionen sollten
-vor öffentlicher Freischaltung separat rechtlich geprüft werden.
+HINWEIS
+V6.22 ersetzt nur die Karten-Datenpipeline. Die zugrunde liegenden
+explored_fields und Spielkoordinaten bleiben unverändert.

@@ -50,35 +50,21 @@ function cellBounds(g,x,y,size=1){
   return [west,south,east,north]
 }
 
-function featureCollection(game,fields,players,mode='detail'){
-  if(!game)return {type:'FeatureCollection',features:[]}
-  const g=geometry(game)
+function playerColors(players){
   const colors={}
-  players.forEach((p,i)=>{
+  ;(players||[]).forEach((p,i)=>{
     colors[p.user_id]=p.player_color||['#3b82f6','#22c55e','#a855f7','#ef4444'][i%4]
   })
+  return colors
+}
 
-  if(mode==='overview'){
-    return {
-      type:'FeatureCollection',
-      features:fields.map(f=>{
-        const size=Math.max(1,Number(f.size||1))
-        const [w,s,e,n]=cellBounds(g,Number(f.x),Number(f.y),size)
-        return {
-          type:'Feature',
-          properties:{
-            color:f.is_treasure?'#f4c542':(colors[f.discovered_by]||'#3b82f6'),
-            aggregated:size>1
-          },
-          geometry:{type:'Point',coordinates:[(w+e)/2,(s+n)/2]}
-        }
-      })
-    }
-  }
-
+function cellCollection(game,fields,players){
+  if(!game)return {type:'FeatureCollection',features:[]}
+  const g=geometry(game)
+  const colors=playerColors(players)
   return {
     type:'FeatureCollection',
-    features:fields.filter(f=>Number(f.size||1)===1).map(f=>{
+    features:(fields||[]).map(f=>{
       const [w,s,e,n]=cellBounds(g,Number(f.x),Number(f.y),1)
       return {
         type:'Feature',
@@ -86,6 +72,32 @@ function featureCollection(game,fields,players,mode='detail'){
           color:f.is_treasure?'#f4c542':(colors[f.discovered_by]||'#3b82f6')
         },
         geometry:{type:'Polygon',coordinates:[[[w,s],[e,s],[e,n],[w,n],[w,s]]]}
+      }
+    })
+  }
+}
+
+function chunkCollection(game,chunks,players){
+  if(!game)return {type:'FeatureCollection',features:[]}
+  const g=geometry(game)
+  const colors=playerColors(players)
+  return {
+    type:'FeatureCollection',
+    features:(chunks||[]).map(c=>{
+      const wCells=Math.max(1,Number(c.w||c.chunk_size||32))
+      const hCells=Math.max(1,Number(c.h||c.chunk_size||32))
+      const west=g.west+Number(c.x)*g.cell/g.metersLon
+      const east=g.west+(Number(c.x)+wCells)*g.cell/g.metersLon
+      const north=g.north-Number(c.y)*g.cell/METERS_PER_DEG_LAT
+      const south=g.north-(Number(c.y)+hCells)*g.cell/METERS_PER_DEG_LAT
+      return {
+        type:'Feature',
+        properties:{
+          color:colors[c.discovered_by]||'#3b82f6',
+          coverage:Math.max(0,Math.min(1,Number(c.coverage||0))),
+          explored_count:Number(c.explored_count||0)
+        },
+        geometry:{type:'Polygon',coordinates:[[[west,south],[east,south],[east,north],[west,north],[west,south]]]}
       }
     })
   }
@@ -142,11 +154,12 @@ function terrainFromFeatures(features){
   return {type:'open',label:'🧭 Offenes Gelände'}
 }
 
-export default function GameMap({game,fields,players,onReveal,onTerrainReveal,onTerrainBatch,terrainScanPower=1,onTrapPlace,trapMode,ownTraps=[],analysisHint,onViewportChange,analysisFocusToken,onAnalysisFeatures,mobileHud}){
+export default function GameMap({game,fields,chunks=[],mapRenderMode='overview',players,onReveal,onTerrainReveal,onTerrainBatch,terrainScanPower=1,onTrapPlace,trapMode,ownTraps=[],analysisHint,onViewportChange,analysisFocusToken,onAnalysisFeatures,mobileHud}){
   const holder=useRef(null)
   const mapRef=useRef(null)
   const gameRef=useRef(game)
   const fieldsRef=useRef(fields)
+  const chunksRef=useRef(chunks)
   const playersRef=useRef(players)
   const onTerrainRevealRef=useRef(onTerrainReveal)
   const onTerrainBatchRef=useRef(onTerrainBatch)
@@ -159,13 +172,14 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
   const viewportRef=useRef(onViewportChange)
   const analysisFeaturesRef=useRef(onAnalysisFeatures)
   const mapModeRef=useRef('map')
-  const renderModeRef=useRef('overview')
+  const renderModeRef=useRef(mapRenderMode)
   const [status,setStatus]=useState('Karte wird geladen…')
   const [mapMode,setMapMode]=useState('map')
-  const [renderMode,setRenderMode]=useState('overview')
+  const [renderMode,setRenderMode]=useState(mapRenderMode)
 
   gameRef.current=game
   fieldsRef.current=fields
+  chunksRef.current=chunks
   playersRef.current=players
   onRevealRef.current=onReveal
   onTerrainRevealRef.current=onTerrainReveal
@@ -178,6 +192,7 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
   viewportRef.current=onViewportChange
   analysisFeaturesRef.current=onAnalysisFeatures
   mapModeRef.current=mapMode
+  renderModeRef.current=mapRenderMode
   const playerColorKey=players.map(p=>`${p.user_id}:${p.player_color||''}`).join('|')
 
   useEffect(()=>{
@@ -212,18 +227,23 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
             map.fitBounds([[g.west,g.south],[g.east,g.north]],{padding:35,duration:0,maxZoom:17})
             fitted=true
           }
-          if(!map.getSource('explored')){
-            map.addSource('explored',{type:'geojson',data:featureCollection(gameRef.current,fieldsRef.current,playersRef.current,renderModeRef.current)})
-            map.addLayer({id:'explored-fill',type:'fill',source:'explored',paint:{'fill-color':['get','color'],'fill-opacity':0.62}})
-            map.addLayer({id:'explored-outline',type:'line',source:'explored',paint:{'line-color':'#ffffff','line-opacity':0.28,'line-width':0.7}})
+          if(!map.getSource('explored-cells')){
+            map.addSource('explored-cells',{type:'geojson',data:cellCollection(gameRef.current,fieldsRef.current,playersRef.current)})
+            map.addLayer({id:'explored-fill',type:'fill',source:'explored-cells',paint:{'fill-color':['get','color'],'fill-opacity':0.62}})
+            map.addLayer({id:'explored-outline',type:'line',source:'explored-cells',paint:{'line-color':'#ffffff','line-opacity':0.22,'line-width':0.55}})
+          }
+          if(!map.getSource('explored-chunks')){
+            map.addSource('explored-chunks',{type:'geojson',data:chunkCollection(gameRef.current,chunksRef.current,playersRef.current)})
             map.addLayer({
-              id:'explored-overview',type:'circle',source:'explored',
+              id:'coverage-fill',type:'fill',source:'explored-chunks',
               paint:{
-                'circle-color':['get','color'],
-                'circle-opacity':0.72,
-                'circle-radius':4,
-                'circle-stroke-width':0
+                'fill-color':['get','color'],
+                'fill-opacity':['interpolate',['linear'],['get','coverage'],0,0,0.05,0.10,0.35,0.28,0.7,0.46,1,0.62]
               }
+            })
+            map.addLayer({
+              id:'coverage-outline',type:'line',source:'explored-chunks',
+              paint:{'line-color':['get','color'],'line-opacity':0.12,'line-width':0.35}
             })
           }
           if(!map.getSource('grid')){
@@ -245,7 +265,7 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
 
         map.on('load',setupGameLayers)
         map.on('style.load',()=>{
-          if(!map.getSource('explored'))setupGameLayers()
+          if(!map.getSource('explored-cells'))setupGameLayers()
         })
 
         slowTimer=setTimeout(()=>{
@@ -257,7 +277,6 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
         },7000)
 
         map.on('moveend',updateGridAndViewport)
-        map.on('zoomend',updateGridAndViewport)
 
         map.on('click',async(e)=>{
           const cg=geometry(gameRef.current)
@@ -266,7 +285,7 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
           if(x<0||y<0||x>=cg.width||y>=cg.height)return
           if(trapModeRef.current){onTrapPlaceRef.current?.(x,y);return}
 
-          const ignored=['explored-fill','explored-outline','grid-lines','analysis-zone-fill','analysis-zone-line','my-traps-fill','my-traps-line']
+          const ignored=['explored-fill','explored-outline','coverage-fill','coverage-outline','grid-lines','analysis-zone-fill','analysis-zone-line','my-traps-fill','my-traps-line']
           const classifyCell=(cx,cy)=>{
             try{
               const [w,so,ea,n]=cellBounds(cg,cx,cy,1)
@@ -317,7 +336,7 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
             ])||[]
             const seen=new Set(),items=[]
             for(const f of features){
-              if(['explored-fill','explored-outline','grid-lines','analysis-zone-fill','analysis-zone-line'].includes(f.layer?.id))continue
+              if(['explored-fill','explored-outline','coverage-fill','coverage-outline','grid-lines','analysis-zone-fill','analysis-zone-line'].includes(f.layer?.id))continue
               const p=f.properties||{}
               const name=p.name_de||p.name||p['name:de']||p.ref
               if(!name)continue
@@ -340,16 +359,14 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
           const b=map.getBounds()
           const zoom=map.getZoom()
 
-          // Hysterese: hineinzoomen -> Detail ab 12; herauszoomen -> Übersicht erst unter 11.
+          // Stabile Hysterese. Der Modus ändert sich nicht während eines Zoom-Gestures.
           let mode=renderModeRef.current
-          if(mode==='overview'&&zoom>=12)mode='detail'
-          else if(mode==='detail'&&zoom<11)mode='overview'
+          if(mode==='overview'&&zoom>=12.25)mode='detail'
+          else if(mode==='detail'&&zoom<11.25)mode='overview'
 
           if(mode!==renderModeRef.current){
             renderModeRef.current=mode
             setRenderMode(mode)
-            const src=map.getSource('explored')
-            if(src)src.setData(featureCollection(gameRef.current,fieldsRef.current,playersRef.current,mode))
           }
 
           let x0=Math.max(0,Math.floor((b.getWest()-cg.west)*cg.metersLon/cg.cell))
@@ -358,34 +375,44 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
           let y1=Math.min(cg.height-1,Math.ceil((cg.north-b.getSouth())*METERS_PER_DEG_LAT/cg.cell))
 
           if(x1<x0||y1<y0)return
-          const cols=x1-x0+1,rows=y1-y0+1
-          const area=Math.max(1,cols*rows)
-          const explored=Number(gameRef.current?.explored_count||0)
 
-          // Detailmodus fragt echte Einzelzellen ab. Übersicht darf serverseitig aggregieren,
-          // zeichnet diese Aggregate aber nur als gleich große Punkte – nie als scheinbar größere Felder.
-          const targetBuckets=explored>500000?300:explored>150000?450:explored>50000?650:900
-          const step=mode==='detail'?1:Math.max(2,Math.ceil(Math.sqrt(area/targetBuckets)))
-
-          const pad=mode==='detail'?2:Math.max(2,step*2)
-          viewportRef.current?.({
-            x0:Math.max(0,x0-pad),x1:Math.min(cg.width-1,x1+pad),
-            y0:Math.max(0,y0-pad),y1:Math.min(cg.height-1,y1+pad),step
-          })
-
-          const features=[]
           if(mode==='detail'){
-            // Immer das echte Raster. Keine zoomabhängig größeren Gitterzellen mehr.
+            // 64er Kacheln stabilisieren den Cache beim kleinen Verschieben.
+            const tile=64
+            x0=Math.max(0,Math.floor(x0/tile)*tile)
+            y0=Math.max(0,Math.floor(y0/tile)*tile)
+            x1=Math.min(cg.width-1,Math.ceil((x1+1)/tile)*tile-1)
+            y1=Math.min(cg.height-1,Math.ceil((y1+1)/tile)*tile-1)
+          }else{
+            // Übersicht wird als kompakte Coverage für das ganze Spiel gehalten.
+            x0=0;y0=0;x1=cg.width-1;y1=cg.height-1
+          }
+
+          viewportRef.current?.({x0,x1,y0,y1,mode,zoom})
+
+          const gridFeatures=[]
+          if(mode==='detail'){
+            // Raster ist rein clientseitig – null DB-/Netzwerktraffic.
             for(let x=x0;x<=x1+1;x++){
               const lon=cg.west+x*cg.cell/cg.metersLon
-              features.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:[[lon,cg.south],[lon,cg.north]]}})
+              gridFeatures.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:[[lon,cg.south],[lon,cg.north]]}})
             }
             for(let y=y0;y<=y1+1;y++){
               const lat=cg.north-y*cg.cell/METERS_PER_DEG_LAT
-              features.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:[[cg.west,lat],[cg.east,lat]]}})
+              gridFeatures.push({type:'Feature',properties:{},geometry:{type:'LineString',coordinates:[[cg.west,lat],[cg.east,lat]]}})
             }
           }
-          map.getSource('grid').setData({type:'FeatureCollection',features})
+          map.getSource('grid').setData({type:'FeatureCollection',features:gridFeatures})
+
+          // Layer statt Geometrie austauschen: kein "Feldgrößen-Springen".
+          const detailVisible=mode==='detail'?'visible':'none'
+          const overviewVisible=mode==='overview'?'visible':'none'
+          for(const id of ['explored-fill','explored-outline','grid-lines']){
+            if(map.getLayer(id))map.setLayoutProperty(id,'visibility',detailVisible)
+          }
+          for(const id of ['coverage-fill','coverage-outline']){
+            if(map.getLayer(id))map.setLayoutProperty(id,'visibility',overviewVisible)
+          }
         }
       }catch(err){
         if(!cancelled)setStatus('Karte konnte nicht gestartet werden. Bitte Seite neu laden.')
@@ -403,12 +430,32 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
   useEffect(()=>{
     const map=mapRef.current
     if(!map)return
+    renderModeRef.current=mapRenderMode
+    setRenderMode(mapRenderMode)
+    const detailVisible=mapRenderMode==='detail'?'visible':'none'
+    const overviewVisible=mapRenderMode==='overview'?'visible':'none'
     const apply=()=>{
-      const src=map.getSource('explored')
-      if(src)src.setData(featureCollection(gameRef.current,fieldsRef.current,playersRef.current,renderModeRef.current))
+      for(const id of ['explored-fill','explored-outline','grid-lines']){
+        if(map.getLayer(id))map.setLayoutProperty(id,'visibility',detailVisible)
+      }
+      for(const id of ['coverage-fill','coverage-outline']){
+        if(map.getLayer(id))map.setLayoutProperty(id,'visibility',overviewVisible)
+      }
     }
     if(map.loaded())apply();else map.once('load',apply)
-  },[fields,playerColorKey,game?.id])
+  },[mapRenderMode])
+
+  useEffect(()=>{
+    const map=mapRef.current
+    if(!map)return
+    const apply=()=>{
+      const cellSrc=map.getSource('explored-cells')
+      if(cellSrc)cellSrc.setData(cellCollection(gameRef.current,fieldsRef.current,playersRef.current))
+      const chunkSrc=map.getSource('explored-chunks')
+      if(chunkSrc)chunkSrc.setData(chunkCollection(gameRef.current,chunksRef.current,playersRef.current))
+    }
+    if(map.loaded())apply();else map.once('load',apply)
+  },[fields,chunks,playerColorKey,game?.id])
 
   useEffect(()=>{
     const map=mapRef.current
@@ -482,7 +529,7 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
             const features=map.queryRenderedFeatures([[center.x-px,center.y-px],[center.x+px,center.y+px]])||[]
             const seen=new Set(),items=[]
             for(const f of features){
-              if(['explored-fill','explored-outline','grid-lines','analysis-zone-fill','analysis-zone-line'].includes(f.layer?.id))continue
+              if(['explored-fill','explored-outline','coverage-fill','coverage-outline','grid-lines','analysis-zone-fill','analysis-zone-line'].includes(f.layer?.id))continue
               const p=f.properties||{}
               const name=p.name_de||p.name||p['name:de']||p.ref
               if(!name)continue
@@ -512,7 +559,7 @@ export default function GameMap({game,fields,players,onReveal,onTerrainReveal,on
     </div>
     <button type="button" className="mapCenterBtn" onClick={centerOnGame}>◎ Zum Spielfeld</button>
     <div className="mapRenderModeBadge">
-      {renderMode==='detail'?'▦ Echtes Raster':'◉ Ruhige Übersicht'}
+      {renderMode==='detail'?'▦ Einzelzellen':'▧ Flächenübersicht'}
     </div>
     {status&&<div className="mapLoadingOverlay">{status}</div>}
   </div>
