@@ -84,5 +84,18 @@ export default function Tutorial(){
     {step===3&&<div className="tutorialTechCard"><strong>Analyse I</strong><span>Richtungshinweis</span><b>2 T pro Hinweis</b></div>}
    </aside>
   </div>
- </main>
+ 
+  <section className="panel">
+   <h2>🧠 Schatz durch Deduktion finden</h2>
+   <p>Der Schatz soll nicht durch blindes Glück gefunden werden. Analysen liefern feste Tatsachen über das aktuelle Schatzteil. Kombiniere sie auf der echten Karte.</p>
+   <div className="grid">
+    <div className="card"><strong>🧭 Sektor</strong><div className="small">Welcher Teil der Karte ist grundsätzlich relevant?</div></div>
+    <div className="card"><strong>📐 Zentrumring</strong><div className="small">Wie weit liegt der Schatz ungefähr vom Kartenmittelpunkt?</div></div>
+    <div className="card"><strong>🌍 Gelände</strong><div className="small">Wald, Wasser, Siedlung, Landwirtschaft oder andere kartierte Nutzung.</div></div>
+    <div className="card"><strong>📡 Peilung</strong><div className="small">Setze bewusst neue Suchpunkte und trianguliere Richtung und Entfernung.</div></div>
+    <div className="card"><strong>🧩 Umgebung</strong><div className="small">Vergleiche mit bereits kartierten Wasser-, Wald-, Siedlungs- und Verkehrsflächen.</div></div>
+    <div className="card"><strong>🎯 Präzision</strong><div className="small">Hohe Analyse-Technik verdichtet deine bisherigen Schlüsse auf einen kleinen Bereich.</div></div>
+   </div>
+  </section>
+</main>
 }

@@ -1132,3 +1132,84 @@ button:disabled{cursor:not-allowed;opacity:.45}
  .claimSubmitRow{flex-direction:column}
  .claimSubmitRow .btn,.claimSubmitRow .miniBtn{width:100%}
 }
+
+
+/* =========================================================
+   V6.21 – Deduktionssuche
+   ========================================================= */
+.deductionPanel{
+  border-color:#465e7d;
+  background:linear-gradient(180deg,rgba(19,32,51,.98),rgba(14,25,41,.98));
+}
+.deductionUnlocks{
+  display:flex;
+  flex-wrap:wrap;
+  gap:5px;
+  margin:8px 0;
+}
+.deductionUnlocks span{
+  padding:4px 7px;
+  border-radius:999px;
+  border:1px solid #33465f;
+  font-size:9px;
+  white-space:nowrap;
+}
+.deductionUnlocks .unlocked{
+  background:#18382f;
+  border-color:#346b58;
+  color:#a8e3c8;
+}
+.deductionUnlocks .locked{
+  background:#151e2b;
+  color:#708095;
+  opacity:.75;
+}
+.deductionNotebook{
+  margin-top:8px;
+  border-top:1px solid #2e425a;
+  padding-top:7px;
+}
+.deductionNotebook summary{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  cursor:pointer;
+  font-weight:800;
+}
+.deductionClueList{
+  display:grid;
+  gap:6px;
+  margin-top:7px;
+  max-height:330px;
+  overflow:auto;
+}
+.deductionClue{
+  padding:8px 9px;
+  border:1px solid #31465f;
+  border-radius:9px;
+  background:#132238;
+  font-size:11px;
+}
+.deductionClueHead{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:4px;
+}
+.deductionClueHead span{
+  color:#91a8bf;
+  font-size:9px;
+}
+.analysisMapContext{
+  margin-top:6px;
+  padding:6px 8px;
+  border-radius:8px;
+  background:#1b2f47;
+  color:#c8d9ea;
+  font-size:10px;
+}
+@media(max-width:700px){
+ .deductionUnlocks{overflow-x:auto;flex-wrap:nowrap}
+ .deductionClueList{max-height:240px}
+ .deductionClue{font-size:10px}
+}

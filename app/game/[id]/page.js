@@ -11,7 +11,7 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [fields,setFields]=useState([]),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false)
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false)
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0)
 
  useEffect(()=>{
@@ -266,6 +266,18 @@ export default function Game(){
   }
  }
 
+ function clueTypeLabel(kind){
+  return ({
+    sector:'🧭 Sektor',
+    center_ring:'📐 Zentrumring',
+    terrain:'🌍 Terrain',
+    edge_distance:'🗺️ Randlage',
+    bearing:'📡 Peilung',
+    proximity:'🧩 Umgebung',
+    precision_zone:'🎯 Präzision'
+  })[kind]||'🔎 Analyse'
+ }
+
  function buildAnalysisClue(items){
   const text=(items||[]).map(x=>(x.name+' '+x.kind).toLowerCase()).join(' ')
   if(!text)return 'Die Kartenanalyse erkennt hier keine eindeutig benannten Landschaftsmerkmale.'
@@ -282,6 +294,12 @@ export default function Game(){
   if(urban)return 'Der Schatz liegt in der Nähe einer Stadt, eines Ortes oder bebauten Gebiets.'
   if(road)return 'Der Schatz liegt in einem Gebiet mit markanten Straßen oder Wegen.'
   return 'Die Umgebung besitzt markante Kartenmerkmale: '+items.slice(0,3).map(x=>x.name).join(', ')+'.'
+ }
+
+ async function loadAnalysisClues(){
+  const {data,error}=await supabase.rpc('get_my_analysis_clues_v621',{p_game_id:id})
+  if(!error)setAnalysisClues(data||[])
+  return data||[]
  }
 
  async function loadActiveGames(){
@@ -336,7 +354,7 @@ export default function Game(){
       5:Number(ps.data?.analysis_price_l5||25),
       6:Number(ps.data?.analysis_price_l6||30)
     })
-    loadActiveGames();loadOwnTraps();loadCompetition();loadPendingClaim()
+    loadActiveGames();loadOwnTraps();loadCompetition();loadPendingClaim();loadAnalysisClues()
   }catch(err){
     setMsg('Fehler beim Laden der Karte: '+(err?.message||String(err)))
   }
@@ -486,7 +504,7 @@ export default function Game(){
       gold:Number(data.amount_ug||0),
       source:'claim'
     })
-    await Promise.all([loadGoldOnly(),loadPlayersOnly(),loadGameOnly()])
+    await Promise.all([loadGoldOnly(),loadPlayersOnly(),loadGameOnly(),loadAnalysisClues()])
     if(data?.game_over){
       setWinnerCelebration({
         won:user?.id===data.winner_id,
@@ -498,6 +516,8 @@ export default function Game(){
       })
     }
   }else{
+    await Promise.all([loadPlayersOnly(),loadAnalysisClues()])
+    setAnalysisHint(null)
     if(currentViewport.current)scheduleVisibleReload(100)
   }
 
@@ -629,13 +649,13 @@ export default function Game(){
 
  async function buyAnalysis(){
   if(analysisBuying)return
-  setAnalysisBuying(true);setMsg('Analyse läuft…')
-  const {data,error}=await supabase.rpc('buy_analysis_hint_v6151',{p_game_id:id})
+  setAnalysisBuying(true);setMsg('Deduktionsanalyse läuft…')
+  const {data,error}=await supabase.rpc('buy_analysis_hint_v621',{p_game_id:id})
   setAnalysisBuying(false)
   if(error){setMsg(error.message);return}
   setAnalysisHint(data)
-  setMsg(`Analyse gekauft · ${Number(data?.cost||0).toFixed(2)} Taler`)
-  await loadPlayersOnly()
+  setMsg(`Hinweis #${Number(data?.clue_no||0)} gekauft · ${Number(data?.cost||0).toFixed(2)} Taler`)
+  await Promise.all([loadPlayersOnly(),loadAnalysisClues()])
  }
 
  async function recreateSameGame(){
@@ -758,7 +778,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.20.2</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.21</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -857,14 +877,54 @@ export default function Game(){
       <span>🚜 Acker</span><span>🏙 Stadt</span><span>🏭 Industrie</span>
       {terrainInfo&&<b className="terrainCurrent">{terrainInfo.label}</b>}
     </div>
-    {Number(me?.analysis_level||0)>0&&<div className="analysisPurchaseBox">
+    {Number(me?.analysis_level||0)>0&&<div className="analysisPurchaseBox deductionPanel">
       <div className="analysisPurchaseHead">
-       <div><strong>🧭 Analyse Stufe {me.analysis_level}</strong><div className="small">Ein Hinweis pro neuer manueller Suchposition.</div></div>
-       <button className="btn" disabled={analysisBuying} onClick={buyAnalysis}>
+       <div>
+        <strong>🧠 Deduktionsanalyse · Stufe {me.analysis_level}</strong>
+        <div className="small">Jeder neue Suchpunkt kann einen weiteren echten Hinweis zum aktuellen Schatz liefern.</div>
+       </div>
+       <button className="btn" disabled={analysisBuying||waitingForStart} onClick={buyAnalysis}>
         {analysisBuying?'Analysiert…':`Hinweis kaufen · ${Number(currentAnalysisCost).toFixed(2)} T`}
        </button>
       </div>
-      {analysisHint&&<div className="analysisHintBox compactAnalysisHint"><div>{analysisHint.text}</div><div className="small">Bezahlt: {Number(analysisHint.cost||0).toFixed(2)} Taler</div></div>}
+
+      <div className="deductionUnlocks">
+       {[
+        [1,'🧭 Sektor + Grobpeilung'],
+        [2,'📐 Zentrumring'],
+        [3,'🌍 Terrain / Randlage'],
+        [4,'📡 Präzisionspeilung'],
+        [5,'🧩 Umgebung'],
+        [6,'🎯 Präzisionszone']
+       ].map(([lvl,label])=><span key={lvl} className={Number(me.analysis_level)>=lvl?'unlocked':'locked'}>
+        {Number(me.analysis_level)>=lvl?'✓':'🔒'} {label}
+       </span>)}
+      </div>
+
+      {analysisHint&&<div className="analysisHintBox compactAnalysisHint">
+       <strong>{clueTypeLabel(analysisHint.kind)}</strong>
+       <div>{analysisHint.text}</div>
+       {analysisHint.kind==='precision_zone'&&analysisClue&&<div className="analysisMapContext">🗺️ {analysisClue}</div>}
+       <div className="small">Bezahlt: {Number(analysisHint.cost||0).toFixed(2)} Taler</div>
+      </div>}
+
+      <details className="deductionNotebook" open={analysisClues.length>0}>
+       <summary>
+        <span>📓 Mein Hinweisbuch</span>
+        <span className="small">{analysisClues.length} Hinweis{analysisClues.length===1?'':'e'}</span>
+       </summary>
+       <div className="deductionClueList">
+        {analysisClues.length===0&&<div className="small muted">Noch keine Hinweise gekauft.</div>}
+        {[...analysisClues].reverse().map(c=><div className="deductionClue" key={c.id}>
+         <div className="deductionClueHead">
+          <strong>{clueTypeLabel(c.clue_kind)} · #{c.clue_no}</strong>
+          <span>Schatz {c.treasure_no}</span>
+         </div>
+         <div>{c.text}</div>
+         <div className="small">Analyse-Stufe {c.level} · {Number(c.cost||0).toFixed(2)} T</div>
+        </div>)}
+       </div>
+      </details>
     </div>}
     <p className="statusLine">{msg}</p>
    </section>
