@@ -19,6 +19,12 @@ export default function Admin(){
  const [treasureProfiles,setTreasureProfiles]=useState([])
  const [barOverview,setBarOverview]=useState(null)
  const [barSizesText,setBarSizesText]=useState('')
+ const [members,setMembers]=useState([])
+ const [memberSearch,setMemberSearch]=useState('')
+ const [selectedMember,setSelectedMember]=useState(null)
+ const [memberDraft,setMemberDraft]=useState(null)
+ const [memberGames,setMemberGames]=useState([])
+ const [passwordDraft,setPasswordDraft]=useState('')
  const [msg,setMsg]=useState('')
  const [saving,setSaving]=useState(false)
 
@@ -47,6 +53,7 @@ export default function Admin(){
   setSettings(s);setTechs(t||[]);setGoldOverview(go||null);setAutoGame(ag||null);setAdminGames(games||[]);setBarOverview(bars||null)
   setBarSizesText((s?.allowed_bar_sizes_mg||[100,250,500,1000,2500,5000]).join(', '))
   setGeoGameId(current=>current||games?.[0]?.id||'')
+  await loadMembers(memberSearch)
  }
 
  function setSetting(key,value){
@@ -191,6 +198,94 @@ export default function Admin(){
   if(!error)await load()
  }
 
+ async function loadMembers(search=memberSearch){
+  const {data,error}=await supabase.rpc('admin_list_members_v6234',{p_search:search||''})
+  if(error){setMsg('Mitglieder: '+error.message);return}
+  setMembers(data||[])
+  if(selectedMember){
+    const fresh=(data||[]).find(m=>m.id===selectedMember.id)
+    if(fresh){
+      setSelectedMember(fresh)
+      setMemberDraft({...fresh})
+    }
+  }
+ }
+
+ async function selectMember(member){
+  setSelectedMember(member)
+  setMemberDraft({...member})
+  setPasswordDraft('')
+  const {data,error}=await supabase.rpc('admin_get_member_games_v6234',{p_user_id:member.id})
+  if(error){setMsg('Spielwerte: '+error.message);setMemberGames([]);return}
+  setMemberGames(data||[])
+ }
+
+ function setMemberValue(key,value){
+  setMemberDraft(m=>({...m,[key]:value}))
+ }
+
+ async function saveMember(){
+  if(!memberDraft)return
+  setSaving(true);setMsg('')
+  const {data,error}=await supabase.rpc('admin_update_member_v6234',{
+    p_user_id:memberDraft.id,
+    p_display_name:memberDraft.display_name||'Spieler',
+    p_bio:memberDraft.bio||'',
+    p_wins:NUM(memberDraft.wins),
+    p_total_games:NUM(memberDraft.total_games),
+    p_total_fields_revealed:NUM(memberDraft.total_fields_revealed),
+    p_gold_found_ug:NUM(memberDraft.gold_found_ug),
+    p_wallet_ug:NUM(memberDraft.wallet_ug)
+  })
+  setSaving(false)
+  setMsg(error?error.message:(data?.message||'Mitglied gespeichert'))
+  if(!error)await loadMembers(memberSearch)
+ }
+
+ function setMemberGame(gameId,key,value){
+  setMemberGames(list=>list.map(g=>g.game_id===gameId?{...g,[key]:value}:g))
+ }
+
+ async function saveMemberGame(g){
+  setSaving(true);setMsg('')
+  const {data,error}=await supabase.rpc('admin_update_member_game_v6234',{
+    p_user_id:selectedMember.id,
+    p_game_id:g.game_id,
+    p_coins:NUM(g.coins),
+    p_moves_left:NUM(g.moves_left)
+  })
+  setSaving(false)
+  setMsg(error?error.message:(data?.message||'Spielwerte gespeichert'))
+  if(!error)await selectMember(selectedMember)
+ }
+
+ async function setMemberPassword(){
+  if(!selectedMember||passwordDraft.length<8)return
+  setSaving(true);setMsg('')
+  try{
+    const {data:{session}}=await supabase.auth.getSession()
+    const res=await fetch('/api/admin/member-password',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        Authorization:`Bearer ${session?.access_token||''}`
+      },
+      body:JSON.stringify({
+        user_id:selectedMember.id,
+        password:passwordDraft
+      })
+    })
+    const body=await res.json()
+    if(!res.ok)throw new Error(body?.error||'Passwort konnte nicht gesetzt werden')
+    setPasswordDraft('')
+    setMsg(body?.message||'Neues Passwort wurde gesetzt.')
+  }catch(err){
+    setMsg(err?.message||'Passwort konnte nicht gesetzt werden')
+  }finally{
+    setSaving(false)
+  }
+ }
+
  async function saveTech(t){
   setSaving(true);setMsg('')
   const {data,error}=await supabase.rpc('admin_update_technology_v614',{
@@ -225,7 +320,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.23.3</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.23.4</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -235,8 +330,97 @@ export default function Admin(){
 
   {msg&&<div className="noticeBar">{msg}</div>}
   <nav className="adminJumpNav">
-   <a href="#admin-games">🎮 Spiele</a><a href="#admin-geo">🌍 Geodaten</a><a href="#admin-auto">🤖 Auto</a><a href="#admin-economy">✨ Gold</a><a href="#admin-rules">⚙️ Regeln</a><a href="#admin-tech">🧠 Technologien</a>
+   <a href="#admin-members">👥 Mitglieder</a><a href="#admin-games">🎮 Spiele</a><a href="#admin-geo">🌍 Geodaten</a><a href="#admin-auto">🤖 Auto</a><a href="#admin-economy">✨ Gold</a><a href="#admin-rules">⚙️ Regeln</a><a href="#admin-tech">🧠 Technologien</a>
   </nav>
+
+  <section className="panel" id="admin-members">
+   <div className="sectionTitleRow">
+    <div>
+     <h2>👥 Mitgliederverwaltung</h2>
+     <p className="small">Profile, Statistik, Gold und laufende Spielwerte bearbeiten. Bestehende Passwörter sind aus Sicherheitsgründen niemals sichtbar.</p>
+    </div>
+   </div>
+
+   <div className="memberAdminLayout">
+    <div className="memberListPane">
+     <div className="memberSearchRow">
+      <input className="input" type="search" value={memberSearch} placeholder="Name oder E-Mail suchen"
+       onChange={e=>setMemberSearch(e.target.value)}
+       onKeyDown={e=>{if(e.key==='Enter')loadMembers(memberSearch)}}/>
+      <button className="btn" onClick={()=>loadMembers(memberSearch)}>Suchen</button>
+     </div>
+     <div className="memberAdminList">
+      {members.map(m=><button type="button" key={m.id}
+       className={'memberAdminRow '+(selectedMember?.id===m.id?'active':'')}
+       onClick={()=>selectMember(m)}>
+       <div>
+        <strong>{m.display_name||'Spieler'} {m.is_admin?'🛡️':''}</strong>
+        <span>{m.email||'keine E-Mail'}</span>
+       </div>
+       <div className="memberMiniStats">
+        <span>{m.wins} Siege</span>
+        <span>{formatGold(m.wallet_ug||0)}</span>
+       </div>
+      </button>)}
+      {members.length===0&&<div className="muted">Keine Mitglieder gefunden.</div>}
+     </div>
+    </div>
+
+    <div className="memberEditorPane">
+     {!memberDraft?<div className="muted">Links ein Mitglied auswählen.</div>:<>
+      <div className="memberEditorHead">
+       <div>
+        <h3>{memberDraft.display_name||'Spieler'}</h3>
+        <div className="small">{memberDraft.email}</div>
+        <div className="small mono">{memberDraft.id}</div>
+       </div>
+       {memberDraft.is_admin&&<span className="adminStatus">ADMIN</span>}
+      </div>
+
+      <div className="adminGrid">
+       <Field label="Anzeigename" type="text" value={memberDraft.display_name} onChange={v=>setMemberValue('display_name',v)}/>
+       <Field label="Siege" value={memberDraft.wins} onChange={v=>setMemberValue('wins',v)}/>
+       <Field label="Spiele gesamt" value={memberDraft.total_games} onChange={v=>setMemberValue('total_games',v)}/>
+       <Field label="Felder gesamt" value={memberDraft.total_fields_revealed} onChange={v=>setMemberValue('total_fields_revealed',v)}/>
+       <MgField label="Gold gefunden (mg)" valueUg={memberDraft.gold_found_ug} onChangeUg={v=>setMemberValue('gold_found_ug',v)}/>
+       <MgField label="Wallet-Gold (mg)" valueUg={memberDraft.wallet_ug} onChangeUg={v=>setMemberValue('wallet_ug',v)}/>
+       <div className="adminField span2">
+        <label>Bio</label>
+        <textarea className="input adminTextarea" maxLength={500} value={memberDraft.bio||''} onChange={e=>setMemberValue('bio',e.target.value)}/>
+       </div>
+      </div>
+      <button className="btn primary" disabled={saving} onClick={saveMember}>Mitglied speichern</button>
+
+      <div className="memberPasswordBox">
+       <h4>🔐 Neues Passwort vergeben</h4>
+       <p className="small">Das alte Passwort kann nicht angezeigt werden. Hier setzt du stattdessen ein neues.</p>
+       <div className="memberPasswordRow">
+        <input className="input" type="password" autoComplete="new-password" minLength={8}
+         placeholder="Neues Passwort · mindestens 8 Zeichen"
+         value={passwordDraft} onChange={e=>setPasswordDraft(e.target.value)}/>
+        <button className="btn" disabled={saving||passwordDraft.length<8} onClick={setMemberPassword}>Passwort setzen</button>
+       </div>
+      </div>
+
+      <div className="memberGameAdmin">
+       <h4>🎮 Spielwerte</h4>
+       {memberGames.length===0?<div className="muted small">Noch keine Spielteilnahmen.</div>:
+        <div className="memberGameList">{memberGames.map(g=><div className="card memberGameCard" key={g.game_id}>
+         <div className="memberGameHead">
+          <strong>{g.game_name}</strong><span className="small">{g.status}</span>
+         </div>
+         <div className="adminGrid compactAdminGrid">
+          <Field label="Taler" step="0.01" value={g.coins} onChange={v=>setMemberGame(g.game_id,'coins',v)}/>
+          <Field label="Gespeicherte Züge" value={g.moves_left} onChange={v=>setMemberGame(g.game_id,'moves_left',v)}/>
+         </div>
+         <div className="small">Felder/Zug: {g.reveal_power} · Analyse-Level: {g.analysis_level} · Züge benutzt: {g.moves_used}</div>
+         <button className="miniBtn" disabled={saving} onClick={()=>saveMemberGame(g)}>Spielwerte speichern</button>
+        </div>)}</div>}
+      </div>
+     </>}
+    </div>
+   </div>
+  </section>
 
   <section className="panel" id="admin-geo">
    <h2>🌍 Geodaten- & Hinweisprüfer</h2>

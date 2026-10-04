@@ -151,7 +151,8 @@ export default function GameMap({
   onViewportChange,
   analysisFocusToken,
   onAnalysisFeatures,
-  mobileHud
+  mobileHud,
+  mapInfo
 }){
   const holder=useRef(null)
   const canvasRef=useRef(null)
@@ -705,6 +706,7 @@ export default function GameMap({
       {renderMode==='detail'?'▦ Lokal gerendert':'▧ Chunk-Übersicht'}
       {gridStride>1?` · Raster ×${gridStride}`:''}
     </div>
+    {mapInfo&&<div className="mapInfoDock">{mapInfo}</div>}
     {status&&<div className="mapLoadingOverlay">{status}</div>}
   </div>
 }

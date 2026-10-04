@@ -903,7 +903,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.23.3</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.23.4</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -994,14 +994,15 @@ export default function Game(){
         [fieldsPerMinute.toFixed(1),'Felder/Min'],
         [left.toLocaleString('de-DE'),'Felder übrig']
        ].map((v,i)=><div className="mobileHudStat" key={i}><span>{v[1]}</span><b>{v[0]}</b></div>)}
-      </div>}/></>}
-
-    <div className="terrainLegend">
-      <span>Terrain:</span>
-      <span>🌊 Wasser</span><span>🌲 Wald</span><span>🌾 Offen</span>
-      <span>🚜 Acker</span><span>🏙 Stadt</span><span>🏭 Industrie</span>
-      {terrainInfo&&<b className="terrainCurrent">{terrainInfo.label}</b>}
-    </div>
+      </div>}
+      mapInfo={<>
+       <div className="mapInfoMain">{msg||'Karte bereit · Feld antippen zum Erkunden'}</div>
+       <div className="mapInfoTerrain">
+        <span>🌊 Wasser</span><span>🌲 Wald</span><span>🌾 Offen</span>
+        <span>🚜 Acker</span><span>🏙 Stadt</span><span>🏭 Industrie</span>
+        {terrainInfo&&<b>{terrainInfo.label}</b>}
+       </div>
+      </>}/></>}
     {Number(me?.analysis_level||0)>0&&<div className="analysisPurchaseBox deductionPanel">
       <div className="analysisPurchaseHead">
        <div>
@@ -1051,7 +1052,6 @@ export default function Game(){
        </div>
       </details>
     </div>}
-    <p className="statusLine">{msg}</p>
    </section>
 
    <aside className="panel">
