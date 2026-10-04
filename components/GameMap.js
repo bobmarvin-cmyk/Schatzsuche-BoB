@@ -171,12 +171,12 @@ export default function GameMap({
   const analysisRef=useRef(analysisHint)
   const viewportRef=useRef(onViewportChange)
   const analysisFeaturesRef=useRef(onAnalysisFeatures)
-  const mapModeRef=useRef('map')
+  const mapModeRef=useRef('satellite')
   const terrainCacheRef=useRef(new Map())
   const drawPendingRef=useRef(false)
   const gridStrideRef=useRef(1)
   const [status,setStatus]=useState('Karte wird geladen…')
-  const [mapMode,setMapMode]=useState('map')
+  const [mapMode,setMapMode]=useState('satellite')
   const [renderMode,setRenderMode]=useState(mapRenderMode)
   const [gridStride,setGridStride]=useState(1)
 
@@ -402,7 +402,7 @@ export default function GameMap({
         const g=geometry(game)
         const map=new maplibregl.Map({
           container:holder.current,
-          style:MAP_STYLE,
+          style:SATELLITE_STYLE,
           center:[g.lon,g.lat],
           zoom:10,
           attributionControl:true,

@@ -1,0 +1,28 @@
+SCHATZSUCHE ONLINE V6.26
+
+NEU
+- Spiele können auf ein beliebiges zukünftiges Datum + Uhrzeit terminiert werden.
+- Lobby zeigt bei terminierten Spielen Datum und Uhrzeit.
+- Countdown unterstützt Tage/Stunden.
+- Kartenansicht startet standardmäßig als Satellitenansicht.
+- Manueller Reveal nutzt jetzt die neuere, größere Suchbereichslogik.
+- Falsche Meldung "alles erforscht" wird unterschieden:
+  * gesamte Karte voll
+  * nur aktueller Suchbereich ohne freies zugängliches Feld
+- Maschinen haben nur noch einen Automatikmodus.
+- Maschinen wählen Felder systematisch statt per Zufallsstichprobe.
+- Suchradius der Maschinen erweitert sich automatisch.
+- Endspiel-Reparatur verhindert "0 freie Felder, aber offener Schatz":
+  verlorene/abgelaufene Schatzsicherung wird bei <=100 Restfeldern neu erzeugt.
+- Terrain-Batch-Fix (2400) aus dem Pionierpatent-Hotfix ist enthalten.
+
+INSTALLATION
+1. Projektdateien ins Repo übernehmen.
+2. In Supabase SQL Editor NUR diese neue Datei EINMAL ausführen:
+   supabase/v6_26_migration.sql
+3. Vercel deployt automatisch.
+4. Version im Spiel: V6.26
+
+WICHTIG
+- Alte Migrationen NICHT erneut ausführen.
+- .env.local ist absichtlich nicht enthalten.

@@ -23,7 +23,7 @@ export default function Lobby(){
  const [lat,setLat]=useState('49.52'),[lon,setLon]=useState('7.14'),[label,setLabel]=useState('Zuhause')
  const [fields,setFields]=useState(100000),[cellSize,setCellSize]=useState(100)
  const [regen,setRegen]=useState(5),[capacity,setCapacity]=useState(4),[maxPlayers,setMaxPlayers]=useState(20)
- const [privateGame,setPrivateGame]=useState(false),[password,setPassword]=useState(''),[startDelay,setStartDelay]=useState(0)
+ const [privateGame,setPrivateGame]=useState(false),[password,setPassword]=useState(''),[startDelay,setStartDelay]=useState(0),[customStartAt,setCustomStartAt]=useState('')
  const [inviteCode,setInviteCode]=useState(''),[joinPassword,setJoinPassword]=useState('')
  const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('10'),[sponsorGold,setSponsorGold]=useState('100'),[sponsorName,setSponsorName]=useState(''),[treasureCount,setTreasureCount]=useState(1),[gimmickPercent,setGimmickPercent]=useState(1),[gimmickWarn,setGimmickWarn]=useState(false),[privateJoinOpen,setPrivateJoinOpen]=useState(false)
  const [placeQuery,setPlaceQuery]=useState(''),[placeResults,setPlaceResults]=useState([]),[placeSearching,setPlaceSearching]=useState(false),[selectedPlaceLabel,setSelectedPlaceLabel]=useState('')
@@ -119,6 +119,18 @@ export default function Lobby(){
    if(gameType==='pay' && entryUg<=0){setMsg('Bitte einen Goldstaub-Einsatz größer 0 wählen.');return}
    if(gameType==='sponsor' && sponsorUg<=0){setMsg('Bitte einen Sponsor-Pool größer 0 mg wählen.');return}
 
+   let scheduledStart=null
+   if(Number(startDelay)===-1){
+     if(!customStartAt){setMsg('Bitte Datum und Uhrzeit für den Spielstart auswählen.');return}
+     const chosen=new Date(customStartAt)
+     if(!Number.isFinite(chosen.getTime())||chosen.getTime()<=Date.now()){
+       setMsg('Der geplante Spielstart muss in der Zukunft liegen.');return
+     }
+     scheduledStart=chosen.toISOString()
+   }else if(Number(startDelay)>0){
+     scheduledStart=new Date(Date.now()+Number(startDelay)*60*1000).toISOString()
+   }
+
    const common={
     p_name:name,
     p_field_count:Number(fields),
@@ -140,9 +152,8 @@ export default function Lobby(){
     : ['create_game_v612',{...common,p_game_type:gameType,p_entry_gold_ug:entryUg}]
    const {data,error}=await supabase.rpc(request[0],request[1])
    if(error){setMsg(error.message);return}
-   if(Number(startDelay)>0){
-     const startAt=new Date(Date.now()+Number(startDelay)*60*1000).toISOString()
-     const {error:startError}=await supabase.rpc('set_game_start_v620',{p_game_id:data,p_start_at:startAt})
+   if(scheduledStart){
+     const {error:startError}=await supabase.rpc('set_game_start_v620',{p_game_id:data,p_start_at:scheduledStart})
      if(startError){setMsg('Spiel erstellt, Starttimer konnte aber nicht gesetzt werden: '+startError.message);return}
    }
    await loadWallet()
@@ -217,7 +228,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.25.3</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.26</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -363,9 +374,15 @@ export default function Lobby(){
        <option value="10">In 10 Minuten</option>
        <option value="15">In 15 Minuten</option>
        <option value="30">In 30 Minuten</option>
-<option value="60">In 60 Minuten</option>
+       <option value="60">In 60 Minuten</option>
+       <option value="-1">📅 Bestimmtes Datum / Uhrzeit…</option>
       </select>
-      <div className="small">Alle können vorher beitreten. Suche und Maschinen werden serverseitig erst beim gemeinsamen Start freigegeben.</div>
+      {Number(startDelay)===-1&&<>
+       <label>Startdatum und Uhrzeit</label>
+       <input className="input" type="datetime-local" value={customStartAt}
+        onChange={e=>setCustomStartAt(e.target.value)}/>
+      </>}
+      <div className="small">Auch Spiele in Tagen oder Wochen können vorab erstellt werden. Alle können vorher beitreten; Suche und Maschinen werden erst zum Termin freigegeben.</div>
      </div>
     </div>
     <button className="btn primary wideOnMobile" onClick={createGame}>{gameType==='pay'?'Goldsuche erstellen & Einsatz zahlen':gameType==='sponsor'?'Sponsorspiel erstellen & Pool stiften':'Spiel erstellen'}</button>
@@ -417,7 +434,7 @@ export default function Lobby(){
        <div className="gameCardTop"><h3>{g.name}</h3><span className={'gameBadge '+(isPay?'gold':isSponsor?'sponsor':'')}>{isPay?'✨ GOLDGAME':isSponsor?'🤝 SPONSORSPIEL':'🧭 SCHATZSUCHE'}</span></div>
        <div className="small">{g.center_label||'Weltkarte'} · {(g.width*g.height).toLocaleString('de-DE')} Felder</div>
        <div className="small">{g.cell_size_m||100} m/Feld · Zug alle {g.regen_seconds||30}s · 🧩 {g.treasure_count||1} Schatzteil{Number(g.treasure_count||1)===1?'':'e'}</div>
-       {g.start_at&&new Date(g.start_at)>new Date()&&<div className="small tournamentCardStart">🏁 Gemeinsamer Start: {new Date(g.start_at).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</div>}
+       {g.start_at&&new Date(g.start_at)>new Date()&&<div className="small tournamentCardStart">🏁 Start: {new Date(g.start_at).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>}
        {isPay&&<div className="payFacts">
         <span>Einsatz: <b>{formatGold(g.entry_gold_ug)}</b></span><span>Schätze: <b>{g.treasure_count}</b></span><span>Aktueller Pool: <b>{formatGold(g.gold_prize_pool_ug)}</b></span>
        </div>}

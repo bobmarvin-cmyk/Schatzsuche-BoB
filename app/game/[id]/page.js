@@ -912,7 +912,12 @@ export default function Game(){
  const jobSecondsLeft=job?.finishes_at?Math.max(0,Math.ceil((new Date(job.finishes_at).getTime()-Date.now())/1000)):null
  const jobReady=jobSecondsLeft===0
  function countdownText(sec){
-  const m=Math.floor(sec/60),ss=sec%60
+  const d=Math.floor(sec/86400)
+  const h=Math.floor((sec%86400)/3600)
+  const m=Math.floor((sec%3600)/60)
+  const ss=sec%60
+  if(d>0)return `${d}T ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`
+  if(h>0)return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`
   return `${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`
  }
  const has=x=>owned.includes(x)
@@ -929,7 +934,6 @@ export default function Game(){
    : effectiveRegen
  const secondsUntilMachine=(()=>{
    if(!me||!game||machinePower<=0)return null
-   if((me.machine_mode||'focus')==='focus'&&(me.auto_focus_x==null||me.auto_focus_y==null))return null
    const last=new Date(me.machine_last_run_at||Date.now()).getTime()
    const due=last+machineBatchInterval*1000
    return Math.max(0,Math.ceil((due-Date.now())/1000))
@@ -1037,8 +1041,7 @@ export default function Game(){
    <div className="regenBarText">Ungenutzte Züge werden bis zum Speicherlimit gesammelt; darüber hinaus verfallen sie.</div>
    {machinePower>0&&<div className="machineStatusCompact">
     <span>⚙️ {machinePower.toLocaleString('de-DE')}/Takt{machinePower>800?` · ${machineBatchSize}/Paket`:''}</span>
-    <button className={'miniBtn '+((me?.machine_mode||'focus')==='focus'?'active':'')} onClick={()=>setMachineMode('focus')}>📍 Fokus</button>
-    <button className={'miniBtn '+(me?.machine_mode==='random'?'active':'')} onClick={()=>setMachineMode('random')}>🎲 Zufall</button>
+    <span className="small">🤖 Automatik · sucht selbstständig freie Felder</span>
    </div>}
    </div>
   </div>
@@ -1083,7 +1086,7 @@ export default function Game(){
   {gameEvent&&<div className="globalGameEvent">📣 {gameEvent.message}</div>}
 
   {waitingForStart&&<div className="tournamentStartPanel">
-   <div className="small">🏁 GEMEINSAMER START</div>
+   <div className="small">🏁 GEMEINSAMER START · {new Date(game.start_at).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
    <strong>{countdownText(secondsToStart)}</strong>
    <span>{players.length} Spieler sind bereits im Spiel.</span>
    <small>Du kannst Karte, Technologien und Mitspieler ansehen. Suche und Maschinen starten für alle gleichzeitig.</small>
