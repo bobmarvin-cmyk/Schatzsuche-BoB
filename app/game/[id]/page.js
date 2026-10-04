@@ -427,15 +427,18 @@ export default function Game(){
   const {data,error}=await supabase.rpc('get_my_pending_claim_v620',{p_game_id:id})
   if(error)return null
   if(data&&data.id){
-    setPendingClaim(data)
-    setClaimInput('')
-    setClaimShow(false)
-    setClaimStarted(!!data.started_at)
-    setClaimChallenge(data.started_at?{
-      challenge_type:data.challenge_type,
-      expression:data.expression||null
-    }:null)
-    clearTimeout(claimTimerRef.current)
+    setPendingClaim(prev=>{
+      if(prev?.id===data.id)return {...prev,...data}
+      return data
+    })
+    setClaimStarted(prev=>prev||!!data.started_at)
+    setClaimChallenge(prev=>{
+      if(prev&&pendingClaim?.id===data.id)return prev
+      return data.started_at?{
+        challenge_type:data.challenge_type,
+        expression:data.expression||null
+      }:null
+    })
     return data
   }
   return null
@@ -450,7 +453,7 @@ export default function Game(){
   setClaimStarted(true)
   setClaimChallenge(data||null)
   setClaimInput('')
-  if(data?.challenge_type==='memory_forward'||data?.challenge_type==='memory_reverse'){
+  if(['memory_forward','memory_reverse','memory_swap'].includes(data?.challenge_type)){
     setClaimShow(true)
     clearTimeout(claimTimerRef.current)
     claimTimerRef.current=setTimeout(()=>setClaimShow(false),4500)
@@ -755,7 +758,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.20.1</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.20.2</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -929,15 +932,11 @@ export default function Game(){
        : <ClaimSymbolInput value={claimInput} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
     </>}
 
-    {claimStarted&&claimChallenge?.challenge_type==='math'&&<>
-      <p>Löse die Aufgabe. Die Aufgabe bleibt sichtbar, bis du deine Antwort abgibst.</p>
-      <div className="claimMath">{claimChallenge.expression||'–'}</div>
-      <input className="input claimMathInput" inputMode="numeric" value={claimInput}
-       onChange={e=>setClaimInput(e.target.value.replace(/[^0-9-]/g,'').slice(0,6))}
-       onKeyDown={e=>{if(e.key==='Enter'&&claimInput)resolveClaim(claimInput)}} autoFocus/>
-      <button className="btn primary" disabled={claimResolving||!claimInput} onClick={()=>resolveClaim(claimInput)}>
-       Antwort abgeben
-      </button>
+    {claimStarted&&claimChallenge?.challenge_type==='memory_swap'&&<>
+      <p>Merke dir die sechs Symbole. Danach vertauschst du immer die Paare: <strong>2–1 · 4–3 · 6–5</strong>.</p>
+      {claimShow
+       ? <div className="claimSequence">{String(claimChallenge.display_code||'').split('').map((n,i)=><span className={'claimKey k'+n} key={i}>{n==='1'?'▲':n==='2'?'●':n==='3'?'■':'◆'}</span>)}</div>
+       : <ClaimSymbolInput value={claimInput} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
     </>}
 
     {claimStarted&&<div className="small claimRule">Ein Versuch · maximal 90 Sekunden. Bei Fehlschlag wird der Schatz neu versteckt.</div>}
