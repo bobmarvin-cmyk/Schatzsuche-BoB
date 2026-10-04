@@ -363,6 +363,7 @@ export default function Lobby(){
        <option value="10">In 10 Minuten</option>
        <option value="15">In 15 Minuten</option>
        <option value="30">In 30 Minuten</option>
+<option value="60">In 60 Minuten</option>
       </select>
       <div className="small">Alle können vorher beitreten. Suche und Maschinen werden serverseitig erst beim gemeinsamen Start freigegeben.</div>
      </div>
