@@ -11,7 +11,7 @@ export default function Game(){
  const [user,setUser]=useState(null),[game,setGame]=useState(null),[players,setPlayers]=useState([])
  const [mapChunks,setMapChunks]=useState([]),[mapRenderMode,setMapRenderMode]=useState('overview'),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
- const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false),[claimTimeLeft,setClaimTimeLeft]=useState(null)
+ const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false),[claimTimeLeft,setClaimTimeLeft]=useState(null),[claimResult,setClaimResult]=useState(null)
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0),chunkSummaryRef=useRef(new Map()),chunkPayloadRef=useRef(new Map()),chunkSinceRef=useRef(null),chunkSyncPromiseRef=useRef(null)
 
  useEffect(()=>{
@@ -605,7 +605,11 @@ export default function Game(){
         id:data.id,
         challenge_type:data.challenge_type,
         display_code:data.display_code||null,
-        expires_at:data.expires_at||null
+        expires_at:data.expires_at||null,
+        symbol_count:Number(data.symbol_count||6),
+        show_seconds:Number(data.show_seconds||6.5),
+        time_seconds:Number(data.time_seconds||120),
+        failure_level:Number(data.failure_level||0)
       }:null
     })
     return data
@@ -636,11 +640,13 @@ export default function Game(){
   if(error){setMsg('Bergung: '+error.message);return}
   setClaimStarted(true)
   setClaimChallenge(data||null)
+  setClaimResult(null)
   setClaimInput('')
   if(['memory_forward','memory_reverse','memory_swap'].includes(data?.challenge_type)){
     setClaimShow(true)
     clearTimeout(claimTimerRef.current)
-    claimTimerRef.current=setTimeout(()=>setClaimShow(false),6500)
+    const showMs=Math.max(5000,Math.min(15000,Number(data?.show_seconds||6.5)*1000))
+    claimTimerRef.current=setTimeout(()=>setClaimShow(false),showMs)
   }else{
     setClaimShow(false)
   }
@@ -659,6 +665,16 @@ export default function Game(){
   if(data?.retryable){
     setMsg(data?.message||'Eingabe noch nicht vollständig')
     return
+  }
+
+  if(!data?.passed&&data?.reason==='wrong'){
+    setClaimResult({
+      passed:false,
+      message:data?.message||'Bergung fehlgeschlagen',
+      correctAnswer:data?.correct_answer||'',
+      displayCode:data?.display_code||'',
+      challengeType:data?.challenge_type||claimChallenge?.challenge_type||'memory_forward'
+    })
   }
 
   setPendingClaim(null)
@@ -698,9 +714,10 @@ export default function Game(){
 
  function pressClaimKey(key){
   if(!pendingClaim||claimShow||claimResolving)return
+  const need=Math.max(5,Math.min(6,Number(claimChallenge?.symbol_count||pendingClaim?.symbol_count||6)))
   setClaimInput(prev=>{
-    if(prev.length>=6)return prev
-    return (prev+String(key)).slice(0,6)
+    if(prev.length>=need)return prev
+    return (prev+String(key)).slice(0,need)
   })
  }
 
@@ -950,7 +967,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.24.1</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.24.3</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1136,6 +1153,24 @@ export default function Game(){
   </div>)}</div></div>
   {game&&user&&<GameChat gameId={id} userId={user.id}/>}
 
+  {claimResult&&!claimResult.passed&&<div className="claimOverlay" role="dialog" aria-modal="true">
+   <div className="claimModal claimResultModal">
+    <div className="claimIcon">🧩</div>
+    <div className="small">BERGUNG NICHT GESCHAFFT</div>
+    <h2>Das wäre richtig gewesen</h2>
+    <p>{claimResult.challengeType==='memory_reverse'
+      ? 'Die angezeigte Folge musste rückwärts eingegeben werden.'
+      : 'Die angezeigte Folge musste in normaler Reihenfolge eingegeben werden.'}</p>
+    <div className="claimCorrectAnswer">
+     {String(claimResult.correctAnswer||'').split('').map((n,i)=><span className={'claimKey k'+n} key={i}>
+      {n==='1'?'▲':n==='2'?'●':n==='3'?'■':'◆'}
+     </span>)}
+    </div>
+    <div className="small muted">Beim nächsten Fehlversuch wird die Bergungsprüfung etwas leichter.</div>
+    <button className="btn primary" onClick={()=>setClaimResult(null)}>Verstanden</button>
+   </div>
+  </div>}
+
   {pendingClaim&&<div className="claimOverlay" role="dialog" aria-modal="true">
    <div className="claimModal">
     <div className="claimIcon">🧗</div>
@@ -1143,6 +1178,9 @@ export default function Game(){
     <h2>Bergungsprüfung</h2>
     {claimStarted&&claimTimeLeft!==null&&<div className={'claimCountdown '+(claimTimeLeft<=20?'urgent':'')}>
       ⏱️ {Math.floor(claimTimeLeft/60)}:{String(claimTimeLeft%60).padStart(2,'0')}
+    </div>}
+    {claimStarted&&Number(claimChallenge?.failure_level||0)>0&&<div className="claimAssistBadge">
+      🧩 Anpassung nach Fehlversuchen · Stufe {Number(claimChallenge.failure_level)}
     </div>}
     {Number(pendingClaim.amount_ug||0)>0&&<div className="claimPrize">✨ möglicher Fund: {formatGold(pendingClaim.amount_ug)}</div>}
 
@@ -1158,22 +1196,30 @@ export default function Game(){
       <p>Merke dir die Symbolfolge und gib sie danach <strong>genau von links nach rechts</strong> ein.</p>
       {claimShow
        ? <div className="claimSequence">{String(claimChallenge.display_code||'').split('').map((n,i)=><span className={'claimKey k'+n} key={i}>{n==='1'?'▲':n==='2'?'●':n==='3'?'■':'◆'}</span>)}</div>
-       : <ClaimSymbolInput value={claimInput} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
+       : <ClaimSymbolInput value={claimInput} count={Number(claimChallenge?.symbol_count||6)} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
     </>}
 
     {claimStarted&&claimChallenge?.challenge_type==='memory_reverse'&&<>
-      <div className="claimRuleBadge reverse">← RÜCKWÄRTS EINGEBEN</div>
-      <p>Merke dir die Folge. Danach musst du sie <strong>von rechts nach links</strong> eingeben.</p>
+      <div className="claimReverseAlert">
+       <div className="claimReverseTop">⚠️ RÜCKWÄRTS!</div>
+       <div className="claimReverseMain">LETZTES SYMBOL ZUERST</div>
+       <div className="claimReverseExample">
+        <span>▲ ● ■ ◆</span>
+        <b>→</b>
+        <span>◆ ■ ● ▲</span>
+       </div>
+      </div>
+      <p className="claimReverseText">Merken wie angezeigt – <strong>bei der Eingabe hinten anfangen.</strong></p>
       {claimShow
        ? <div className="claimSequence">{String(claimChallenge.display_code||'').split('').map((n,i)=><span className={'claimKey k'+n} key={i}>{n==='1'?'▲':n==='2'?'●':n==='3'?'■':'◆'}</span>)}</div>
-       : <ClaimSymbolInput value={claimInput} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
+       : <ClaimSymbolInput value={claimInput} count={Number(claimChallenge?.symbol_count||6)} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
     </>}
 
     {claimStarted&&claimChallenge?.challenge_type==='memory_swap'&&<>
       <p>Merke dir die sechs Symbole. Danach vertauschst du immer die Paare: <strong>2–1 · 4–3 · 6–5</strong>.</p>
       {claimShow
        ? <div className="claimSequence">{String(claimChallenge.display_code||'').split('').map((n,i)=><span className={'claimKey k'+n} key={i}>{n==='1'?'▲':n==='2'?'●':n==='3'?'■':'◆'}</span>)}</div>
-       : <ClaimSymbolInput value={claimInput} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
+       : <ClaimSymbolInput value={claimInput} count={Number(claimChallenge?.symbol_count||6)} onKey={pressClaimKey} onClear={()=>setClaimInput('')} onSubmit={resolveClaim} disabled={claimResolving}/>}
     </>}
 
     {claimStarted&&<div className="small claimRule">Ein bestätigter Versuch · maximal 120 Sekunden. Kontrolliere deine sechs Symbole vor dem Absenden.</div>}
@@ -1239,20 +1285,21 @@ export default function Game(){
 }
 
 
-function ClaimSymbolInput({value,onKey,onClear,onSubmit,disabled}){
+function ClaimSymbolInput({value,count=6,onKey,onClear,onSubmit,disabled}){
  const symbols={1:'▲',2:'●',3:'■',4:'◆'}
+ const need=Math.max(5,Math.min(6,Number(count||6)))
  return <div className="claimInputArea">
-  <div className="claimInput">{[0,1,2,3,4,5].map((_,i)=><span key={i}>{value[i]?symbols[value[i]]:'·'}</span>)}</div>
+  <div className="claimInput">{Array.from({length:need},(_,i)=><span key={i}>{value[i]?symbols[value[i]]:'·'}</span>)}</div>
   <div className="claimButtons">
-   {[1,2,3,4].map(n=><button key={n} disabled={disabled||value.length>=6} onClick={()=>onKey(n)}>{symbols[n]}</button>)}
+   {[1,2,3,4].map(n=><button key={n} disabled={disabled||value.length>=need} onClick={()=>onKey(n)}>{symbols[n]}</button>)}
   </div>
   <div className="claimSubmitRow">
    <button className="miniBtn" disabled={disabled||!value} onClick={onClear}>Eingabe löschen</button>
-   <button className="btn primary" disabled={disabled||value.length!==6} onClick={()=>onSubmit(value)}>
+   <button className="btn primary" disabled={disabled||value.length!==need} onClick={()=>onSubmit(value)}>
     Antwort prüfen
    </button>
   </div>
-  {value.length<6&&<div className="small">{value.length}/6 Symbole eingegeben</div>}
-  {value.length===6&&<div className="small">Kontrolliere die Folge und bestätige dann bewusst.</div>}
+  {value.length<need&&<div className="small">{value.length}/{need} Symbole eingegeben</div>}
+  {value.length===need&&<div className="small">Kontrolliere die Folge und bestätige dann bewusst.</div>}
  </div>
 }

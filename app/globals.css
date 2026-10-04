@@ -1716,3 +1716,72 @@ button:disabled{cursor:not-allowed;opacity:.45}
   background:#2a2115;
   color:#ffe1a5;
 }
+
+
+/* V6.24.2 – richtige Lösung nach Fehlversuch */
+.claimResultModal{text-align:center}
+.claimCorrectAnswer{
+  display:flex;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:7px;
+  margin:12px 0 10px;
+}
+.claimCorrectAnswer .claimKey{
+  width:42px;
+  min-height:42px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:9px;
+  font-size:20px;
+}
+
+
+/* V6.24.3 – Rückwärts-Bergung unübersehbar */
+.claimReverseAlert{
+  margin:8px auto 10px;
+  max-width:460px;
+  padding:12px 14px;
+  border:2px solid #ef9a47;
+  border-radius:12px;
+  background:#2d1b0d;
+  box-shadow:0 0 0 3px rgba(239,154,71,.12),0 8px 24px rgba(0,0,0,.24);
+  text-align:center;
+}
+.claimReverseTop{
+  color:#ffc27f;
+  font-size:13px;
+  font-weight:1000;
+  letter-spacing:.08em;
+}
+.claimReverseMain{
+  margin-top:3px;
+  color:#fff2df;
+  font-size:18px;
+  font-weight:1000;
+  line-height:1.05;
+}
+.claimReverseExample{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  margin-top:9px;
+  color:#f7d7b2;
+  font-size:16px;
+  font-weight:900;
+}
+.claimReverseExample b{
+  color:#ffb35f;
+  font-size:21px;
+}
+.claimReverseText{
+  text-align:center;
+  font-size:12px;
+}
+@media(max-width:600px){
+ .claimReverseAlert{padding:10px}
+ .claimReverseMain{font-size:16px}
+ .claimReverseExample{font-size:14px;gap:7px}
+}

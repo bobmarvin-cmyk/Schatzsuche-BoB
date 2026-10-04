@@ -506,7 +506,10 @@ export default function GameMap({
 
           // Terrain wird clientseitig nur als Karten-Hintergrundinformation gelesen.
           // Die eigentliche Aufdeckung bleibt serverautoritativ.
-          const target=Math.min(1500,Math.max(1,Number(terrainScanPowerRef.current||1)))
+          // V6.24.3: mehr Kandidaten vermessen als nominelle Suchleistung.
+          // Bereits belegte / gesperrte Felder dürfen den Zug nicht künstlich verkleinern.
+          const nominal=Math.max(1,Number(terrainScanPowerRef.current||1))
+          const target=Math.min(2400,Math.max(nominal,Math.ceil(nominal*2.25)))
           const cells=[]
           let r=0
           while(cells.length<target&&r<Math.max(cg.width,cg.height)){
