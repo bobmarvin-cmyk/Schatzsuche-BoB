@@ -1195,6 +1195,26 @@ export default function Game(){
    .filter(t=>!has(t.id)&&(t.requires||[]).every(has))
    .sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0))
    .slice(0,3)
+ const activeTrack=techProgress.find(t=>t.branch===activeBranch)||{branch:activeBranch,items:[],completed:0,total:0}
+ const activeTrackChoices=currentTechChoices.filter(t=>t.branch===activeBranch)
+ const visibleTechChoices=activeTrackChoices.length?activeTrackChoices:currentTechChoices
+ const techById=Object.fromEntries(technologies.map(t=>[t.id,t]))
+ const activeTrackTierCache={}
+ function techTierInActiveBranch(id){
+   if(activeTrackTierCache[id]!==undefined)return activeTrackTierCache[id]
+   const t=activeTrack.items.find(x=>x.id===id)
+   if(!t){activeTrackTierCache[id]=0;return 0}
+   const reqs=(t.requires||[]).map(r=>techById[r]).filter(Boolean).filter(r=>r.branch===activeBranch)
+   const val=reqs.length?Math.max(...reqs.map(r=>techTierInActiveBranch(r.id)))+1:0
+   activeTrackTierCache[id]=val
+   return val
+ }
+ const activeTechColumns=activeTrack.items.reduce((acc,t)=>{
+   const tier=techTierInActiveBranch(t.id)
+   ;(acc[tier] ||= []).push(t)
+   return acc
+ },{})
+ const activeTechTierList=Object.keys(activeTechColumns).map(Number).sort((a,b)=>a-b)
  const machinePower=technologies
    .filter(t=>owned.includes(t.id))
    .reduce((sum,t)=>sum+Number(t.machine_auto_fields||0),0)
@@ -1243,7 +1263,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.33: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.34: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%5!==0)return
   runMachines()
@@ -1299,7 +1319,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.33</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.34</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1487,71 +1507,90 @@ export default function Game(){
 
    <aside className="panel developmentPanel">
     <div className="developmentHead">
-     <div><h2>🧠 Entwicklung</h2><div className="small">Oben deine nächsten Entscheidungen, darunter der gesamte Entwicklungsweg als Baum.</div></div>
+     <div><h2>🧠 Technologien</h2></div>
     </div>
 
     {!endgameStatus?.ready&&<>
-     <div className="nextDevelopmentsTitle">Jetzt möglich</div>
-     <div className="nextDevelopments">
-      {currentTechChoices.map(t=>{
+     <div className="technologyTabs">
+      {branches.map(b=><button
+        key={b}
+        className={b===activeBranch?'active':''}
+        onClick={()=>setBranch(b)}
+      >{b}</button>)}
+     </div>
+
+     <div className="techPanelTopline">
+      <div className="techPanelBranchInfo">
+       <strong>{activeTrack.branch}</strong>
+       <span>{activeTrack.completed}/{activeTrack.total} erforscht</span>
+      </div>
+      <div className="small">
+       {visibleTechChoices.some(t=>t.branch===activeBranch)
+         ? 'Aktuell mögliche Technologien in diesem Zweig'
+         : (currentTechChoices.length>0 ? 'In diesem Zweig ist gerade nichts direkt kaufbar – offene Technologien aus anderen Zweigen werden unten gezeigt.' : 'Momentan sind keine neuen Technologien direkt verfügbar.')}
+      </div>
+     </div>
+
+     <div className="nextDevelopmentsTitle">Aktuell verfügbar</div>
+     <div className="nextDevelopments compactTechChoices">
+      {visibleTechChoices.length>0 ? visibleTechChoices.map(t=>{
        const enough=Number(me?.coins||0)>=Number(t.cost)
-       return <div className="nextDevelopmentCard" key={t.id}>
+       return <div className={'nextDevelopmentCard compact '+(t.branch===activeBranch?'inBranch':'outBranch')} key={t.id}>
         <div>
          <span className="developmentBranch">{t.branch}</span>
          <strong>{t.name}{t.exclusive_per_game?' 🔒':''}</strong>
          <div className="small">{techEffect(t)}</div>
         </div>
-        <button className="btn primary" disabled={!enough} onClick={()=>buy(t)}>
-         {Number(t.cost).toFixed(2)} T · Entwickeln
-        </button>
+        <div className="developmentCardFooter">
+         <span>{Number(t.cost).toFixed(2)} T</span>
+         <button className="miniBtn" disabled={!enough} onClick={()=>research(t.id)}>
+          {enough?'Erforschen':'zu teuer'}
+         </button>
+        </div>
        </div>
-      })}
-      {currentTechChoices.length===0&&<div className="small muted">Keine weitere normale Entwicklung verfügbar.</div>}
+      }) : <div className="small muted">Aktuell ist keine weitere Technologie freigeschaltet. Baue zuerst in anderen Zweigen aus oder sammle mehr Taler.</div>}
      </div>
-    </>}
 
-    {endgameStatus?.ready&&<div className="endgameUpgradePanel">
-      <div className="endgameUpgradeHead">
-       <strong>♾️ Endgame-Ausbau</strong>
-       <span>Normaler Techbaum vollständig</span>
+     <details className="techBranchMapPanel" open>
+      <summary>
+       <span>{activeTrack.branch}-Zweig</span>
+       <span className="small">{activeTrack.total} Technologien</span>
+      </summary>
+      <div className="techBranchLegend">
+       <span><i className="dot done"></i> erforscht</span>
+       <span><i className="dot current"></i> jetzt möglich</span>
+       <span><i className="dot future"></i> später</span>
       </div>
-      <div className="endgameUpgradeCard">
-       <div><strong>🗺️ Expeditionsausbau</strong><div className="small">+{Number(endgameStatus.reveal_bonus_per_buy||0).toLocaleString('de-DE')} Felder/Zug · {Number(endgameStatus.reveal_buys||0)}× gekauft</div></div>
-       <button className="btn primary" disabled={endgameBusy||Number(me?.coins||0)<Number(endgameStatus.reveal_next_cost||0)} onClick={()=>buyEndgame('reveal')}>
-        {Number(endgameStatus.reveal_next_cost||0).toFixed(2)} T
-       </button>
-      </div>
-      <div className="endgameUpgradeCard">
-       <div><strong>⚙️ Maschinenoptimierung</strong><div className="small">+{Number(endgameStatus.machine_bonus_per_buy||0).toLocaleString('de-DE')} Suchfelder/Takt · {Number(endgameStatus.machine_buys||0)}× gekauft</div></div>
-       <button className="btn primary" disabled={endgameBusy||Number(me?.coins||0)<Number(endgameStatus.machine_next_cost||0)} onClick={()=>buyEndgame('machine')}>
-        {Number(endgameStatus.machine_next_cost||0).toFixed(2)} T
-       </button>
-      </div>
-    </div>}
-
-    <details className="techTreeOverview" open>
-     <summary><span>Entwicklungsweg</span><span className="small">{owned.length}/{technologies.length}</span></summary>
-     <div className="techTreeCompact">
-      {techProgress.map(track=><div className="techBranchRow" key={track.branch}>
-       <div className="techBranchLabel">
-        <strong>{track.branch}</strong>
-        <span>{track.completed}/{track.total}</span>
-       </div>
-       <div className="techBranchPath">
-        {track.items.map((t,i)=>{
-         const state=has(t.id)?'done':(t.requires||[]).every(has)?'current':'future'
-         return <div className="techStepWrap" key={t.id}>
-          {i>0&&<span className="techConnector">›</span>}
-          <div className={'techStep '+state} title={`${t.name} · ${techEffect(t)}`}>
-           <span className="techStepDot">{state==='done'?'✓':i+1}</span>
-           <span className="techStepName">{t.name}</span>
-          </div>
+      <div className="techGraphScroller">
+       <div className="techGraph">
+        {activeTechTierList.map(tier=><div className="techColumn" key={tier}>
+         <div className="techColumnLabel">{tier===0?'Start':`Stufe ${tier}`}</div>
+         <div className="techColumnNodes">
+          {activeTechColumns[tier].map(t=>{
+           const ready=!has(t.id)&&(t.requires||[]).every(has)
+           const state=has(t.id)?'done':ready?'current':'future'
+           const reqNames=(t.requires||[]).map(r=>techById[r]?.name).filter(Boolean)
+           return <div className={'techGraphNode '+state} key={t.id}>
+            <div className="techGraphNodeHead">
+             <span className={'statusPill '+state}>{state==='done'?'Erforscht':state==='current'?'Aktiv':'Später'}</span>
+             <span className="techCost">{Number(t.cost||0).toFixed(2)} T</span>
+            </div>
+            <strong>{t.name}{t.exclusive_per_game?' 🔒':''}</strong>
+            <div className="small">{techEffect(t)}</div>
+            {reqNames.length>0&&<div className="techReqLine">nach {reqNames.join(' · ')}</div>}
+            {state==='current'&&<div className="techInlineAction">
+             <button className="miniBtn" disabled={Number(me?.coins||0)<Number(t.cost)} onClick={()=>research(t.id)}>
+              {Number(me?.coins||0)>=Number(t.cost)?'Erforschen':'zu teuer'}
+             </button>
+            </div>}
+           </div>
+          })}
          </div>
-        })}
+        </div>)}
        </div>
-      </div>)}
-     </div>
-    </details>
+      </div>
+     </details>
+    </>}
    </aside>
   </div>
 

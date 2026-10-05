@@ -1,4 +1,4 @@
-SCHATZSUCHE ONLINE V6.33
+SCHATZSUCHE ONLINE V6.34
 
 NEU / KORRIGIERT
 
@@ -51,3 +51,14 @@ DEPLOY
 2. Projektdateien ins Repo übernehmen.
 3. .env.local nicht hochladen.
 4. Vercel deployen lassen.
+
+
+V6.34 – TECHNOLOGIEN-UI
+- Bereich wieder in „Technologien“ umbenannt.
+- Untertitel „Oben deine nächsten Entscheidungen …“ entfernt.
+- Neuer Stil nach Vorbild klassischer Strategiespiel-/Forschungstabs:
+  - Branch-Tabs oben
+  - aktuell gewählter Zweig im Fokus
+  - aktuell verfügbare Technologien kompakt darüber
+  - darunter ein klarer Technologiestrang in Spalten nach Stufen
+- Kein neues SQL nötig, wenn V6.33 bereits vollständig installiert ist.
