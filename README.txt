@@ -1,21 +1,46 @@
-SCHATZSUCHE ONLINE V6.39.1
+SCHATZSUCHE ONLINE V6.40
 
-SECURITY-HOTFIX VOR INSTALLATION
+BOTS – ÜBERARBEITUNG
 
-Diese Version ersetzt V6.39, falls V6.39 noch NICHT ausgeführt wurde.
+1. BOTS IN NORMALEN SCHATZSUCHE-SPIELEN
+- Bots sind nicht mehr auf automatisch erzeugte Spiele beschränkt.
+- Neue normale Schatzsuchspiele erlauben Bots standardmäßig.
+- Beim Erstellen gibt es die Option:
+  „🤖 Bots sperren“
+- Ist sie aktiviert, dürfen in dieser Runde keine Bots mitspielen.
+- Goldgames und Sponsorspiele bleiben immer botfrei.
+- Bereits laufende normale Schatzsuchspiele werden beim V6.40-Update einmalig
+  mit Bots aufgefüllt, sofern sie nicht gesperrt sind.
 
-- Enthält weiterhin V6.38 Auto-Entwicklung + V6.39 Bots.
-- Alle neuen Bot-/Bot-Historie-/Bot-Map-/Bot-Archivtabellen haben jetzt explizit RLS aktiviert.
-- anon und authenticated erhalten keinen direkten Tabellenzugriff.
-- Zugriff erfolgt ausschließlich über die vorgesehenen SECURITY DEFINER RPCs.
-- Dadurch ist die Supabase-RLS-Warnung fachlich behoben.
+2. BOT-AKTIVITÄT
+- Client stößt den Bot-Tick häufiger an.
+- Der Server entscheidet weiterhin, wann die nächste Aktion wirklich fällig ist.
+- Dadurch entsteht kaum unnötige Datenbankarbeit.
+- Bot-Fehler werden nicht mehr komplett verschluckt.
+- Der Server speichert den letzten Bot-Fehler zur Diagnose.
+- Leere Spiele können weiterhin über den vorhandenen Bot-Welt-Tick laufen.
 
-INSTALLATION AB PRODUKTIVSTAND V6.33:
-1. NUR supabase/v6_39_migration.sql EINMAL ausführen.
-2. NICHT zusätzlich v6_38_migration.sql ausführen.
-3. Danach V6.39.1 deployen.
+3. ONLINE-STATUS
+- Bots werden wie Teilnehmer mit Online-/Offline-Status dargestellt.
+- „online“ basiert auf ihrer letzten Bot-Aktion.
+- Nach längerer Inaktivität wechseln sie automatisch auf offline.
 
-Hinweis:
-Supabase kann weiterhin vor „destructive operations“ warnen, weil die Migration
-bestehende Trigger/Funktionen mit DROP TRIGGER / CREATE OR REPLACE aktualisiert.
-Das ist für dieses Update beabsichtigt; es werden dabei keine Spieltabellen gelöscht.
+4. INDIVIDUELLE ICONS
+- Jeder Bot hat ein eigenes Emoji/Icon.
+- Standardbots erhalten unterschiedliche Icons.
+- In der Schaltzentrale kann das Icon frei geändert werden.
+- Neue Bots bekommen ebenfalls ein wählbares Icon.
+- Icon erscheint in Teilnehmerliste, Ranking und Bot-Profil.
+
+5. SCHALTZENTRALE
+- Bot-Name
+- Bot-Icon
+- Farbe
+- Schwierigkeit
+- Aktivstatus
+- laufende Standardspiele: Bots erlauben / Bots sperren
+
+INSTALLATION
+1. supabase/v6_40_migration.sql EINMAL ausführen.
+2. Dateien deployen.
+3. Kein anderes SQL erneut ausführen.

@@ -37,6 +37,7 @@ export default function Admin(){
  const [newsPinned,setNewsPinned]=useState(false)
  const [botConfig,setBotConfig]=useState(null)
  const [newBotName,setNewBotName]=useState('')
+ const [newBotIcon,setNewBotIcon]=useState('🤖')
  const [newBotDifficulty,setNewBotDifficulty]=useState('normal')
 
  useEffect(()=>{init()},[])
@@ -404,20 +405,22 @@ export default function Admin(){
  async function addBot(){
   if(!newBotName.trim())return
   setSaving(true);setMsg('')
-  const {data,error}=await supabase.rpc('admin_add_bot_v639',{
+  const {data,error}=await supabase.rpc('admin_add_bot_v640',{
     p_name:newBotName.trim(),
+    p_icon:newBotIcon||'🤖',
     p_difficulty:newBotDifficulty
   })
   setSaving(false)
   setMsg(error?error.message:(data?.message||'Bot angelegt.'))
-  if(!error){setNewBotName('');await load()}
+  if(!error){setNewBotName('');setNewBotIcon('🤖');await load()}
  }
 
  async function saveBot(bot){
   setSaving(true);setMsg('')
-  const {data,error}=await supabase.rpc('admin_update_bot_v639',{
+  const {data,error}=await supabase.rpc('admin_update_bot_v640',{
     p_bot_id:bot.id,
     p_name:bot.display_name,
+    p_icon:bot.avatar_emoji||'🤖',
     p_active:!!bot.active,
     p_difficulty:bot.difficulty||'normal',
     p_color:bot.player_color||'#6f86a8'
@@ -432,6 +435,17 @@ export default function Admin(){
   const {data,error}=await supabase.rpc('admin_seed_bots_v639',{p_game_id:gameId})
   setSaving(false)
   setMsg(error?error.message:(data?.message||'Bots hinzugefügt.'))
+  if(!error)await load()
+ }
+
+ async function setGameBots(gameId,blocked){
+  setSaving(true);setMsg('')
+  const {data,error}=await supabase.rpc('admin_set_game_bots_v640',{
+    p_game_id:gameId,
+    p_blocked:!!blocked
+  })
+  setSaving(false)
+  setMsg(error?error.message:(data?.message||'Bot-Einstellung gespeichert.'))
   if(!error)await load()
  }
 
@@ -470,7 +484,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.39.1</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.40</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -858,6 +872,7 @@ export default function Admin(){
    <h3 style={{marginTop:20}}>Bot-Profile</h3>
    <div className="botAdminCreate">
     <input className="input" value={newBotName} placeholder="Neuer Bot-Name" onChange={e=>setNewBotName(e.target.value)}/>
+    <input className="input botIconInput" value={newBotIcon} maxLength={12} placeholder="Icon" onChange={e=>setNewBotIcon(e.target.value)}/>
     <select className="input" value={newBotDifficulty} onChange={e=>setNewBotDifficulty(e.target.value)}>
      <option value="locker">locker</option><option value="normal">normal</option><option value="aktiv">aktiv</option>
     </select>
@@ -868,6 +883,7 @@ export default function Admin(){
     {(botConfig.bots||[]).map(bot=><div className="botAdminRow" key={bot.id}>
      <div className="botAdminIdentity"><span className="botAdminAvatar">{bot.avatar_emoji||'🤖'}</span><div><strong>{bot.display_name}</strong><span className="small">{Number(bot.total_games||0)} Spiele · {Number(bot.total_fields_revealed||0).toLocaleString('de-DE')} Felder</span></div></div>
      <input className="input" value={bot.display_name} onChange={e=>setBotValue(bot.id,'display_name',e.target.value)}/>
+     <input className="input botIconInput" value={bot.avatar_emoji||'🤖'} maxLength={12} onChange={e=>setBotValue(bot.id,'avatar_emoji',e.target.value)}/>
      <select className="input" value={bot.difficulty||'normal'} onChange={e=>setBotValue(bot.id,'difficulty',e.target.value)}>
       <option value="locker">locker</option><option value="normal">normal</option><option value="aktiv">aktiv</option>
      </select>
@@ -877,9 +893,14 @@ export default function Admin(){
     </div>)}
    </div>
 
-   <h3 style={{marginTop:20}}>Bots testweise in Spiel setzen</h3>
-   <div className="botSeedGames">
-    {(adminGames||[]).filter(g=>g.status==='active'&&g.game_type==='standard').slice(0,20).map(g=><button className="miniBtn" key={g.id} disabled={saving} onClick={()=>seedBots(g.id)}>🤖 {g.name}</button>)}
+   <h3 style={{marginTop:20}}>Bots in laufenden Schatzsuchen</h3>
+   <p className="small">Normale Schatzsuchen dürfen standardmäßig Bots enthalten. Hier kannst du sie nachträglich sperren oder wieder zulassen.</p>
+   <div className="botSeedGames botGameControls">
+    {(adminGames||[]).filter(g=>g.status==='active'&&g.game_type==='standard').slice(0,30).map(g=><div className="botGameControl" key={g.id}>
+     <span>{g.name}</span>
+     <button className="miniBtn" disabled={saving} onClick={()=>setGameBots(g.id,false)}>🤖 erlauben</button>
+     <button className="miniBtn" disabled={saving} onClick={()=>setGameBots(g.id,true)}>🚫 sperren</button>
+    </div>)}
    </div>
   </section>}
 

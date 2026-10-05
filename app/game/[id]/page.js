@@ -304,15 +304,16 @@ export default function Game(){
  }
 
  async function loadGameBots(){
-  const {data,error}=await supabase.rpc('get_game_bots_v639',{p_game_id:id})
+  const {data,error}=await supabase.rpc('get_game_bots_v640',{p_game_id:id})
   if(!error)setBotPlayers(Array.isArray(data)?data:[])
   return data||[]
  }
 
  async function runBots(){
   if(document.visibilityState!=='visible')return
-  const {data,error}=await supabase.rpc('run_bot_game_tick_v639',{p_game_id:id})
-  if(error)return
+  const {data,error}=await supabase.rpc('run_bot_game_tick_v640',{p_game_id:id})
+  if(error){setMsg('Bot-System: '+error.message);return}
+  if(data?.reason==='error'&&data?.error){setMsg('Bot-System: '+data.error);return}
   if(Number(data?.actions||0)>0||Number(data?.opened||0)>0){
     await loadGameBots()
     if(currentViewport.current)scheduleVisibleReload(180)
@@ -1311,7 +1312,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.39.1: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.40: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%5!==0)return
   runMachines()
@@ -1327,7 +1328,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||botPlayers.length===0)return
   if(document.visibilityState!=='visible')return
-  if(tick%15!==0)return
+  if(tick%5!==0)return
   runBots()
  },[tick,joinState,botPlayers.length])
 
@@ -1364,6 +1365,7 @@ export default function Game(){
     bot_id:b.bot_id,
     is_bot:true,
     display_name:b.display_name,
+    avatar_emoji:b.avatar_emoji,
     coins:b.coins,
     fields_revealed:b.fields_revealed,
     treasure_share_bps:b.treasure_share_bps,
@@ -1394,7 +1396,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.39.1</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.40</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1703,7 +1705,7 @@ export default function Game(){
     <div className="rankingList">
      {ranked.map((r,i)=><div className={'rankingRow '+(r.user_id===user?.id?'me':'')} key={r.user_id}>
       <span>{i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</span>
-      <strong>{r.is_bot?<a className="profileLink" href={'/bot/'+r.bot_id}>🤖 {r.display_name||'Bot'}</a>:<>{r.display_name||'Spieler'} {onlineIds.includes(r.user_id)&&<span className="onlineDot" title="online">●</span>}</>}</strong>
+      <strong>{r.is_bot?<a className="profileLink" href={'/bot/'+r.bot_id}>{r.avatar_emoji||'🤖'} {r.display_name||'Bot'}</a>:<>{r.display_name||'Spieler'} {onlineIds.includes(r.user_id)&&<span className="onlineDot" title="online">●</span>}</>}</strong>
       <b>{rankValue(r)}</b>
      </div>)}
     </div>
@@ -1716,7 +1718,7 @@ export default function Game(){
     <div className="small">{Number(p.coins).toFixed(2)} T · {p.moves_left} gespeicherte Züge · {p.reveal_power} Felder/Zug · 🗺️ {Number(p.fields_revealed||0).toLocaleString('de-DE')} Felder · 🧩 {(Number(p.treasure_share_bps||0)/100).toFixed(2)}%</div>
    </div>)}
    {botPlayers.map(b=><div className="card playerStatusCard botPlayerCard" key={'bot-'+b.bot_id}>
-    <div className="playerNameLine"><span className="colorDot large" style={{background:b.player_color||'#6f86a8'}}></span><strong><a className="profileLink" href={'/bot/'+b.bot_id}>🤖 {b.display_name||'Bot'}</a></strong><span className="presenceLabel bot">Bot</span></div>
+    <div className="playerNameLine"><span className="colorDot large" style={{background:b.player_color||'#6f86a8'}}></span><strong><a className="profileLink" href={'/bot/'+b.bot_id}>{b.avatar_emoji||'🤖'} {b.display_name||'Bot'}</a></strong><span className={'presenceLabel '+(b.online?'online':'bot')}>{b.online?'● online':'Bot offline'}</span></div>
     <div className="small">{Number(b.coins||0).toFixed(2)} T · {Number(b.reveal_power||1)} Felder/Aktion · 🗺️ {Number(b.fields_revealed||0).toLocaleString('de-DE')} Felder · 🧠 {Number(b.tech_count||0)} Techs · 🧩 {(Number(b.treasure_share_bps||0)/100).toFixed(2)}%</div>
    </div>)}
   </div></div>

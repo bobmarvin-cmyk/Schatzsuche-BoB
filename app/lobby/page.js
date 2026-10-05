@@ -23,7 +23,8 @@ export default function Lobby(){
  const [lat,setLat]=useState('49.52'),[lon,setLon]=useState('7.14'),[label,setLabel]=useState('Zuhause')
  const [fields,setFields]=useState(100000),[cellSize,setCellSize]=useState(100)
  const [regen,setRegen]=useState(5),[capacity,setCapacity]=useState(4),[maxPlayers,setMaxPlayers]=useState(20)
- const [privateGame,setPrivateGame]=useState(false),[password,setPassword]=useState(''),[startDelay,setStartDelay]=useState(0),[customStartAt,setCustomStartAt]=useState('')
+ const [privateGame,setPrivateGame]=useState(false)
+ const [botsBlocked,setBotsBlocked]=useState(false),[password,setPassword]=useState(''),[startDelay,setStartDelay]=useState(0),[customStartAt,setCustomStartAt]=useState('')
  const [inviteCode,setInviteCode]=useState(''),[joinPassword,setJoinPassword]=useState('')
  const [gameType,setGameType]=useState('standard'),[entryGold,setEntryGold]=useState('10'),[sponsorGold,setSponsorGold]=useState('100'),[sponsorName,setSponsorName]=useState(''),[treasureCount,setTreasureCount]=useState(1),[gimmickPercent,setGimmickPercent]=useState(1),[gimmickWarn,setGimmickWarn]=useState(false),[privateJoinOpen,setPrivateJoinOpen]=useState(false)
  const [placeQuery,setPlaceQuery]=useState(''),[placeResults,setPlaceResults]=useState([]),[placeSearching,setPlaceSearching]=useState(false),[selectedPlaceLabel,setSelectedPlaceLabel]=useState('')
@@ -54,10 +55,10 @@ export default function Lobby(){
  }
 
  async function loadBotCounts(){
-   const {data,error}=await supabase.rpc('get_lobby_bot_counts_v639')
+   const {data,error}=await supabase.rpc('get_lobby_bot_counts_v640')
    if(error)return
    const next={}
-   for(const row of data||[])next[String(row.game_id)]=Number(row.bot_count||0)
+   for(const row of data||[])next[String(row.game_id)]={count:Number(row.bot_count||0),blocked:!!row.bots_blocked}
    setBotCounts(next)
  }
 
@@ -174,6 +175,16 @@ export default function Lobby(){
     : ['create_game_v612',{...common,p_game_type:gameType,p_entry_gold_ug:entryUg}]
    const {data,error}=await supabase.rpc(request[0],request[1])
    if(error){setMsg(error.message);return}
+   if(gameType==='standard'){
+     const {error:botConfigError}=await supabase.rpc('configure_game_bots_v640',{
+       p_game_id:data,
+       p_blocked:!!botsBlocked
+     })
+     if(botConfigError){
+       setMsg('Spiel erstellt, Bot-Einstellung konnte aber nicht gespeichert werden: '+botConfigError.message)
+       return
+     }
+   }
    if(scheduledStart){
      const {error:startError}=await supabase.rpc('set_game_start_v620',{p_game_id:data,p_start_at:scheduledStart})
      if(startError){setMsg('Spiel erstellt, Starttimer konnte aber nicht gesetzt werden: '+startError.message);return}
@@ -250,7 +261,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.39.1</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.40</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -385,6 +396,10 @@ export default function Lobby(){
        <label>Spielpasswort <span className="muted">(optional)</span></label>
        <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)}/>
       </>}
+      {gameType==='standard'&&<label className="toggleRow">
+       <input type="checkbox" checked={botsBlocked} onChange={e=>setBotsBlocked(e.target.checked)}/>
+       <span><strong>🤖 Bots sperren</strong><small>Keine Bot-Spieler in dieser Runde zulassen.</small></span>
+      </label>}
      </div>
 
      <div>
@@ -466,7 +481,8 @@ export default function Lobby(){
     {visibleActiveGames.length===0&&<div className="muted">Für diesen Filter sind momentan keine Spiele verfügbar.</div>}
     {visibleActiveGames.map(g=>{
       const count=Number(g.player_count||0)
-      const botCount=Number(botCounts[String(g.id)]||0)
+      const botInfo=botCounts[String(g.id)]||{count:0,blocked:false}
+      const botCount=Number(botInfo.count||0)
       const isPay=g.game_type==='pay'
       const isSponsor=g.game_type==='sponsor'
       return <div className={'card '+(isPay?'payGameCard':isSponsor?'sponsorGameCard':'')} key={g.id}>
@@ -480,7 +496,7 @@ export default function Lobby(){
        {isSponsor&&<div className="payFacts sponsorFacts">
         <span>Sponsor: <b>{g.sponsor_name||'Sponsor'}</b></span><span>Teilnahme: <b>kostenlos</b></span><span>Pool: <b>{formatGold(g.gold_prize_pool_ug)}</b></span>
        </div>}
-       <div className="capacityLine"><span>👥 {count} / {g.max_players}{botCount>0?` · 🤖 ${botCount} Bots`:''}</span><span>🟢 aktiv</span></div>
+       <div className="capacityLine"><span>👥 {count} / {g.max_players}{g.game_type==='standard'?(botInfo.blocked?' · 🚫 Bots':botCount>0?` · 🤖 ${botCount} Bots`:' · 🤖 Bots erlaubt'):''}</span><span>🟢 aktiv</span></div>
        <div className="gameProgressLine">
         <div><span style={{width:`${Math.round(gameProgress(g)*100)}%`}}/></div>
         <small>{(gameProgress(g)*100).toFixed(1)} % erkundet</small>
