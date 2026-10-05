@@ -1263,7 +1263,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.34: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.35: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%5!==0)return
   runMachines()
@@ -1319,7 +1319,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.34</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.35</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1511,12 +1511,16 @@ export default function Game(){
     </div>
 
     {!endgameStatus?.ready&&<>
-     <div className="technologyTabs">
-      {branches.map(b=><button
-        key={b}
-        className={b===activeBranch?'active':''}
-        onClick={()=>setBranch(b)}
-      >{b}</button>)}
+     <div className="technologyTabsShell">
+      <div className="technologyTabs" role="tablist" aria-label="Technologiearten">
+       {branches.map(b=><button
+         key={b}
+         role="tab"
+         aria-selected={b===activeBranch}
+         className={b===activeBranch?'active':''}
+         onClick={e=>{setBranch(b);e.currentTarget.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'})}}
+       >{b}</button>)}
+      </div>
      </div>
 
      <div className="techPanelTopline">
@@ -1561,7 +1565,8 @@ export default function Game(){
        <span><i className="dot current"></i> jetzt möglich</span>
        <span><i className="dot future"></i> später</span>
       </div>
-      <div className="techGraphScroller">
+      <div className="techGraphScrollHint">↔ Seitlich scrollen, um den gesamten Zweig zu sehen</div>
+      <div className="techGraphScroller" tabIndex="0" aria-label={`${activeTrack.branch} Technologiebaum horizontal scrollen`}>
        <div className="techGraph">
         {activeTechTierList.map(tier=><div className="techColumn" key={tier}>
          <div className="techColumnLabel">{tier===0?'Start':`Stufe ${tier}`}</div>
