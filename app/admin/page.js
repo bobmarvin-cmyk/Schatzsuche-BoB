@@ -8,10 +8,44 @@ const NUM=(v)=>v===''?0:Number(v)
 
 const RELEASE_NEWS_TEMPLATES=[
  {
-  id:'v646',
-  title:'Update V6.48 – Tutorial, stärkere Mitspieler & Startbonus',
+  id:'v649',
+  title:'Update V6.49.1 – kompaktere News & stärkere Gegner',
   kind:'change',
-  body:`Neu in V6.48:
+  body:`Neu in V6.49.1:
+
+• In der Lobby heißt der Bereich jetzt nur noch „News“.
+• Nur die zwei neuesten Meldungen sind direkt sichtbar; ältere News lassen sich platzsparend aufklappen.
+• Der Zugzähler wird nach einem Aufdecken sofort mit dem Serverstand synchronisiert.
+• Computer-Mitspieler erhalten einen neuen Konkurrenzdruck: Liegen sie hinter echten Spielern zurück, bekommen sie automatisch einen Aufhol-Boost.
+• Auch der Technologie-Rückstand wird berücksichtigt und aggressiver nachentwickelt.`
+ },
+ {
+  id:'v648',
+  title:'Update V6.49.1 – kompakte News & mehr Bot-Power',
+  kind:'change',
+  body:`Änderungen aus V6.49.1:
+
+• Lobby-News wurden kompakter gestaltet.
+• Vollgas-Ratio, Such-Power und maximale Felder/Aktion wurden deutlich erweitert.
+• Neue Einstellung „Vollgas-Aktionen pro Zug“ für stärkere Computer-Mitspieler.`
+ },
+ {
+  id:'v647',
+  title:'Update V6.47 – Vollgas bei aktiven Spielern',
+  kind:'change',
+  body:`Änderungen aus V6.47:
+
+• Felder/min dient nur noch als Anzeige.
+• Ohne echte Spieler laufen Computer-Mitspieler im Minimalbetrieb.
+• Sobald ein echter Spieler aktiv ist, wechseln sie sofort in den Vollgas-Modus.
+• Tutorial-Fix für die nicht vorhandene password_hash-Spalte.`
+ },
+
+ {
+  id:'v646',
+  title:'Update V6.49.1 – Tutorial, stärkere Mitspieler & Startbonus',
+  kind:'change',
+  body:`Neu in V6.49.1:
 
 • Tutorial-Erstellung robuster gemacht und den gen_salt/pgcrypto-Fehler abgefangen.
 • Computer-Mitspieler reagieren stärker auf aktive Spiele und erhalten mehr Such-Power.
@@ -24,9 +58,9 @@ Viel Spaß bei der Schatzsuche!`
  },
  {
   id:'v645',
-  title:'Update V6.48 – Tutorial-Fix & mehr Gegner-Power',
+  title:'Update V6.49.1 – Tutorial-Fix & mehr Gegner-Power',
   kind:'change',
-  body:`Änderungen aus V6.48:
+  body:`Änderungen aus V6.49.1:
 
 • Tutorial-Fix für den Fehler „gen_salt does not exist“.
 • Tutorial-Runde wird ohne Passwortpfad erzeugt und anschließend privat geschaltet.
@@ -452,13 +486,17 @@ export default function Admin(){
   if(!botConfig?.settings)return
   setSaving(true);setMsg('')
   const s=botConfig.settings
-  const {data,error}=await supabase.rpc('admin_save_bot_settings_v648',{
+  const {data,error}=await supabase.rpc('admin_save_bot_settings_v649',{
     p_enabled:!!s.enabled,
     p_bots_per_auto_game:NUM(s.bots_per_auto_game),
     p_active_power_ratio:NUM(s.active_power_ratio??1),
     p_power_multiplier:NUM(s.power_multiplier??3),
     p_active_burst_actions:NUM(s.active_burst_actions??2),
     p_idle_action_seconds:NUM(s.idle_action_seconds??45),
+    p_catchup_enabled:!!s.catchup_enabled,
+    p_catchup_max_multiplier:NUM(s.catchup_max_multiplier??3),
+    p_catchup_start_ratio:NUM(s.catchup_start_ratio??0.8),
+    p_tech_catchup_bonus:NUM(s.tech_catchup_bonus??2),
     p_base_solve_percent:NUM(s.base_solve_percent),
     p_use_real_average:!!s.use_real_average,
     p_max_fields_per_action:NUM(s.max_fields_per_action??10000)
@@ -550,7 +588,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.48</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.49.1</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -938,11 +976,15 @@ export default function Admin(){
     <Field label="Vollgas-Ratio" step="0.05" value={botConfig.settings?.active_power_ratio??1} onChange={v=>setBotSetting('active_power_ratio',v)}/>
     <Field label="Such-Power Multiplikator" step="0.25" value={botConfig.settings?.power_multiplier??3} onChange={v=>setBotSetting('power_multiplier',v)}/>
     <Field label="Vollgas-Aktionen pro Zug" value={botConfig.settings?.active_burst_actions??2} onChange={v=>setBotSetting('active_burst_actions',v)}/>
+    <label className="adminToggle"><input type="checkbox" checked={botConfig.settings?.catchup_enabled!==false} onChange={e=>setBotSetting('catchup_enabled',e.target.checked)}/> Aufhol-Druck aktiv</label>
+    <Field label="Max. Aufhol-Multiplikator" step="0.25" value={botConfig.settings?.catchup_max_multiplier??3} onChange={v=>setBotSetting('catchup_max_multiplier',v)}/>
+    <Field label="Aufholen ab Verhältnis" step="0.05" value={botConfig.settings?.catchup_start_ratio??0.8} onChange={v=>setBotSetting('catchup_start_ratio',v)}/>
+    <Field label="Tech-Aufholbonus" value={botConfig.settings?.tech_catchup_bonus??2} onChange={v=>setBotSetting('tech_catchup_bonus',v)}/>
     <Field label="Leerlauf-Aktion alle (s)" value={botConfig.settings?.idle_action_seconds??45} onChange={v=>setBotSetting('idle_action_seconds',v)}/>
     <Field label="Fallback Lösequote (%)" step="0.1" value={botConfig.settings?.base_solve_percent??60} onChange={v=>setBotSetting('base_solve_percent',v)}/>
     <Field label="Max. Felder/Aktion" value={botConfig.settings?.max_fields_per_action??10000} onChange={v=>setBotSetting('max_fields_per_action',v)}/>
    </div>
-   <div className="small adminHint">⚡ Vollgas: Ratio steuert Tempo/Stärke, Such-Power vervielfacht reveal_power und „Vollgas-Aktionen pro Zug“ bündelt zusätzlich 1–5 Suchaktionen in einem normalen Bot-Zug.</div>
+   <div className="small adminHint">⚡ Vollgas + Konkurrenzdruck: Liegt ein Computer-Spieler bei Feldern oder Technologien deutlich hinter echten Spielern, wird er automatisch stärker. Der maximale Aufhol-Multiplikator begrenzt diesen Boost.</div>
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.use_real_average} onChange={e=>setBotSetting('use_real_average',e.target.checked)}/> echte durchschnittliche Schatzsicherungsquote verwenden</label>
    <div className="winnerActions"><button className="btn primary" disabled={saving} onClick={saveBotSettings}>Bot-Einstellungen speichern</button></div>
 

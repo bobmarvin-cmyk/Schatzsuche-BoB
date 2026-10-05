@@ -173,7 +173,8 @@ export default function GameMap({
   assistantPosition=null,
   assistantTarget=null,
   onAssistantStepDone,
-  clueMarker=null
+  clueMarker=null,
+  fieldOpacity=0.34
 }){
   const holder=useRef(null)
   const canvasRef=useRef(null)
@@ -202,6 +203,7 @@ export default function GameMap({
   const lastClueMarkerTokenRef=useRef(null)
   const lastAssistantTokenRef=useRef(null)
   const mapModeRef=useRef('satellite')
+  const fieldOpacityRef=useRef(fieldOpacity)
   const terrainCacheRef=useRef(new Map())
   const drawPendingRef=useRef(false)
   const gridStrideRef=useRef(1)
@@ -232,6 +234,7 @@ export default function GameMap({
   onAssistantStepDoneRef.current=onAssistantStepDone
   clueMarkerRef.current=clueMarker
   mapModeRef.current=mapMode
+  fieldOpacityRef.current=Math.max(0.10,Math.min(1,Number(fieldOpacity||0.34)))
 
   function scheduleCanvasDraw(){
     if(drawPendingRef.current)return
@@ -241,6 +244,10 @@ export default function GameMap({
       drawCanvas()
     })
   }
+
+  useEffect(()=>{
+    scheduleCanvasDraw()
+  },[fieldOpacity])
 
   function resizeCanvas(){
     const canvas=canvasRef.current
@@ -324,7 +331,7 @@ export default function GameMap({
         const px=xFor(x),py=yFor(y)
         const pw=wCells*cellPxX,ph=hCells*cellPxY
         const color=colors[c.dominant_user_id]||'#3b82f6'
-        ctx.fillStyle=hexToRgba(color,0.025+coverage*0.20)
+        ctx.fillStyle=hexToRgba(color,Math.min(0.85,(0.025+coverage*0.20)*(fieldOpacityRef.current/0.34)))
         ctx.fillRect(px,py,pw,ph)
       }
     }else{
@@ -334,7 +341,7 @@ export default function GameMap({
         if(chunkX>vx1||chunkX+CHUNK<vx0||chunkY>vy1||chunkY+CHUNK<vy0)continue
 
         for(const group of c.groups||[]){
-          ctx.fillStyle=hexToRgba(colors[group.user_id]||'#3b82f6',0.34)
+          ctx.fillStyle=hexToRgba(colors[group.user_id]||'#3b82f6',fieldOpacityRef.current)
           for(const run of group.runs||[]){
             let idx=Number(run?.[0]||0)
             let left=Number(run?.[1]||0)

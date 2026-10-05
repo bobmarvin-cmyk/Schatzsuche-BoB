@@ -14,6 +14,7 @@ export default function Game(){
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false),[claimTimeLeft,setClaimTimeLeft]=useState(null),[claimResult,setClaimResult]=useState(null),[job,setJob]=useState(null),[jobBusy,setJobBusy]=useState(false),[jobSettings,setJobSettings]=useState({bottlesSeconds:180,bottlesReward:1,scrapSeconds:900,scrapReward:7})
  const [assistantEnabled,setAssistantEnabled]=useState(false),[assistantWaypoints,setAssistantWaypoints]=useState([]),[assistantPosition,setAssistantPosition]=useState(null),[assistantNextIndex,setAssistantNextIndex]=useState(0),[assistantTarget,setAssistantTarget]=useState(null),[assistantUnlocked,setAssistantUnlocked]=useState(null),[assistantUnlockBusy,setAssistantUnlockBusy]=useState(false),[assistantRouteDone,setAssistantRouteDone]=useState(false)
  const [endgameStatus,setEndgameStatus]=useState(null),[endgameBusy,setEndgameBusy]=useState(false),[gameChangelog,setGameChangelog]=useState([]),[cluePositions,setCluePositions]=useState({}),[selectedClueMarker,setSelectedClueMarker]=useState(null),[autoDevelopEnabled,setAutoDevelopEnabled]=useState(false),[autoDevelopBusy,setAutoDevelopBusy]=useState(false),[botPlayers,setBotPlayers]=useState([]),[gameActivity,setGameActivity]=useState(null)
+ const [fieldOpacity,setFieldOpacity]=useState(34)
 
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0),chunkSummaryRef=useRef(new Map()),chunkPayloadRef=useRef(new Map()),chunkSinceRef=useRef(null),chunkSyncPromiseRef=useRef(null)
  const assistantBusyRef=useRef(false),assistantLastStepAtRef=useRef(Date.now()),assistantPendingStepRef=useRef(null),assistantTokenRef=useRef(0)
@@ -43,6 +44,19 @@ export default function Game(){
     clearTimeout(viewportTimer.current);clearTimeout(playerReloadTimer.current);clearTimeout(claimTimerRef.current)
   }
  },[id])
+
+ useEffect(()=>{
+  try{
+    const saved=Number(localStorage.getItem('map_field_opacity'))
+    if(Number.isFinite(saved)&&saved>=10&&saved<=100)setFieldOpacity(saved)
+  }catch{}
+ },[])
+
+ function changeFieldOpacity(value){
+  const next=Math.max(10,Math.min(100,Number(value)||34))
+  setFieldOpacity(next)
+  try{localStorage.setItem('map_field_opacity',String(next))}catch{}
+ }
 
  useEffect(()=>{
   try{
@@ -317,7 +331,7 @@ export default function Game(){
 
  async function runBots(){
   if(document.visibilityState!=='visible')return
-  const {data,error}=await supabase.rpc('run_bot_game_tick_v648',{
+  const {data,error}=await supabase.rpc('run_bot_game_tick_v649',{
     p_game_id:id,
     p_active_humans:Math.max(1,onlineIds.length)
   })
@@ -904,6 +918,13 @@ export default function Game(){
     handleGimmicks(data?.gimmicks)
     handleTreasure(data,'manual')
     setSessionFields(v=>v+Number(data?.opened||0))
+
+    // Zuganzeige sofort korrigieren. Danach wird der echte Serverstand geladen.
+    setPlayers(prev=>prev.map(p=>p.user_id===user?.id
+      ? {...p,moves_left:Math.max(0,Number(p.moves_left||0)-1)}
+      : p
+    ))
+    await loadPlayersOnly()
     if(data?.game_over){
       setWinnerCelebration({
         won:!!data.won,
@@ -1327,7 +1348,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.48: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.49.1: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%2!==0)return
   runMachines()
@@ -1421,7 +1442,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.48</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.49.1</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1496,6 +1517,12 @@ export default function Game(){
   <div className="gameLayout">
    <section className="panel gameMapPanel">
     <div className="mapHeader"><div><h2>{game?.name||'Schatzsuche'}{game?.center_label?` · ${game.center_label}`:''}</h2><div className="small">{assistantEnabled?'Assistent aktiv: Kartenklick setzt Wegpunkte. Normales Aufdecken ist pausiert.':'Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.'}</div>{gameActivity&&<div className="gameActivityBadge">⚡ Aktivität {Number(gameActivity.fields_per_min||0).toFixed(1)} Felder/min je Spieler <span className="activityInfo">· nur Anzeige</span></div>}</div>
+     <div className="mapViewControls">
+      <label className="fieldOpacityControl" title="Nur deine Darstellung – hat keinen Einfluss auf andere Spieler">
+       <span>Feld-Deckkraft <b>{fieldOpacity}%</b></span>
+       <input type="range" min="10" max="100" step="5" value={fieldOpacity} onChange={e=>changeFieldOpacity(e.target.value)}/>
+      </label>
+     </div>
      <div className="mapLegend">
       {players.map(p=><div className={'legendItem '+(onlineIds.includes(p.user_id)?'online':'offline')} key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span><a className="profileLink" href={'/spieler/'+p.user_id}>{p.profiles?.display_name||'Spieler'}</a>{onlineIds.includes(p.user_id)&&<span className="onlineDot" title="online">●</span>}</div>)}
       {botPlayers.map(b=><div className="legendItem online" key={'legend-'+b.bot_id}><span className="colorDot" style={{background:b.player_color||'#35516d'}}></span><a className="profileLink" href={'/bot/'+b.bot_id}>{b.avatar_emoji||'🙂'} {b.display_name||'Spieler'}</a><span className="onlineDot" title="online">●</span></div>)}
@@ -1530,7 +1557,7 @@ export default function Game(){
       assistantPosition={assistantPosition}
       assistantTarget={assistantTarget}
       onAssistantStepDone={handleAssistantStepDone}
-      clueMarker={selectedClueMarker}
+      clueMarker={selectedClueMarker} fieldOpacity={fieldOpacity/100}
       mobileHud={<div className="mobileMapHud">
        {[
         [Number(me?.coins||0).toFixed(2),'Taler'],

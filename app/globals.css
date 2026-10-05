@@ -3837,3 +3837,39 @@ body{
   -webkit-box-orient:vertical;
   overflow:hidden;
 }
+
+
+/* =========================================================
+   V6.49.1 – persönliche Feld-Deckkraft
+   ========================================================= */
+.mapViewControls{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  min-width:155px;
+}
+.fieldOpacityControl{
+  display:grid;
+  gap:3px;
+  width:155px;
+  font-size:10px;
+  color:#afbed0;
+}
+.fieldOpacityControl span{
+  display:flex;
+  justify-content:space-between;
+  gap:6px;
+}
+.fieldOpacityControl input[type="range"]{
+  width:100%;
+  margin:0;
+}
+@media(max-width:700px){
+  .mapViewControls{
+    width:100%;
+    justify-content:stretch;
+  }
+  .fieldOpacityControl{
+    width:100%;
+  }
+}

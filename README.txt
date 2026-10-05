@@ -1,33 +1,23 @@
-SCHATZSUCHE ONLINE V6.48
+SCHATZSUCHE ONLINE V6.49.1
 
-LOBBY-NEWS
-- Nur die 3 neuesten Meldungen werden vollständig angezeigt.
-- Ältere News liegen platzsparend unter „Weitere News“.
-- Eingeklappte alte Meldungen sind deutlich kleiner.
-- Das spart besonders auf dem Handy viel Platz, ohne Inhalte zu verlieren.
+Dieses Paket enthält V6.49 plus eine reine Darstellungsverbesserung.
+Die Datenbankmigration bleibt deshalb v6_49_migration.sql.
 
-NOCH STÄRKERE COMPUTER-SPIELER
-Neue Einstellung:
-- „Vollgas-Aktionen pro Zug“: 1 bis 5
-
-Damit wird die Suchleistung innerhalb eines Bot-Zugs zusätzlich vervielfacht.
-
-Außerdem angehobene Grenzen:
-- Vollgas-Ratio: bis 5,0
-- Such-Power: bis ×25
-- Max. Felder/Aktion: bis 10.000
-
-Beispiel:
-- Ratio 1,0
-- Such-Power ×3
-- Vollgas-Aktionen 2
-=> ungefähr doppelte Suchleistung gegenüber V6.47.
-
-Für sehr starke Gegner:
-- Ratio 1,25–1,5
-- Such-Power ×4–6
-- Vollgas-Aktionen 2–3
+NEU: PERSÖNLICHE FELD-DECKKRAFT
+- Im Kartenkopf gibt es einen kleinen Regler „Feld-Deckkraft“.
+- Bereich: 10 % bis 100 %.
+- Standard: 34 %, also ungefähr die bisherige Darstellung.
+- Ändert nur die farbige Darstellung bereits aufgedeckter Felder.
+- Raster, Hinweise, Schatzmarker und Spielregeln bleiben unverändert.
+- Einstellung wird lokal im Browser gespeichert.
+- Jeder Spieler kann seine Ansicht unabhängig einstellen.
+- Keine zusätzliche Datenbankabfrage und keine Serverlast.
 
 INSTALLATION
-1. supabase/v6_48_migration.sql EINMAL ausführen.
-2. V6.48 deployen.
+Wenn V6.49 noch NICHT installiert wurde:
+1. supabase/v6_49_migration.sql EINMAL ausführen.
+2. Danach dieses V6.49.1-Paket deployen.
+
+Wenn V6.49 bereits installiert wurde:
+- Kein weiteres SQL nötig.
+- Nur V6.49.1 deployen.

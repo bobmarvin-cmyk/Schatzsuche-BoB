@@ -270,7 +270,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.48</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.49.1</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -297,22 +297,22 @@ export default function Lobby(){
 
   {news.length>0&&<section className="panel lobbyNewsPanel compactNewsPanel">
    <div className="lobbyNewsHead">
-    <div><h2>📰 News & Änderungen</h2><div className="small">Die neuesten Meldungen auf einen Blick.</div></div>
+    <div><h2>📰 News</h2></div>
    </div>
    <div className="lobbyNewsList">
-    {news.slice(0,3).map(n=><article className={'lobbyNewsItem '+(n.is_pinned?'pinned':'')} key={n.id}>
+    {news.slice(0,2).map(n=><article className={'lobbyNewsItem '+(n.is_pinned?'pinned':'')} key={n.id}>
      <div className="lobbyNewsMeta">
-      <span>{n.kind==='change'?'🔧 Änderung':n.kind==='maintenance'?'🛠 Wartung':n.kind==='event'?'🎉 Event':'📣 News'}</span>
+      <span>{n.kind==='maintenance'?'🛠 Wartung':n.kind==='event'?'🎉 Event':'📣 News'}</span>
       <time>{n.created_at?new Date(n.created_at).toLocaleString('de-DE'):'–'}</time>
      </div>
      <h3>{n.is_pinned?'📌 ':''}{n.title}</h3>
      <p>{n.body}</p>
     </article>)}
    </div>
-   {news.length>3&&<details className="olderNewsDetails">
-    <summary>Weitere News ({news.length-3})</summary>
+   {news.length>2&&<details className="olderNewsDetails">
+    <summary>Ältere News anzeigen ({news.length-2})</summary>
     <div className="olderNewsList">
-     {news.slice(3,12).map(n=><article className="olderNewsItem" key={n.id}>
+     {news.slice(2,12).map(n=><article className="olderNewsItem" key={n.id}>
       <div className="olderNewsTitle"><strong>{n.is_pinned?'📌 ':''}{n.title}</strong><time>{n.created_at?new Date(n.created_at).toLocaleDateString('de-DE'):'–'}</time></div>
       <p>{n.body}</p>
      </article>)}
