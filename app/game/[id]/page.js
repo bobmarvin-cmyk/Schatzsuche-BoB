@@ -12,7 +12,7 @@ export default function Game(){
  const [mapChunks,setMapChunks]=useState([]),[mapRenderMode,setMapRenderMode]=useState('overview'),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false),[claimTimeLeft,setClaimTimeLeft]=useState(null),[claimResult,setClaimResult]=useState(null),[job,setJob]=useState(null),[jobBusy,setJobBusy]=useState(false),[jobSettings,setJobSettings]=useState({bottlesSeconds:180,bottlesReward:1,scrapSeconds:900,scrapReward:7})
- const [assistantEnabled,setAssistantEnabled]=useState(false),[assistantWaypoints,setAssistantWaypoints]=useState([]),[assistantPosition,setAssistantPosition]=useState(null),[assistantNextIndex,setAssistantNextIndex]=useState(0),[assistantTarget,setAssistantTarget]=useState(null),[assistantUnlocked,setAssistantUnlocked]=useState(false),[assistantUnlockBusy,setAssistantUnlockBusy]=useState(false),[assistantRouteDone,setAssistantRouteDone]=useState(false)
+ const [assistantEnabled,setAssistantEnabled]=useState(false),[assistantWaypoints,setAssistantWaypoints]=useState([]),[assistantPosition,setAssistantPosition]=useState(null),[assistantNextIndex,setAssistantNextIndex]=useState(0),[assistantTarget,setAssistantTarget]=useState(null),[assistantUnlocked,setAssistantUnlocked]=useState(null),[assistantUnlockBusy,setAssistantUnlockBusy]=useState(false),[assistantRouteDone,setAssistantRouteDone]=useState(false)
  const [endgameStatus,setEndgameStatus]=useState(null),[endgameBusy,setEndgameBusy]=useState(false)
 
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0),chunkSummaryRef=useRef(new Map()),chunkPayloadRef=useRef(new Map()),chunkSinceRef=useRef(null),chunkSyncPromiseRef=useRef(null)
@@ -809,13 +809,19 @@ export default function Game(){
     await supabase.rpc('set_machine_focus_v690',{p_game_id:id,p_x:x,p_y:y})
     const {data,error}=await supabase.rpc('reveal_area_v620',{p_game_id:id,p_x:x,p_y:y})
     if(error){
+      const errorText=String(error.message||'')
+      const traversable=
+        errorText.includes('kein freies zugängliches Feld')||
+        errorText.includes('vollständig erforscht')
       const {data:rescue,error:rescueError}=await supabase.rpc('ensure_terrain_progress_v6245',{p_game_id:id})
-      if(!rescueError&&rescue?.message){
+      if(traversable){
+        setMsg('🧭 Assistent läuft über bereits erforschtes Gebiet weiter.')
+      }else if(!rescueError&&rescue?.message){
         setMsg(rescue.message)
       }else{
-        setMsg(error.message)
+        setMsg(errorText)
       }
-      return {success:false,reason:error.message||'reveal_failed'}
+      return {success:false,traversable,reason:errorText||'reveal_failed'}
     }
 
     setMsg(data?.message||'Gebiet untersucht')
@@ -864,7 +870,7 @@ export default function Game(){
  }
 
  function toggleAssistant(){
-  if(!assistantUnlocked){
+  if(assistantUnlocked!==true){
     setMsg('🧭 Assistent muss zuerst einmalig für 10 Taler freigeschaltet werden.')
     return
   }
@@ -995,7 +1001,7 @@ export default function Game(){
   setAssistantTarget(null)
   if(!step)return
 
-  if(result?.success||result?.blocked){
+  if(result?.success||result?.blocked||result?.traversable){
     setAssistantPosition({x:step.x,y:step.y})
     setAssistantNextIndex(step.nextIndex)
     if(step.nextIndex>=assistantWaypoints.length){
@@ -1109,8 +1115,13 @@ export default function Game(){
 
  const me=players.find(p=>p.user_id===user?.id)
  useEffect(()=>{
-  setAssistantUnlocked(!!me?.assistant_unlocked)
- },[me?.assistant_unlocked])
+  if(!me)return
+  if(me.assistant_unlocked===true){
+    setAssistantUnlocked(true)
+  }else{
+    setAssistantUnlocked(prev=>prev===true?true:false)
+  }
+ },[me?.user_id,me?.assistant_unlocked])
  const currentAnalysisCost=analysisPrices[Math.min(6,Math.max(1,Number(me?.analysis_level||1)))]||0
  const left=game?Math.max(0,Number(game.width)*Number(game.height)-Number(game.explored_count||0)):0
  const startAtMs=game?.start_at?new Date(game.start_at).getTime():0
@@ -1132,6 +1143,15 @@ export default function Game(){
  const effectiveRegen=Number(regenInfo?.interval_seconds||game?.regen_seconds||30)
  const branches=[...new Set(technologies.map(t=>t.branch))]
  const activeBranch=branches.includes(branch)?branch:(branches[0]||'Erkundung')
+ const techProgress=branches.map(b=>{
+   const items=technologies.filter(t=>t.branch===b).sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0))
+   const completed=items.filter(t=>has(t.id)).length
+   return {branch:b,items,completed,total:items.length}
+ })
+ const currentTechChoices=technologies
+   .filter(t=>!has(t.id)&&(t.requires||[]).every(has))
+   .sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0))
+   .slice(0,3)
  const machinePower=technologies
    .filter(t=>owned.includes(t.id))
    .reduce((sum,t)=>sum+Number(t.machine_auto_fields||0),0)
@@ -1180,7 +1200,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.30.1: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.31: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%5!==0)return
   runMachines()
@@ -1235,7 +1255,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.30.1</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.31</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1314,19 +1334,20 @@ export default function Game(){
     </div>
     {game&&<>
      <div className="assistantToolbar">
-      {!assistantUnlocked&&<button className="miniBtn" disabled={assistantUnlockBusy||Number(me?.coins||0)<10} onClick={unlockAssistant}>
+      {assistantUnlocked===null&&<span className="assistantLoading small">🧭 Assistent wird geladen…</span>}
+      {assistantUnlocked===false&&<button className="miniBtn" disabled={assistantUnlockBusy||Number(me?.coins||0)<10} onClick={unlockAssistant}>
        {assistantUnlockBusy?'Freischalten…':'🧭 Assistent freischalten · 10 T'}
       </button>}
-      {assistantUnlocked&&<button className={'miniBtn '+(assistantEnabled?'active':'')} onClick={toggleAssistant}>
+      {assistantUnlocked===true&&<button className={'miniBtn '+(assistantEnabled?'active':'')} onClick={toggleAssistant}>
        🧭 Assistent {assistantEnabled?'AN':'AUS'}
       </button>}
-      <span className="small">
-       {assistantUnlocked?`Route: ${assistantNextIndex}/${assistantWaypoints.length} erledigt · ${assistantWaypoints.length}/20 Wegpunkte`:'Einmalige Freischaltung'}
+      {assistantUnlocked===true&&<span className="small">
+       Route: {assistantNextIndex}/{assistantWaypoints.length} erledigt · {assistantWaypoints.length}/20 Wegpunkte
        {assistantEnabled?' · Kartenklick setzt Wegpunkt':''}
-      </span>
-      {assistantWaypoints.length>0&&assistantNextIndex>=assistantWaypoints.length&&<button className="miniBtn" onClick={repeatAssistantRoute}>🔁 Route wiederholen</button>}
-      {assistantWaypoints.length>0&&<button className="miniBtn" onClick={undoAssistantWaypoint}>↩ Letzten löschen</button>}
-      {assistantWaypoints.length>0&&<button className="miniBtn" onClick={clearAssistantRoute}>🗑 Route löschen</button>}
+      </span>}
+      {assistantUnlocked===true&&assistantWaypoints.length>0&&assistantNextIndex>=assistantWaypoints.length&&<button className="miniBtn" onClick={repeatAssistantRoute}>🔁 Route wiederholen</button>}
+      {assistantUnlocked===true&&assistantWaypoints.length>0&&<button className="miniBtn" onClick={undoAssistantWaypoint}>↩ Letzten löschen</button>}
+      {assistantUnlocked===true&&assistantWaypoints.length>0&&<button className="miniBtn" onClick={clearAssistantRoute}>🗑 Route löschen</button>}
      </div>
      {assistantRouteDone&&<div className="assistantDoneNotice">
       <strong>🏁 Route beendet</strong>
@@ -1377,89 +1398,103 @@ export default function Game(){
       </div>
     </details>
 
-    {Number(me?.analysis_level||0)>0&&<div className="analysisPurchaseBox deductionPanel">
+    {Number(me?.analysis_level||0)>0&&<div className="analysisPurchaseBox deductionPanel searchCenterCompact">
       <div className="analysisPurchaseHead">
        <div>
-        <strong>🧠 Deduktionsanalyse · Stufe {me.analysis_level}</strong>
-        <div className="small">Jeder neue Suchpunkt kann einen weiteren echten Hinweis zum aktuellen Schatz liefern.</div>
+        <strong>🧭 Suchzentrale · Analyse {Number(me.analysis_level)}</strong>
+        <div className="small">
+         {analysisClues.length
+          ?`${analysisClues.length} Hinweis${analysisClues.length===1?'':'e'} gesammelt · nächster Hinweis verfeinert die Suche`
+          :'Noch kein Hinweis gekauft · starte mit einer groben Eingrenzung'}
+        </div>
        </div>
-       <button className="btn" disabled={analysisBuying||waitingForStart} onClick={buyAnalysis}>
-        {analysisBuying?'Analysiert…':`Hinweis kaufen · ${Number(currentAnalysisCost).toFixed(2)} T`}
+       <button className="btn primary" disabled={analysisBuying||waitingForStart} onClick={buyAnalysis}>
+        {analysisBuying?'Analysiert…':`Nächsten Hinweis · ${Number(currentAnalysisCost).toFixed(2)} T`}
        </button>
       </div>
 
-      <div className="deductionUnlocks">
-       {[
-        [1,'🧭 Sektor + Grobpeilung'],
-        [2,'📐 Zentrumring'],
-        [3,'🌍 Terrain / Randlage'],
-        [4,'📡 Präzisionspeilung'],
-        [5,'🧩 Umgebung'],
-        [6,'🎯 Präzisionszone']
-       ].map(([lvl,label])=><span key={lvl} className={Number(me.analysis_level)>=lvl?'unlocked':'locked'}>
-        {Number(me.analysis_level)>=lvl?'✓':'🔒'} {label}
-       </span>)}
-      </div>
-
       {analysisHint&&<div className="analysisHintBox compactAnalysisHint">
-       <strong>{clueTypeLabel(analysisHint.kind)}</strong>
+       <div className="analysisHintTitle"><strong>{clueTypeLabel(analysisHint.kind)}</strong><span>aktueller Hinweis</span></div>
        <div>{analysisHint.text}</div>
        {analysisHint.kind==='precision_zone'&&analysisClue&&<div className="analysisMapContext">🗺️ {analysisClue}</div>}
-       <div className="small">Bezahlt: {Number(analysisHint.cost||0).toFixed(2)} Taler</div>
       </div>}
 
-      <details className="deductionNotebook" open={analysisClues.length>0}>
+      {analysisClues.length>0&&<details className="deductionNotebook compactClueHistory">
        <summary>
-        <span>📓 Mein Hinweisbuch</span>
-        <span className="small">{analysisClues.length} Hinweis{analysisClues.length===1?'':'e'}</span>
+        <span>📓 Bisherige Hinweise</span>
+        <span className="small">{analysisClues.length}</span>
        </summary>
        <div className="deductionClueList">
-        {analysisClues.length===0&&<div className="small muted">Noch keine Hinweise gekauft.</div>}
-        {[...analysisClues].reverse().map(c=><div className="deductionClue" key={c.id}>
+        {[...analysisClues].reverse().slice(0,8).map(c=><div className="deductionClue" key={c.id}>
          <div className="deductionClueHead">
           <strong>{clueTypeLabel(c.clue_kind)} · #{c.clue_no}</strong>
           <span>Schatz {c.treasure_no}</span>
          </div>
          <div>{c.text}</div>
-         <div className="small">Analyse-Stufe {c.level} · {Number(c.cost||0).toFixed(2)} T</div>
         </div>)}
        </div>
-      </details>
+      </details>}
     </div>}
    </section>
 
-   <aside className="panel">
-    <h2>Technologien</h2>
-    <div className="branchTabs">{branches.map(b=><button key={b} className={'branchTab '+(activeBranch===b?'active':'')} onClick={()=>setBranch(b)}>{b}</button>)}</div>
-    <div className="techList">{technologies.filter(t=>t.branch===activeBranch).map(t=>{
-     const req=t.requires||[]
-     const bought=has(t.id),unlocked=req.every(has),enough=Number(me?.coins||0)>=Number(t.cost)
-     return <div key={t.id} className={'techCard '+(bought?'bought':unlocked?'available':'locked')}>
-      <strong>{bought?'✅ ':''}{t.name}{t.exclusive_per_game?' 🔒':''}</strong><div className="small">{techEffect(t)}</div>
-      <div className="small">Benötigt: {req.length?req.join(', '):'–'}</div>
-      <div className="techBottom"><b>{Number(t.cost).toFixed(2)} T</b><button className="btn primary" disabled={bought||!unlocked||!enough} onClick={()=>buy(t)}>{bought?'Erforscht':'Erforschen'}</button></div>
+   <aside className="panel developmentPanel">
+    <div className="developmentHead">
+     <div><h2>🧠 Entwicklung</h2><div className="small">Dein Weg bleibt sichtbar – kaufen musst du nur die nächsten Schritte.</div></div>
+    </div>
+
+    <div className="developmentTracks">
+     {techProgress.map(track=><div className="developmentTrack" key={track.branch}>
+      <div className="developmentTrackHead">
+       <strong>{track.branch}</strong>
+       <span>{track.completed}/{track.total}</span>
+      </div>
+      <div className="developmentDots" aria-label={`${track.completed} von ${track.total} erforscht`}>
+       {track.items.map(t=><span key={t.id} title={t.name} className={has(t.id)?'done':(t.requires||[]).every(has)?'current':'future'}></span>)}
+      </div>
+      <div className="developmentTrail small">
+       {track.completed>0?`Zuletzt: ${track.items.filter(t=>has(t.id)).slice(-1)[0]?.name||'–'}`:'Noch nicht begonnen'}
+      </div>
+     </div>)}
+    </div>
+
+    {!endgameStatus?.ready&&<>
+     <div className="nextDevelopmentsTitle">Nächste Entwicklung</div>
+     <div className="nextDevelopments">
+      {currentTechChoices.map(t=>{
+       const enough=Number(me?.coins||0)>=Number(t.cost)
+       return <div className="nextDevelopmentCard" key={t.id}>
+        <div>
+         <span className="developmentBranch">{t.branch}</span>
+         <strong>{t.name}{t.exclusive_per_game?' 🔒':''}</strong>
+         <div className="small">{techEffect(t)}</div>
+        </div>
+        <button className="btn primary" disabled={!enough} onClick={()=>buy(t)}>
+         {Number(t.cost).toFixed(2)} T · Entwickeln
+        </button>
+       </div>
+      })}
+      {currentTechChoices.length===0&&<div className="small muted">Keine weitere normale Entwicklung verfügbar.</div>}
      </div>
-    })}</div>
+    </>}
+
     {endgameStatus?.ready&&<div className="endgameUpgradePanel">
       <div className="endgameUpgradeHead">
        <strong>♾️ Endgame-Ausbau</strong>
        <span>Normaler Techbaum vollständig</span>
       </div>
       <div className="endgameUpgradeCard">
-       <div><strong>🗺️ Expeditionsausbau</strong><div className="small">+{Number(endgameStatus.reveal_bonus_per_buy||0).toLocaleString('de-DE')} Felder/Zug · bisher {Number(endgameStatus.reveal_buys||0)}× gekauft</div></div>
+       <div><strong>🗺️ Expeditionsausbau</strong><div className="small">+{Number(endgameStatus.reveal_bonus_per_buy||0).toLocaleString('de-DE')} Felder/Zug · {Number(endgameStatus.reveal_buys||0)}× gekauft</div></div>
        <button className="btn primary" disabled={endgameBusy||Number(me?.coins||0)<Number(endgameStatus.reveal_next_cost||0)} onClick={()=>buyEndgame('reveal')}>
         {Number(endgameStatus.reveal_next_cost||0).toFixed(2)} T
        </button>
       </div>
       <div className="endgameUpgradeCard">
-       <div><strong>⚙️ Maschinenoptimierung</strong><div className="small">+{Number(endgameStatus.machine_bonus_per_buy||0).toLocaleString('de-DE')} virtuelle Suchfelder/Takt · bisher {Number(endgameStatus.machine_buys||0)}× gekauft</div></div>
+       <div><strong>⚙️ Maschinenoptimierung</strong><div className="small">+{Number(endgameStatus.machine_bonus_per_buy||0).toLocaleString('de-DE')} Suchfelder/Takt · {Number(endgameStatus.machine_buys||0)}× gekauft</div></div>
        <button className="btn primary" disabled={endgameBusy||Number(me?.coins||0)<Number(endgameStatus.machine_next_cost||0)} onClick={()=>buyEndgame('machine')}>
         {Number(endgameStatus.machine_next_cost||0).toFixed(2)} T
        </button>
       </div>
-      <div className="small muted">Preis: Startpreis × Faktor ^ bisherige Käufe</div>
     </div>}
-    {!endgameStatus?.ready&&endgameStatus&&<div className="small muted endgameLockedHint">♾️ Endgame-Ausbau erscheint nach vollständigem normalen Techbaum.</div>}
    </aside>
   </div>
 

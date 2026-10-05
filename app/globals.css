@@ -2156,3 +2156,172 @@ button:disabled{cursor:not-allowed;opacity:.45}
     max-width:100%;
   }
 }
+
+
+/* =========================================================
+   V6.31 – kompakte Entwicklung + Suchzentrale
+   ========================================================= */
+.assistantLoading{
+  display:block;
+  padding:6px 8px;
+}
+
+.searchCenterCompact{
+  padding:12px;
+}
+.searchCenterCompact .analysisPurchaseHead{
+  margin-bottom:8px;
+}
+.analysisHintTitle{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:center;
+  margin-bottom:5px;
+}
+.analysisHintTitle span{
+  font-size:10px;
+  opacity:.7;
+  text-transform:uppercase;
+}
+.compactClueHistory{
+  margin-top:8px;
+}
+.compactClueHistory summary{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  cursor:pointer;
+}
+
+.developmentPanel{
+  min-width:0;
+}
+.developmentHead h2{
+  margin-bottom:3px;
+}
+.developmentTracks{
+  display:grid;
+  gap:7px;
+  margin:10px 0 13px;
+}
+.developmentTrack{
+  padding:8px 9px;
+  border:1px solid #30435f;
+  background:#142238;
+  border-radius:10px;
+  min-width:0;
+}
+.developmentTrackHead{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  align-items:center;
+}
+.developmentTrackHead span{
+  font-size:11px;
+  color:#9fb2c9;
+  white-space:nowrap;
+}
+.developmentDots{
+  display:flex;
+  gap:4px;
+  margin:7px 0 5px;
+  min-width:0;
+}
+.developmentDots span{
+  height:6px;
+  flex:1 1 0;
+  min-width:4px;
+  border-radius:999px;
+  background:#27364d;
+}
+.developmentDots span.done{
+  background:#3dbb83;
+}
+.developmentDots span.current{
+  background:#efb94f;
+  box-shadow:0 0 0 1px #efb94f55;
+}
+.developmentDots span.future{
+  background:#2a3547;
+}
+.developmentTrail{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.nextDevelopmentsTitle{
+  font-size:11px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.06em;
+  color:#9fb2c9;
+  margin:4px 0 7px;
+}
+.nextDevelopments{
+  display:grid;
+  gap:8px;
+}
+.nextDevelopmentCard{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:9px;
+  align-items:center;
+  padding:10px;
+  border:1px solid #3a4e6d;
+  border-radius:11px;
+  background:#17283e;
+  min-width:0;
+}
+.nextDevelopmentCard > div{
+  min-width:0;
+}
+.nextDevelopmentCard strong{
+  display:block;
+  margin:2px 0 4px;
+  overflow-wrap:anywhere;
+}
+.developmentBranch{
+  display:inline-block;
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  color:#efc66e;
+}
+.nextDevelopmentCard .btn{
+  white-space:nowrap;
+}
+
+@media(max-width:900px){
+  .searchCenterCompact .analysisPurchaseHead{
+    display:grid!important;
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  .searchCenterCompact .analysisPurchaseHead .btn{
+    width:100%;
+  }
+  .nextDevelopmentCard{
+    grid-template-columns:1fr;
+  }
+  .nextDevelopmentCard .btn{
+    width:100%;
+    white-space:normal;
+  }
+  .developmentDots{
+    gap:3px;
+  }
+}
+
+@media(max-width:520px){
+  .developmentTrack{
+    padding:7px;
+  }
+  .developmentTrail{
+    font-size:10px;
+  }
+  .searchCenterCompact{
+    padding:9px;
+  }
+}
