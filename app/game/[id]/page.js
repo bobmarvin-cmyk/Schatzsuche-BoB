@@ -17,9 +17,12 @@ export default function Game(){
 
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0),chunkSummaryRef=useRef(new Map()),chunkPayloadRef=useRef(new Map()),chunkSinceRef=useRef(null),chunkSyncPromiseRef=useRef(null)
  const assistantBusyRef=useRef(false),assistantLastStepAtRef=useRef(Date.now()),assistantPendingStepRef=useRef(null),assistantTokenRef=useRef(0)
+ const eventPopupsReadyRef=useRef(false)
 
 
  useEffect(()=>{
+  eventPopupsReadyRef.current=false
+  lastEventId.current=0
   chunkSummaryRef.current.clear()
   chunkPayloadRef.current.clear()
   chunkSinceRef.current=null
@@ -102,6 +105,7 @@ export default function Game(){
     if(eid<=lastEventId.current)return
     lastEventId.current=eid
   }
+  if(!eventPopupsReadyRef.current)return
   if(evt.event_type==='game_won'){
     winnerHandledRef.current=true
     const {data:{user:meNow}}=await supabase.auth.getUser()
@@ -395,7 +399,13 @@ export default function Game(){
 
  async function loadGameChangelog(){
   const {data,error}=await supabase.rpc('get_game_changelog_v632',{p_game_id:id,p_limit:80})
-  if(!error)setGameChangelog(Array.isArray(data)?data:[])
+  if(!error){
+    const rows=Array.isArray(data)?data:[]
+    setGameChangelog(rows)
+    const newest=rows.reduce((m,e)=>Math.max(m,Number(e?.id||0)),0)
+    lastEventId.current=Math.max(lastEventId.current,newest)
+    eventPopupsReadyRef.current=true
+  }
   return data||[]
  }
 
@@ -406,18 +416,20 @@ export default function Game(){
  }
 
  function showClueOnMap(clue){
-  const pos=cluePositions?.[String(clue.clue_no)]
-  if(!pos||pos.x===null||pos.y===null){
-    setMsg('Für diesen älteren Hinweis wurde noch kein Standort gespeichert.')
+  const fallback=cluePositions?.[String(clue.clue_no)]
+  const x=clue?.focus_x??fallback?.x
+  const y=clue?.focus_y??fallback?.y
+  if(x===null||x===undefined||y===null||y===undefined){
+    setMsg('Für diesen Hinweis ist kein Suchstandpunkt gespeichert.')
     return
   }
   setSelectedClueMarker({
-    x:Number(pos.x),
-    y:Number(pos.y),
+    x:Number(x),
+    y:Number(y),
     label:`Hinweis #${clue.clue_no}`,
     token:`clue:${clue.clue_no}:${Date.now()}`
   })
-  setMsg(`📍 Standort von Hinweis #${clue.clue_no} markiert.`)
+  setMsg(`📍 Suchstandpunkt von Hinweis #${clue.clue_no} markiert.`)
  }
 
  async function loadActiveGames(){
@@ -1123,7 +1135,7 @@ export default function Game(){
  async function buyAnalysis(){
   if(analysisBuying)return
   setAnalysisBuying(true);setMsg('Deduktionsanalyse läuft…')
-  const {data,error}=await supabase.rpc('buy_analysis_hint_v632',{p_game_id:id})
+  const {data,error}=await supabase.rpc('buy_analysis_hint_v633',{p_game_id:id})
   setAnalysisBuying(false)
   if(error){setMsg(error.message);return}
   setAnalysisHint(data)
@@ -1231,7 +1243,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.32: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.33: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%5!==0)return
   runMachines()
@@ -1247,7 +1259,8 @@ export default function Game(){
   if(Number(t.regen_reduction))effects.push(`${Math.round(Number(t.regen_reduction)*100)}% schnellere Regeneration`)
   if(Number(t.machine_auto_fields))effects.push(`${Number(t.machine_auto_fields).toLocaleString('de-DE')} virtuelle Suchfelder/Takt`)
   if(t.exclusive_per_game)effects.push('🔒 exklusiv: nur 1 Spieler pro Game')
-  if(t.trap_type)effects.push(`🪤 ${t.trap_type} · Stärke ${Number(t.trap_power||0)} · max. ${Number(t.trap_limit||0)} aktiv`)
+  if(t.trap_type==='taler')effects.push(`🪤 Talerfalle · −${Number(t.trap_power||0)}% aktueller Taler · max. ${Number(t.trap_limit||0)} aktiv`)
+  else if(t.trap_type)effects.push(`🪤 ${t.trap_type} · Stärke ${Number(t.trap_power||0)} · max. ${Number(t.trap_limit||0)} aktiv`)
   if(t.id==='ter2')effects.push('🌲 Wald freigeschaltet')
   if(t.id==='ter4')effects.push('🌊 Wasser freigeschaltet')
   if(t.id==='ter5')effects.push('🟫 Feuchtgebiete freigeschaltet')
@@ -1286,7 +1299,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.32</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.33</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1517,20 +1530,21 @@ export default function Game(){
     </div>}
 
     <details className="techTreeOverview" open>
-     <summary><span>🌳 Entwicklungsbaum</span><span className="small">{owned.length}/{technologies.length} erforscht</span></summary>
-     <div className="techTreeLanes">
-      {techProgress.map(track=><div className="techTreeLane" key={track.branch}>
-       <div className="techTreeLaneTitle"><strong>{track.branch}</strong><span>{track.completed}/{track.total}</span></div>
-       <div className="techTreeScroller">
+     <summary><span>Entwicklungsweg</span><span className="small">{owned.length}/{technologies.length}</span></summary>
+     <div className="techTreeCompact">
+      {techProgress.map(track=><div className="techBranchRow" key={track.branch}>
+       <div className="techBranchLabel">
+        <strong>{track.branch}</strong>
+        <span>{track.completed}/{track.total}</span>
+       </div>
+       <div className="techBranchPath">
         {track.items.map((t,i)=>{
-         const reqNames=(t.requires||[]).map(id=>technologies.find(x=>x.id===id)?.name||id)
          const state=has(t.id)?'done':(t.requires||[]).every(has)?'current':'future'
-         return <div className="techTreeChainItem" key={t.id}>
-          {i>0&&<span className="techTreeArrow">→</span>}
-          <div className={'techTreeNode '+state}>
-           <strong>{t.name}</strong>
-           <span>{state==='done'?'✓ erforscht':state==='current'?'jetzt möglich':'später'}</span>
-           {reqNames.length>0&&<small>nach {reqNames.join(' + ')}</small>}
+         return <div className="techStepWrap" key={t.id}>
+          {i>0&&<span className="techConnector">›</span>}
+          <div className={'techStep '+state} title={`${t.name} · ${techEffect(t)}`}>
+           <span className="techStepDot">{state==='done'?'✓':i+1}</span>
+           <span className="techStepName">{t.name}</span>
           </div>
          </div>
         })}

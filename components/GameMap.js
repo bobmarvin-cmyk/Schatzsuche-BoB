@@ -423,7 +423,7 @@ export default function GameMap({
     ctx.lineWidth=1.8
     ctx.strokeRect(bx,by,bw,bh)
 
-    // V6.32: Assistentenroute nur lokal zeichnen – kein Netzwerkverkehr.
+    // V6.33: Assistentenroute nur lokal zeichnen – kein Netzwerkverkehr.
     const route=assistantWaypointsRef.current||[]
     const pos=assistantPositionRef.current
     if(route.length){

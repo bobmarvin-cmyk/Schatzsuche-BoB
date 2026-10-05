@@ -90,7 +90,7 @@ export default function Tutorial(){
  },[])
 
  return <main className="container tutorialPage">
-  <div className="buildBadge">V6.32</div>
+  <div className="buildBadge">V6.33</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/hilfe">Hilfe</a></div>
 
   <section className="panel tutorialHero">
@@ -180,7 +180,7 @@ export default function Tutorial(){
 
     {step===2&&<div className="tutorialTechCard"><strong>Erkundung I</strong><span>mehr Felder pro Zug</span><b>3 T</b></div>}
     {step===3&&<div className="tutorialTechCard"><strong>Analyse I</strong><span>echter Richtungshinweis</span><b>2 T</b></div>}
-    {step===4&&<div className="tutorialTechCard"><strong>Talerfalle</strong><span>bleibt bis zur Auslösung aktiv</span><b>2 T je Setzen</b></div>}
+    {step===4&&<div className="tutorialTechCard"><strong>Talerfalle</strong><span>zieht beim Opfer einen prozentualen Anteil der aktuellen Taler ab</span><b>2 T je Setzen</b></div>}
     {step===5&&<div className="tutorialTechCard"><strong>Maschine</strong><span>arbeitet automatisch im Hintergrund des Spiels</span><b>simuliert</b></div>}
    </aside>
   </div>

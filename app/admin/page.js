@@ -407,7 +407,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.32</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.33</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -804,7 +804,7 @@ export default function Admin(){
   <details className="panel adminCollapsible" id="admin-tech">
    <summary><span>🧠 Technologien</span><span className="small">{techs.length} Einträge</span></summary>
    <div className="adminCollapsibleBody">
-   <p className="small">Diese Werte werden direkt vom Spiel geladen. Änderungen benötigen keinen neuen GitHub-Deploy.</p>
+   <p className="small">Diese Werte werden direkt vom Spiel geladen. Änderungen benötigen keinen neuen GitHub-Deploy. Bei Talerfallen bedeutet „Talerverlust (%)“ den prozentualen Abzug vom aktuellen Talerbestand.</p>
    <div className="adminTechList">
     {techs.map(t=><div className={'adminTech '+(!t.is_active?'disabledTech':'')} key={t.id}>
       <div className="adminTechHead">
@@ -823,7 +823,7 @@ export default function Admin(){
        <Field label="Maschinenfelder pro Takt" value={t.machine_auto_fields||0} onChange={v=>setTech(t.id,'machine_auto_fields',v)}/>
        <label className="adminCheck"><input type="checkbox" checked={!!t.exclusive_per_game} onChange={e=>setTech(t.id,'exclusive_per_game',e.target.checked)}/> Exklusiv pro Game</label>
        <Field label="Fallentyp (leer = keine)" type="text" value={t.trap_type||''} onChange={v=>setTech(t.id,'trap_type',v)}/>
-       <Field label="Fallenstärke" step="0.1" value={t.trap_power||0} onChange={v=>setTech(t.id,'trap_power',v)}/>
+       <Field label={t.trap_type==='taler'?'Talerverlust (%)':'Fallenstärke'} step="0.1" value={t.trap_power||0} onChange={v=>setTech(t.id,'trap_power',v)}/>
        <Field label="Max. aktive Fallen" value={t.trap_limit||0} onChange={v=>setTech(t.id,'trap_limit',v)}/>
        <Field label="Taler je Fallenplatzierung" step="0.1" value={t.trap_place_cost||0} onChange={v=>setTech(t.id,'trap_place_cost',v)}/>
        <Field label="Sortierung" value={t.sort_order} onChange={v=>setTech(t.id,'sort_order',v)}/>

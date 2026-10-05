@@ -2545,3 +2545,251 @@ button:disabled{cursor:not-allowed;opacity:.45}
     width:100%;
   }
 }
+
+
+/* =========================================================
+   V6.33 – UI polish: ruhiger, klarer, weniger "Kartenstapel"
+   ========================================================= */
+:root{
+  --panel-border:#26364d;
+  --panel-soft:#0e1828;
+  --panel-soft-2:#142033;
+  --text-soft:#c9d5e4;
+}
+
+body{
+  line-height:1.45;
+  letter-spacing:.002em;
+}
+
+.panel{
+  border-color:var(--panel-border);
+  box-shadow:0 10px 30px rgba(0,0,0,.10);
+}
+
+.panel h1,.panel h2,.panel h3{
+  letter-spacing:-.018em;
+}
+
+.btn{
+  border:1px solid #3b4d67;
+  background:#1a2940;
+  color:#edf3fb;
+  font-weight:750;
+  box-shadow:none;
+  transition:background .14s ease,border-color .14s ease,transform .08s ease;
+}
+.btn:hover:not(:disabled){
+  background:#223550;
+  border-color:#536b8b;
+}
+.btn:active:not(:disabled){
+  transform:translateY(1px);
+}
+.btn.primary{
+  border-color:#d6a848;
+  background:#e8b654;
+  color:#172033;
+}
+.btn.primary:hover:not(:disabled){
+  background:#f1c56a;
+  border-color:#e8bc59;
+}
+.miniBtn{
+  background:#121e30;
+  border-color:#33445f;
+  font-weight:650;
+}
+
+.card{
+  border-color:#2a3a52;
+  box-shadow:none;
+}
+
+.developmentPanel{
+  background:linear-gradient(180deg,#101a2a,#0e1726);
+}
+.developmentHead{
+  padding-bottom:8px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.nextDevelopments{
+  gap:6px;
+}
+.nextDevelopmentCard{
+  border-color:#31435b;
+  background:#121f31;
+  padding:9px 10px;
+  box-shadow:none;
+}
+.nextDevelopmentCard:hover{
+  border-color:#435b78;
+}
+.nextDevelopmentsTitle{
+  margin-top:10px;
+  color:#8296ae;
+}
+
+/* kompakter Entwicklungsbaum */
+.techTreeOverview{
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.techTreeOverview summary{
+  color:#d4deea;
+  font-weight:700;
+}
+.techTreeCompact{
+  display:grid;
+  gap:8px;
+  margin-top:9px;
+}
+.techBranchRow{
+  display:grid;
+  grid-template-columns:112px minmax(0,1fr);
+  gap:9px;
+  align-items:center;
+  min-width:0;
+}
+.techBranchLabel{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:6px;
+  min-width:0;
+}
+.techBranchLabel strong{
+  font-size:10px;
+  color:#b9c7d8;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.techBranchLabel span{
+  font-size:9px;
+  color:#7288a1;
+  white-space:nowrap;
+}
+.techBranchPath{
+  display:flex;
+  align-items:center;
+  gap:3px;
+  min-width:0;
+  overflow-x:auto;
+  padding:2px 0 4px;
+  scrollbar-width:none;
+}
+.techBranchPath::-webkit-scrollbar{display:none}
+.techStepWrap{
+  display:flex;
+  align-items:center;
+  gap:3px;
+  flex:0 0 auto;
+}
+.techConnector{
+  color:#52677f;
+  font-size:13px;
+  line-height:1;
+}
+.techStep{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  height:28px;
+  max-width:145px;
+  padding:3px 7px 3px 4px;
+  border:1px solid #2f4056;
+  border-radius:999px;
+  background:#101a29;
+  opacity:.7;
+}
+.techStepDot{
+  width:18px;
+  height:18px;
+  display:grid;
+  place-items:center;
+  flex:0 0 18px;
+  border-radius:50%;
+  font-size:8px;
+  font-weight:800;
+  background:#26364b;
+  color:#a9bbcf;
+}
+.techStepName{
+  font-size:9px;
+  line-height:1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.techStep.done{
+  opacity:.86;
+  border-color:#315747;
+  background:#10251e;
+}
+.techStep.done .techStepDot{
+  background:#285f49;
+  color:#d9f5e9;
+}
+.techStep.current{
+  opacity:1;
+  border-color:#80672f;
+  background:#251f10;
+}
+.techStep.current .techStepDot{
+  background:#a77a27;
+  color:#fff1c4;
+}
+.techStep.future{
+  opacity:.42;
+}
+
+/* Suchzentrale ruhiger */
+.searchCenterCompact{
+  border-color:#2b3d54;
+  background:#0f1928;
+}
+.searchCenterCompact .analysisHintBox{
+  background:#171f27;
+  border-color:#5d512e;
+}
+.deductionClue{
+  border-color:#2a3b51;
+  background:#111c2c;
+}
+
+/* Changelog eher Log als Kartenwand */
+.gameChangelogList{
+  gap:0;
+  border-top:1px solid rgba(255,255,255,.06);
+}
+.gameChangelogItem{
+  border:0;
+  border-bottom:1px solid rgba(255,255,255,.055);
+  border-radius:0;
+  background:transparent;
+  padding:8px 2px;
+}
+.gameChangelogMeta{
+  opacity:.82;
+}
+
+@media(max-width:700px){
+  .techBranchRow{
+    grid-template-columns:1fr;
+    gap:3px;
+  }
+  .techBranchLabel{
+    justify-content:flex-start;
+  }
+  .techBranchLabel span{
+    margin-left:auto;
+  }
+  .techStep{
+    max-width:126px;
+  }
+  .panel{
+    box-shadow:none;
+  }
+}
