@@ -84,7 +84,7 @@ export default function ArchivedGame(){
     {players.map((p,i)=><div className={'card archivePlayer '+(p.user_id===archive.winner_user_id?'winner':'')} key={p.user_id}>
       <div className="playerNameLine">
        <span className="colorDot large" style={{background:p.player_color||'#35516d'}}></span>
-       <strong><a className="profileLink" href={p.is_bot?'/bot/'+p.bot_id:'/spieler/'+p.user_id}>{p.is_bot?'🤖 ':''}{p.display_name||'Spieler'}</a></strong>
+       <strong><a className="profileLink" href={p.is_bot?'/bot/'+p.bot_id:'/spieler/'+p.user_id}>{p.avatar_emoji?`${p.avatar_emoji} `:''}{p.display_name||'Spieler'}</a></strong>
        {p.user_id===archive.winner_user_id&&<span>🏆</span>}
       </div>
       <div className="small">{Number(p.moves_used||0).toLocaleString('de-DE')} Züge · ⚙️ {Number(p.machine_ticks_used||0).toLocaleString('de-DE')} Maschinentakte · {Number(p.fields||0).toLocaleString('de-DE')} Felder · 🧩 {(Number(p.treasure_share_bps||0)/100).toFixed(2)}% Schatz · {Number(p.coins||0).toFixed(2)} Taler</div>

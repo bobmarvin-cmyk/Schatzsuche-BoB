@@ -3635,3 +3635,12 @@ body{
     text-align:left;
   }
 }
+
+/* V6.41 – Computer-Spieler optisch wie normale Spieler */
+.playerStatusCard.botPlayerCard{
+  border-color:inherit;
+  background:inherit;
+}
+.mapLegend .legendItem{
+  white-space:nowrap;
+}

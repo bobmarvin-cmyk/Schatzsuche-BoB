@@ -55,7 +55,7 @@ export default function Lobby(){
  }
 
  async function loadBotCounts(){
-   const {data,error}=await supabase.rpc('get_lobby_bot_counts_v640')
+   const {data,error}=await supabase.rpc('get_lobby_bot_counts_v641')
    if(error)return
    const next={}
    for(const row of data||[])next[String(row.game_id)]={count:Number(row.bot_count||0),blocked:!!row.bots_blocked}
@@ -261,7 +261,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.40</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.41</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -496,7 +496,7 @@ export default function Lobby(){
        {isSponsor&&<div className="payFacts sponsorFacts">
         <span>Sponsor: <b>{g.sponsor_name||'Sponsor'}</b></span><span>Teilnahme: <b>kostenlos</b></span><span>Pool: <b>{formatGold(g.gold_prize_pool_ug)}</b></span>
        </div>}
-       <div className="capacityLine"><span>👥 {count} / {g.max_players}{g.game_type==='standard'?(botInfo.blocked?' · 🚫 Bots':botCount>0?` · 🤖 ${botCount} Bots`:' · 🤖 Bots erlaubt'):''}</span><span>🟢 aktiv</span></div>
+       <div className="capacityLine"><span>👥 {Math.min(Number(g.max_players||0),count+botCount)} / {g.max_players}</span><span>🟢 aktiv</span></div>
        <div className="gameProgressLine">
         <div><span style={{width:`${Math.round(gameProgress(g)*100)}%`}}/></div>
         <small>{(gameProgress(g)*100).toFixed(1)} % erkundet</small>

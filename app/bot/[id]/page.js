@@ -18,8 +18,8 @@ export default function BotProfile(){
   setLoading(false)
  }
 
- if(loading)return <main className="container"><div className="panel">Lade Bot-Profil…</div></main>
- if(!bot)return <main className="container"><div className="panel"><h1>Bot nicht gefunden</h1><p>{msg}</p><a className="btn" href="/lobby">← Lobby</a></div></main>
+ if(loading)return <main className="container"><div className="panel">Lade Profil…</div></main>
+ if(!bot)return <main className="container"><div className="panel"><h1>Profil nicht gefunden</h1><p>{msg}</p><a className="btn" href="/lobby">← Lobby</a></div></main>
 
  const success=Number(bot.treasure_attempts||0)>0
   ?100*Number(bot.treasure_successes||0)/Number(bot.treasure_attempts||1)
@@ -31,9 +31,9 @@ export default function BotProfile(){
   <section className="panel publicProfileHero botProfileHero">
    <div className="profileAvatar avatarFallback botAvatar">{bot.avatar_emoji||'🤖'}</div>
    <div>
-    <div className="eyebrow">BOT-PROFIL</div>
+    <div className="eyebrow">SPIELERPROFIL</div>
     <h1>{bot.display_name}</h1>
-    <p className="profileBioView">Automatischer Mitspieler · Schwierigkeit: <strong>{bot.difficulty}</strong></p>
+    <p className="profileBioView">Aktiver Spieler in laufenden Schatzsuchen.</p>
    </div>
   </section>
 
@@ -46,7 +46,7 @@ export default function BotProfile(){
   </section>
 
   <section className="panel">
-   <h2>Historie</h2>
+   <h2>Spielhistorie</h2>
    <div className="botHistoryList">
     {(bot.history||[]).length===0&&<div className="muted">Noch keine Spiele.</div>}
     {(bot.history||[]).map(h=><div className="botHistoryRow" key={h.game_id}>
