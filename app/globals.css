@@ -3417,3 +3417,168 @@ body{
     width:100%;
   }
 }
+
+
+/* =========================================================
+   V6.38 – Technologie-Status + Auto-Entwicklung
+   ========================================================= */
+.technologyHeaderRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.autoDevelopToggle{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  cursor:pointer;
+  color:#9eafc3;
+  font-size:11px;
+  user-select:none;
+}
+.autoDevelopToggle input{
+  width:15px;
+  height:15px;
+  accent-color:#d3ab4b;
+}
+.autoDevelopToggle.active{
+  color:#f0cb70;
+}
+.autoDevelopToggle span{
+  white-space:nowrap;
+}
+
+.technologyBranchTitleRow strong{
+  display:flex;
+  align-items:center;
+  gap:7px;
+}
+.branchReadyDot{
+  width:9px;
+  height:9px;
+  flex:0 0 9px;
+  border-radius:50%;
+  display:inline-block;
+  background:#485970;
+  box-shadow:none;
+}
+.branchReadyDot.ready{
+  background:#56e38d;
+  box-shadow:0 0 0 3px rgba(86,227,141,.10),0 0 9px rgba(86,227,141,.85);
+  animation:techReadyPulse 1.6s ease-in-out infinite;
+}
+.branchReadyDot.idle{
+  opacity:.45;
+}
+@keyframes techReadyPulse{
+  0%,100%{transform:scale(.92);filter:brightness(.95)}
+  50%{transform:scale(1.08);filter:brightness(1.2)}
+}
+@media(max-width:700px){
+  .technologyHeaderRow{
+    align-items:flex-start;
+  }
+  .autoDevelopToggle span{
+    white-space:normal;
+  }
+}
+
+
+/* =========================================================
+   V6.39 – Bots
+   ========================================================= */
+.botPlayerCard{
+  border-color:#40536d;
+  background:linear-gradient(180deg,#132035,#101a2a);
+}
+.presenceLabel.bot{
+  color:#c8d5e6;
+  border-color:#536983;
+  background:#1a2a3f;
+}
+.botProfileHero .botAvatar{
+  font-size:42px;
+  display:grid;
+  place-items:center;
+  border:2px solid #516985;
+}
+.botHistoryList{
+  display:grid;
+  gap:7px;
+}
+.botHistoryRow{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+  padding:9px 0;
+  border-bottom:1px solid rgba(255,255,255,.06);
+}
+.botHistoryRow strong,
+.botHistoryRow span{
+  display:block;
+}
+
+.botAdminCreate{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 150px auto;
+  gap:8px;
+  align-items:end;
+}
+.botAdminList{
+  display:grid;
+  gap:8px;
+  margin-top:12px;
+}
+.botAdminRow{
+  display:grid;
+  grid-template-columns:minmax(170px,1.2fr) minmax(150px,1fr) 120px 54px auto auto;
+  gap:8px;
+  align-items:center;
+  padding:9px;
+  border:1px solid #30425b;
+  border-radius:10px;
+  background:#111d2d;
+}
+.botAdminIdentity{
+  display:flex;
+  gap:8px;
+  align-items:center;
+  min-width:0;
+}
+.botAdminIdentity span{
+  display:block;
+}
+.botAdminAvatar{
+  font-size:24px;
+}
+.botAdminRow .input{
+  margin:0;
+}
+.botColorInput{
+  padding:4px!important;
+  height:40px;
+}
+.botSeedGames{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+
+@media(max-width:900px){
+  .botAdminRow{
+    grid-template-columns:1fr 1fr;
+  }
+  .botAdminIdentity{
+    grid-column:1/-1;
+  }
+}
+@media(max-width:600px){
+  .botAdminCreate,
+  .botAdminRow,
+  .botHistoryRow{
+    grid-template-columns:1fr;
+  }
+}

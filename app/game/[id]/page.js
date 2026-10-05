@@ -13,7 +13,7 @@ export default function Game(){
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false),[claimTimeLeft,setClaimTimeLeft]=useState(null),[claimResult,setClaimResult]=useState(null),[job,setJob]=useState(null),[jobBusy,setJobBusy]=useState(false),[jobSettings,setJobSettings]=useState({bottlesSeconds:180,bottlesReward:1,scrapSeconds:900,scrapReward:7})
  const [assistantEnabled,setAssistantEnabled]=useState(false),[assistantWaypoints,setAssistantWaypoints]=useState([]),[assistantPosition,setAssistantPosition]=useState(null),[assistantNextIndex,setAssistantNextIndex]=useState(0),[assistantTarget,setAssistantTarget]=useState(null),[assistantUnlocked,setAssistantUnlocked]=useState(null),[assistantUnlockBusy,setAssistantUnlockBusy]=useState(false),[assistantRouteDone,setAssistantRouteDone]=useState(false)
- const [endgameStatus,setEndgameStatus]=useState(null),[endgameBusy,setEndgameBusy]=useState(false),[gameChangelog,setGameChangelog]=useState([]),[cluePositions,setCluePositions]=useState({}),[selectedClueMarker,setSelectedClueMarker]=useState(null)
+ const [endgameStatus,setEndgameStatus]=useState(null),[endgameBusy,setEndgameBusy]=useState(false),[gameChangelog,setGameChangelog]=useState([]),[cluePositions,setCluePositions]=useState({}),[selectedClueMarker,setSelectedClueMarker]=useState(null),[autoDevelopEnabled,setAutoDevelopEnabled]=useState(false),[autoDevelopBusy,setAutoDevelopBusy]=useState(false),[botPlayers,setBotPlayers]=useState([])
 
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0),chunkSummaryRef=useRef(new Map()),chunkPayloadRef=useRef(new Map()),chunkSinceRef=useRef(null),chunkSyncPromiseRef=useRef(null)
  const assistantBusyRef=useRef(false),assistantLastStepAtRef=useRef(Date.now()),assistantPendingStepRef=useRef(null),assistantTokenRef=useRef(0)
@@ -267,7 +267,7 @@ export default function Game(){
  }
 
  async function loadPlayersOnly(){
-  const {data}=await supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,fields_revealed,assistant_unlocked,endgame_reveal_buys,endgame_machine_buys,endgame_reveal_power_bonus,endgame_machine_power_bonus,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at')
+  const {data}=await supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,fields_revealed,assistant_unlocked,endgame_reveal_buys,endgame_machine_buys,endgame_reveal_power_bonus,endgame_machine_power_bonus,auto_develop_enabled,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at')
   if(data)setPlayers(data)
  }
  async function loadGameOnly(){
@@ -301,6 +301,23 @@ export default function Game(){
   if(error){setMsg(error.message);return}
   setMsg(data?.message||'Endgame-Ausbau gekauft.')
   await Promise.all([loadPlayersOnly(),loadEndgameStatus()])
+ }
+
+ async function loadGameBots(){
+  const {data,error}=await supabase.rpc('get_game_bots_v639',{p_game_id:id})
+  if(!error)setBotPlayers(Array.isArray(data)?data:[])
+  return data||[]
+ }
+
+ async function runBots(){
+  if(document.visibilityState!=='visible')return
+  const {data,error}=await supabase.rpc('run_bot_game_tick_v639',{p_game_id:id})
+  if(error)return
+  if(Number(data?.actions||0)>0||Number(data?.opened||0)>0){
+    await loadGameBots()
+    if(currentViewport.current)scheduleVisibleReload(180)
+    setTimeout(()=>pollLiveState(),250)
+  }
  }
 
  async function loadCompetition(){
@@ -513,7 +530,7 @@ export default function Game(){
       scrapSeconds:Number(ps.data?.job_scrap_duration_seconds||900),
       scrapReward:Number(ps.data?.job_scrap_reward_taler||7)
     })
-    loadActiveGames();loadOwnTraps();loadCompetition();loadPendingClaim();loadAnalysisClues();loadCluePositions();loadGameChangelog();loadJob();loadEndgameStatus()
+    loadActiveGames();loadOwnTraps();loadCompetition();loadGameBots();loadPendingClaim();loadAnalysisClues();loadCluePositions();loadGameChangelog();loadJob();loadEndgameStatus()
   }catch(err){
     setMsg('Fehler beim Laden der Karte: '+(err?.message||String(err)))
   }
@@ -1156,6 +1173,33 @@ export default function Game(){
   await Promise.all([loadPlayersOnly(),loadOwnedOnly()]); await loadEndgameStatus()
  }
 
+ async function toggleAutoDevelop(){
+  if(autoDevelopBusy)return
+  setAutoDevelopBusy(true)
+  const next=!autoDevelopEnabled
+  const {data,error}=await supabase.rpc('set_auto_develop_v638',{p_game_id:id,p_enabled:next})
+  setAutoDevelopBusy(false)
+  if(error){setMsg(error.message);return}
+  setAutoDevelopEnabled(next)
+  setMsg(data?.message||(next?'⚙️ Automatisch entwickeln aktiviert.':'⚙️ Automatisch entwickeln deaktiviert.'))
+  await loadPlayersOnly()
+ }
+
+ async function runAutoDevelop(){
+  if(autoDevelopBusy||!autoDevelopEnabled||document.visibilityState!=='visible')return
+  setAutoDevelopBusy(true)
+  const {data,error}=await supabase.rpc('run_auto_develop_v638',{p_game_id:id})
+  setAutoDevelopBusy(false)
+  if(error){
+    setMsg('Auto-Entwicklung: '+error.message)
+    return
+  }
+  if(data?.purchased){
+    setMsg(data.message||'⚙️ Technologie automatisch erforscht.')
+    await Promise.all([loadPlayersOnly(),loadOwnedOnly(),loadEndgameStatus()])
+  }
+ }
+
  const me=players.find(p=>p.user_id===user?.id)
  useEffect(()=>{
   if(!me)return
@@ -1165,6 +1209,10 @@ export default function Game(){
     setAssistantUnlocked(prev=>prev===true?true:false)
   }
  },[me?.user_id,me?.assistant_unlocked])
+ useEffect(()=>{
+  if(!me)return
+  setAutoDevelopEnabled(!!me.auto_develop_enabled)
+ },[me?.user_id,me?.auto_develop_enabled])
  const currentAnalysisCost=analysisPrices[Math.min(6,Math.max(1,Number(me?.analysis_level||1)))]||0
  const left=game?Math.max(0,Number(game.width)*Number(game.height)-Number(game.explored_count||0)):0
  const startAtMs=game?.start_at?new Date(game.start_at).getTime():0
@@ -1191,10 +1239,10 @@ export default function Game(){
    const completed=items.filter(t=>has(t.id)).length
    return {branch:b,items,completed,total:items.length}
  })
- const currentTechChoices=technologies
+ const allCurrentTechChoices=technologies
    .filter(t=>!has(t.id)&&(t.requires||[]).every(has))
    .sort((a,b)=>Number(a.sort_order||0)-Number(b.sort_order||0))
-   .slice(0,3)
+ const currentTechChoices=allCurrentTechChoices.slice(0,3)
  const activeTrack=techProgress.find(t=>t.branch===activeBranch)||{branch:activeBranch,items:[],completed:0,total:0}
  const activeTrackChoices=currentTechChoices.filter(t=>t.branch===activeBranch)
  const visibleTechChoices=activeTrackChoices.length?activeTrackChoices:currentTechChoices
@@ -1263,11 +1311,25 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.37: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.39.1: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%5!==0)return
   runMachines()
  },[tick,joinState,machinePower])
+
+ useEffect(()=>{
+  if(joinState!=='joined'||!autoDevelopEnabled||endgameStatus?.ready)return
+  if(document.visibilityState!=='visible')return
+  if(tick%5!==0)return
+  runAutoDevelop()
+ },[tick,joinState,autoDevelopEnabled,endgameStatus?.ready])
+
+ useEffect(()=>{
+  if(joinState!=='joined'||botPlayers.length===0)return
+  if(document.visibilityState!=='visible')return
+  if(tick%15!==0)return
+  runBots()
+ },[tick,joinState,botPlayers.length])
 
  function techEffect(t){
   const effects=[]
@@ -1295,7 +1357,20 @@ export default function Game(){
   ['fields_revealed','🗺️ Felder'],
   ['treasure_share_bps','🧩 Schatz']
  ]
- const ranked=[...competition].sort((a,b)=>Number(b?.[rankMetric]||0)-Number(a?.[rankMetric]||0))
+ const competitionWithBots=[
+  ...competition,
+  ...botPlayers.map(b=>({
+    user_id:'bot:'+b.bot_id,
+    bot_id:b.bot_id,
+    is_bot:true,
+    display_name:b.display_name,
+    coins:b.coins,
+    fields_revealed:b.fields_revealed,
+    treasure_share_bps:b.treasure_share_bps,
+    tech_count:b.tech_count
+  }))
+ ]
+ const ranked=[...competitionWithBots].sort((a,b)=>Number(b?.[rankMetric]||0)-Number(a?.[rankMetric]||0))
  function rankValue(r){
    if(rankMetric==='coins')return Number(r.coins||0).toFixed(2)+' T'
    if(rankMetric==='treasure_share_bps')return (Number(r.treasure_share_bps||0)/100).toFixed(2)+'%'
@@ -1319,7 +1394,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.37</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.39.1</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1418,7 +1493,7 @@ export default function Game(){
       <span>Alle Wegpunkte wurden abgearbeitet. Die Route bleibt gespeichert.</span>
       <button className="miniBtn" onClick={repeatAssistantRoute}>🔁 Noch einmal abfahren</button>
      </div>}
-     <div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} disabled={assistantEnabled} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name} · {Number(t.trap_place_cost||0).toFixed(1)} T</button>)}{trapMode&&<button className="miniBtn trapCancelBtn" onClick={()=>setTrapMode(null)}>✕ Fallenmodus beenden</button>}</>}</div><GameMap game={game} mapChunks={mapChunks} mapRenderMode={mapRenderMode} players={players} onReveal={reveal} onTerrainReveal={terrainReveal} onTerrainBatch={cacheTerrainBatch} terrainScanPower={Number(me?.reveal_power||1)+Number(me?.gimmick_reveal_bonus_pending||0)} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}
+     <div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} disabled={assistantEnabled} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name} · {Number(t.trap_place_cost||0).toFixed(1)} T</button>)}{trapMode&&<button className="miniBtn trapCancelBtn" onClick={()=>setTrapMode(null)}>✕ Fallenmodus beenden</button>}</>}</div><GameMap game={game} mapChunks={mapChunks} mapRenderMode={mapRenderMode} players={[...players,...botPlayers.map(b=>({user_id:'bot:'+b.bot_id,player_color:b.player_color,display_name:b.display_name,is_bot:true}))]} onReveal={reveal} onTerrainReveal={terrainReveal} onTerrainBatch={cacheTerrainBatch} terrainScanPower={Number(me?.reveal_power||1)+Number(me?.gimmick_reveal_bonus_pending||0)} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}
       waypointMode={assistantEnabled}
       onWaypoint={addAssistantWaypoint}
       assistantWaypoints={assistantWaypoints}
@@ -1506,18 +1581,25 @@ export default function Game(){
    </section>
 
    <aside className="panel developmentPanel">
-    <div className="developmentHead">
+    <div className="developmentHead technologyHeaderRow">
      <h2>🧠 Technologien</h2>
+     <label className={'autoDevelopToggle '+(autoDevelopEnabled?'active':'')}>
+      <input type="checkbox" checked={autoDevelopEnabled} disabled={autoDevelopBusy||endgameStatus?.ready}
+       onChange={toggleAutoDevelop}/>
+      <span>⚙️ automatisch entwickeln</span>
+     </label>
     </div>
 
     {!endgameStatus?.ready&&<div className="technologyBranchStack compactCategories">
      {techProgress.map(track=>{
-      const branchChoices=currentTechChoices.filter(t=>t.branch===track.branch).slice(0,2)
+      const branchAllChoices=allCurrentTechChoices.filter(t=>t.branch===track.branch)
+      const branchChoices=branchAllChoices.slice(0,2)
+      const branchCanBuy=branchAllChoices.some(t=>Number(me?.coins||0)>=Number(t.cost))
       return <details className="technologyBranchSection compactBranch" key={track.branch}>
        <summary className="technologyBranchSummary">
         <div className="technologyBranchSummaryMain">
          <div className="technologyBranchTitleRow">
-          <strong>{track.branch}</strong>
+          <strong><i className={'branchReadyDot '+(branchCanBuy?'ready':'idle')} title={branchCanBuy?'Technologie jetzt bezahlbar':'Aktuell nichts bezahlbar'}></i>{track.branch}</strong>
           <span>{track.completed}/{track.total}</span>
          </div>
          <div className="technologyBranchProgress">
@@ -1615,23 +1697,29 @@ export default function Game(){
   </details>
 
   <details className="panel ingameRanking" open={rankOpen} onToggle={e=>setRankOpen(e.currentTarget.open)}>
-   <summary><span>🏁 Ingame-Ranking</span><span className="small">{competition.length} Spieler</span></summary>
+   <summary><span>🏁 Ingame-Ranking</span><span className="small">{competitionWithBots.length} Teilnehmer</span></summary>
    <div className="rankingBody">
     <div className="rankingTabs">{rankTabs.map(t=><button key={t[0]} className={'miniBtn '+(rankMetric===t[0]?'active':'')} onClick={()=>setRankMetric(t[0])}>{t[1]}</button>)}</div>
     <div className="rankingList">
      {ranked.map((r,i)=><div className={'rankingRow '+(r.user_id===user?.id?'me':'')} key={r.user_id}>
       <span>{i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</span>
-      <strong>{r.display_name||'Spieler'} {onlineIds.includes(r.user_id)&&<span className="onlineDot" title="online">●</span>}</strong>
+      <strong>{r.is_bot?<a className="profileLink" href={'/bot/'+r.bot_id}>🤖 {r.display_name||'Bot'}</a>:<>{r.display_name||'Spieler'} {onlineIds.includes(r.user_id)&&<span className="onlineDot" title="online">●</span>}</>}</strong>
       <b>{rankValue(r)}</b>
      </div>)}
     </div>
    </div>
   </details>
 
-  <div className="panel"><h2>Spieler</h2><div className="grid">{players.map(p=><div className={'card playerStatusCard '+(onlineIds.includes(p.user_id)?'online':'offline')} key={p.user_id}>
-   <div className="playerNameLine"><span className="colorDot large" style={{background:p.player_color||'#35516d'}}></span><strong><a className="profileLink" href={'/spieler/'+p.user_id}>{p.profiles?.display_name||'Spieler'}</a></strong><span className={'presenceLabel '+(onlineIds.includes(p.user_id)?'online':'')}>{onlineIds.includes(p.user_id)?'● online':'offline'}</span></div>
-   <div className="small">{Number(p.coins).toFixed(2)} T · {p.moves_left} gespeicherte Züge · {p.reveal_power} Felder/Zug · 🗺️ {Number(p.fields_revealed||0).toLocaleString('de-DE')} Felder · 🧩 {(Number(p.treasure_share_bps||0)/100).toFixed(2)}%</div>
-  </div>)}</div></div>
+  <div className="panel"><h2>Teilnehmer</h2><div className="grid">
+   {players.map(p=><div className={'card playerStatusCard '+(onlineIds.includes(p.user_id)?'online':'offline')} key={p.user_id}>
+    <div className="playerNameLine"><span className="colorDot large" style={{background:p.player_color||'#35516d'}}></span><strong><a className="profileLink" href={'/spieler/'+p.user_id}>{p.profiles?.display_name||'Spieler'}</a></strong><span className={'presenceLabel '+(onlineIds.includes(p.user_id)?'online':'')}>{onlineIds.includes(p.user_id)?'● online':'offline'}</span></div>
+    <div className="small">{Number(p.coins).toFixed(2)} T · {p.moves_left} gespeicherte Züge · {p.reveal_power} Felder/Zug · 🗺️ {Number(p.fields_revealed||0).toLocaleString('de-DE')} Felder · 🧩 {(Number(p.treasure_share_bps||0)/100).toFixed(2)}%</div>
+   </div>)}
+   {botPlayers.map(b=><div className="card playerStatusCard botPlayerCard" key={'bot-'+b.bot_id}>
+    <div className="playerNameLine"><span className="colorDot large" style={{background:b.player_color||'#6f86a8'}}></span><strong><a className="profileLink" href={'/bot/'+b.bot_id}>🤖 {b.display_name||'Bot'}</a></strong><span className="presenceLabel bot">Bot</span></div>
+    <div className="small">{Number(b.coins||0).toFixed(2)} T · {Number(b.reveal_power||1)} Felder/Aktion · 🗺️ {Number(b.fields_revealed||0).toLocaleString('de-DE')} Felder · 🧠 {Number(b.tech_count||0)} Techs · 🧩 {(Number(b.treasure_share_bps||0)/100).toFixed(2)}%</div>
+   </div>)}
+  </div></div>
   {game&&user&&<GameChat gameId={id} userId={user.id}/>}
 
   {claimResult&&!claimResult.passed&&<div className="claimOverlay" role="dialog" aria-modal="true">

@@ -32,6 +32,8 @@ export default function Lobby(){
  const [sortDir,setSortDir]=useState('desc')
  const [gameFilter,setGameFilter]=useState('all')
  const [news,setNews]=useState([])
+ const [joinedGameIds,setJoinedGameIds]=useState(new Set())
+ const [botCounts,setBotCounts]=useState({})
 
  useEffect(()=>{
    setName(creativeGameName(namePool))
@@ -47,8 +49,22 @@ export default function Lobby(){
    await supabase.rpc('run_game_maintenance_v66')
    const {data:adminFlag}=await supabase.rpc('is_admin_v67')
    setIsAdmin(!!adminFlag)
-   await Promise.all([loadGames(),loadWallet(),loadSettings(),loadNamePool(),loadNews()])
+   await Promise.all([loadGames(),loadWallet(),loadSettings(),loadNamePool(),loadNews(),loadJoinedGames(),loadBotCounts()])
    setAuthReady(true)
+ }
+
+ async function loadBotCounts(){
+   const {data,error}=await supabase.rpc('get_lobby_bot_counts_v639')
+   if(error)return
+   const next={}
+   for(const row of data||[])next[String(row.game_id)]=Number(row.bot_count||0)
+   setBotCounts(next)
+ }
+
+ async function loadJoinedGames(){
+   const {data,error}=await supabase.rpc('my_active_games_v613')
+   if(error)return
+   setJoinedGameIds(new Set((data||[]).map(x=>String(x.game_id))))
  }
 
  async function loadNews(){
@@ -170,7 +186,7 @@ export default function Lobby(){
    const fn=g.game_type==='pay'?'join_paygame_v65':'join_game_v64'
    const {error}=await supabase.rpc(fn,{p_game_id:g.id,p_password:null})
    if(error){setMsg(error.message);return}
-   await loadWallet()
+   await Promise.all([loadWallet(),loadJoinedGames()])
    location.href='/game/'+g.id
  }
 
@@ -234,7 +250,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.33</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.39.1</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -450,6 +466,7 @@ export default function Lobby(){
     {visibleActiveGames.length===0&&<div className="muted">Für diesen Filter sind momentan keine Spiele verfügbar.</div>}
     {visibleActiveGames.map(g=>{
       const count=Number(g.player_count||0)
+      const botCount=Number(botCounts[String(g.id)]||0)
       const isPay=g.game_type==='pay'
       const isSponsor=g.game_type==='sponsor'
       return <div className={'card '+(isPay?'payGameCard':isSponsor?'sponsorGameCard':'')} key={g.id}>
@@ -463,14 +480,23 @@ export default function Lobby(){
        {isSponsor&&<div className="payFacts sponsorFacts">
         <span>Sponsor: <b>{g.sponsor_name||'Sponsor'}</b></span><span>Teilnahme: <b>kostenlos</b></span><span>Pool: <b>{formatGold(g.gold_prize_pool_ug)}</b></span>
        </div>}
-       <div className="capacityLine"><span>👥 {count} / {g.max_players}</span><span>🟢 aktiv</span></div>
+       <div className="capacityLine"><span>👥 {count} / {g.max_players}{botCount>0?` · 🤖 ${botCount} Bots`:''}</span><span>🟢 aktiv</span></div>
        <div className="gameProgressLine">
         <div><span style={{width:`${Math.round(gameProgress(g)*100)}%`}}/></div>
         <small>{(gameProgress(g)*100).toFixed(1)} % erkundet</small>
        </div>
-       <button className={'btn '+(isPay?'goldBtn':'primary')+' wideOnMobile'} disabled={count>=g.max_players} onClick={()=>joinPublic(g)}>
-        {count>=g.max_players?'Voll':isPay?`Beitreten · ${formatGold(g.entry_gold_ug)}`:isSponsor?'Kostenlos teilnehmen':'Beitreten'}
-       </button>
+       {(()=>{
+        const alreadyJoined=joinedGameIds.has(String(g.id))
+        return <button className={'btn '+(isPay?'goldBtn':'primary')+' wideOnMobile'} disabled={!alreadyJoined&&count>=g.max_players} onClick={()=>joinPublic(g)}>
+         {alreadyJoined
+          ?'Weiterspielen'
+          :count>=g.max_players
+            ?'Voll'
+            :isPay
+              ?`Beitreten · einmalig ${formatGold(g.entry_gold_ug)}`
+              :isSponsor?'Kostenlos teilnehmen':'Beitreten'}
+        </button>
+       })()}
       </div>
     })}
    </div>

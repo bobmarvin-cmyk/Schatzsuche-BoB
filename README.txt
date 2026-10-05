@@ -1,22 +1,21 @@
-SCHATZSUCHE ONLINE V6.37
+SCHATZSUCHE ONLINE V6.39.1
 
-TECHNOLOGIEN KOMPAKTER
+SECURITY-HOTFIX VOR INSTALLATION
 
-Standardansicht pro Technologie-Kategorie:
-- Kategoriename
-- Fortschritt x/y
-- schmaler Entwicklungsbalken
-- maximal 1–2 aktuell mögliche Entwicklungen
+Diese Version ersetzt V6.39, falls V6.39 noch NICHT ausgeführt wurde.
 
-Erst nach Klick auf die Kategorie:
-- kompletter Technologie-Zweig klappt auf
-- bereits erforschte, aktuelle und spätere Technologien sichtbar
-- Voraussetzungen und Kosten sichtbar
-- direktes Erforschen weiterhin möglich
+- Enthält weiterhin V6.38 Auto-Entwicklung + V6.39 Bots.
+- Alle neuen Bot-/Bot-Historie-/Bot-Map-/Bot-Archivtabellen haben jetzt explizit RLS aktiviert.
+- anon und authenticated erhalten keinen direkten Tabellenzugriff.
+- Zugriff erfolgt ausschließlich über die vorgesehenen SECURITY DEFINER RPCs.
+- Dadurch ist die Supabase-RLS-Warnung fachlich behoben.
 
-Vorteil:
-- deutlich weniger Scrollen
-- alle Kategorien gleichzeitig schnell erfassbar
-- voller Baum nur bei Bedarf sichtbar
+INSTALLATION AB PRODUKTIVSTAND V6.33:
+1. NUR supabase/v6_39_migration.sql EINMAL ausführen.
+2. NICHT zusätzlich v6_38_migration.sql ausführen.
+3. Danach V6.39.1 deployen.
 
-Kein neues SQL nötig, wenn V6.33 bereits installiert ist.
+Hinweis:
+Supabase kann weiterhin vor „destructive operations“ warnen, weil die Migration
+bestehende Trigger/Funktionen mit DROP TRIGGER / CREATE OR REPLACE aktualisiert.
+Das ist für dieses Update beabsichtigt; es werden dabei keine Spieltabellen gelöscht.
