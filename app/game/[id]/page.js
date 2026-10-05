@@ -359,7 +359,7 @@ export default function Game(){
   if(document.visibilityState!=='visible'||botTickBusyRef.current)return
   botTickBusyRef.current=true
   try{
-    const {data,error}=await supabase.rpc('run_bot_game_tick_v6521',{
+    const {data,error}=await supabase.rpc('run_bot_simulation_v653',{
       p_game_id:id,
       p_active_humans:Math.max(1,onlineIds.length)
     })
@@ -371,7 +371,7 @@ export default function Game(){
     }
 
     const changed=
-      Number(data?.moves_used||0)>0||
+      Number(data?.moves||0)>0||
       Number(data?.opened||0)>0||
       Number(data?.parts_found||0)>0||
       !!data?.game_over
@@ -959,6 +959,7 @@ export default function Game(){
       : p
     ))
     await loadPlayersOnly()
+    setTimeout(()=>runBots(),120)
     if(data?.game_over){
       await loadWinnerFromServer()
     }
@@ -1375,7 +1376,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.52.1: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.53: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%2!==0)return
   runMachines()
@@ -1389,10 +1390,11 @@ export default function Game(){
  },[tick,joinState,autoDevelopEnabled,endgameStatus?.ready])
 
  useEffect(()=>{
-  if(joinState!=='joined'||botPlayers.length===0)return
+  if(joinState!=='joined')return
   if(document.visibilityState!=='visible')return
+  if(tick%2!==0)return
   runBots()
- },[tick,joinState,botPlayers.length])
+ },[tick,joinState])
 
  function techEffect(t){
   const effects=[]
@@ -1469,7 +1471,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.52.1</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.53</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>

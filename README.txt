@@ -1,30 +1,39 @@
-SCHATZSUCHE ONLINE V6.52.1
+SCHATZSUCHE ONLINE V6.53
 
-URSACHE DES ZEITLUPEN-EFFEKTS
-Der Bulk-Executor funktionierte. Neue Bots starteten aber praktisch nur mit einem
-einzigen Zug und mussten danach auf normale Regeneration warten. Deshalb erschien
-oft erst sehr spät genau ein Feld.
+WARUM DIESER UMBAU
+Die bisherigen Bot-Versionen waren zu stark an moves_left, last_regen_at und Client-Ticks gekoppelt.
+Dadurch konnten Bots sichtbar im Spiel sein, aber praktisch trotzdem stehenbleiben.
 
-FIX
-- neue Bots starten mit dem normalen Zugspeicher der Runde
-- bestehende aktive Bots werden beim Update einmalig auf diesen Speicher aufgefüllt
-- danach gelten normale Zugzeiten und Technologieboni
-- keine künstlichen Gratiszüge pro Sekunde
-- V6.52-Bulk-Suche bleibt erhalten
+V6.53
+- Bots besitzen weiterhin ihre Profile, Taler, Techs, Reveal-Power und Schatzanteile.
+- Ihre Aktivität hängt aber NICHT mehr von moves_left ab.
+- Stattdessen gilt:
+  vergangene Zeit / effektive Zugzeit = virtuelle Bot-Züge.
+- Neue Bots erhalten sofort einen vollen virtuellen Startspeicher.
+- Während ein echter Spieler das Spiel offen hat, wird die Simulation alle 2 Sekunden angestoßen.
+- Bei mehreren Spielern verhindert ein PostgreSQL Advisory Lock doppelte Bot-Züge.
+
+AKTIV
+- Aktiv-Leistung 100 % = normales Spieltempo.
+- Optional kann die Leistung in der Schaltzentrale erhöht oder reduziert werden.
+- Alle fälligen virtuellen Züge werden in einer gemeinsamen Feldoperation verarbeitet.
+
+LEERES SPIEL
+- Minuten-Cron bleibt bestehen.
+- Dort gilt der Sparmodus-Prozentsatz.
 
 DIAGNOSE
-In der Schaltzentrale gibt es jetzt „Laufzeit-Diagnose“:
-- Züge
+Schaltzentrale zeigt:
+- fällige virtuelle Züge
+- letzter Simulationslauf
+- Felder im letzten Lauf
 - Reveal-Power
-- Felder
+- Felder gesamt
 - Techs
 - Taler
-- letzter Erfolg
+- Zahl der Simulationsläufe
 - letzter Fehler
 
-Damit lässt sich sofort unterscheiden:
-kein Zug / kein Erfolg / SQL-Fehler / zu geringe Power.
-
 INSTALLATION
-1. supabase/v6_52_1_migration.sql EINMAL ausführen.
-2. V6.52.1 deployen.
+1. supabase/v6_53_migration.sql EINMAL ausführen.
+2. V6.53 deployen.
