@@ -311,7 +311,7 @@ export default function Game(){
 
  async function runBots(){
   if(document.visibilityState!=='visible')return
-  const {data,error}=await supabase.rpc('run_bot_game_tick_v642',{p_game_id:id})
+  const {data,error}=await supabase.rpc('run_bot_game_tick_v643',{p_game_id:id})
   if(error){setMsg('Spieler-Automatik: '+error.message);return}
   if(data?.reason==='error'&&data?.error){setMsg('Spieler-Automatik: '+data.error);return}
   if(Number(data?.errors||0)>0&&Number(data?.opened||0)===0){
@@ -1315,9 +1315,9 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.42: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.43: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
-  if(tick%5!==0)return
+  if(tick%2!==0)return
   runMachines()
  },[tick,joinState,machinePower])
 
@@ -1375,6 +1375,16 @@ export default function Game(){
     tech_count:b.tech_count
   }))
  ]
+ const isTutorial=!!game?.is_tutorial
+ const ownFields=Number(me?.fields_revealed||0)
+ const tutorialStep=ownFields<1?0:owned.length<1?1:analysisClues.length<1?2:ownFields<8?3:4
+ const tutorialHints=[
+  {title:'Karte ausprobieren',text:'Klicke auf ein unbekanntes Rasterfeld. Damit verbrauchst du einen Zug und erhältst für leere Felder Taler.'},
+  {title:'Technologie erforschen',text:'Du hast gesucht und Taler gesammelt. Öffne „Technologien“ und erforsche eine bezahlbare Entwicklung. Der grüne Punkt zeigt dir, wo etwas möglich ist.'},
+  {title:'Analyse testen',text:'Setze einen Suchpunkt und kaufe anschließend einen Analysehinweis. Hinweise helfen dir, den Schatz systematisch einzugrenzen.'},
+  {title:'Mitspieler beobachten',text:'Schau auf Karte, Teilnehmer und Ranking: Die anderen Spieler suchen gleichzeitig. Namen kannst du überall anklicken und ihr Profil öffnen.'},
+  {title:'Jetzt frei spielen',text:'Du kennst die wichtigsten Elemente. Suche weiter, entwickle Technologien und versuche, den Schatz vor den anderen zu sichern.'}
+ ]
  const ranked=[...competitionWithBots].sort((a,b)=>Number(b?.[rankMetric]||0)-Number(a?.[rankMetric]||0))
  function rankValue(r){
    if(rankMetric==='coins')return Number(r.coins||0).toFixed(2)+' T'
@@ -1399,7 +1409,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.42</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.43</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1475,8 +1485,8 @@ export default function Game(){
    <section className="panel gameMapPanel">
     <div className="mapHeader"><div><h2>{game?.name||'Schatzsuche'}{game?.center_label?` · ${game.center_label}`:''}</h2><div className="small">{assistantEnabled?'Assistent aktiv: Kartenklick setzt Wegpunkte. Normales Aufdecken ist pausiert.':'Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.'}</div></div>
      <div className="mapLegend">
-      {players.map(p=><div className={'legendItem '+(onlineIds.includes(p.user_id)?'online':'offline')} key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.profiles?.display_name||'Spieler'}{onlineIds.includes(p.user_id)&&<span className="onlineDot" title="online">●</span>}</div>)}
-      {botPlayers.map(b=><div className="legendItem online" key={'legend-'+b.bot_id}><span className="colorDot" style={{background:b.player_color||'#35516d'}}></span>{b.avatar_emoji||'🙂'} {b.display_name||'Spieler'}<span className="onlineDot" title="online">●</span></div>)}
+      {players.map(p=><div className={'legendItem '+(onlineIds.includes(p.user_id)?'online':'offline')} key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span><a className="profileLink" href={'/spieler/'+p.user_id}>{p.profiles?.display_name||'Spieler'}</a>{onlineIds.includes(p.user_id)&&<span className="onlineDot" title="online">●</span>}</div>)}
+      {botPlayers.map(b=><div className="legendItem online" key={'legend-'+b.bot_id}><span className="colorDot" style={{background:b.player_color||'#35516d'}}></span><a className="profileLink" href={'/bot/'+b.bot_id}>{b.avatar_emoji||'🙂'} {b.display_name||'Spieler'}</a><span className="onlineDot" title="online">●</span></div>)}
      </div>
     </div>
     {game&&<>
@@ -1730,6 +1740,17 @@ export default function Game(){
     <div className="small">{Number(b.coins||0).toFixed(2)} T · {Number(b.moves_left||1)} gespeicherte Züge · {Number(b.reveal_power||1)} Felder/Zug · 🗺️ {Number(b.fields_revealed||0).toLocaleString('de-DE')} Felder · 🧩 {(Number(b.treasure_share_bps||0)/100).toFixed(2)}%</div>
    </div>)}
   </div></div>
+  {isTutorial&&<aside className="tutorialLiveCoach">
+   <div className="tutorialCoachProgress">🎓 Tutorial · {tutorialStep+1}/5</div>
+   <strong>{tutorialHints[tutorialStep].title}</strong>
+   <p>{tutorialHints[tutorialStep].text}</p>
+   <div className="tutorialCoachMini">
+    <span>🗺️ {ownFields} Felder</span>
+    <span>🧠 {owned.length} Techs</span>
+    <span>🧭 {analysisClues.length} Hinweise</span>
+   </div>
+   {tutorialStep===4&&<a className="miniBtn" href="/lobby">Tutorial verlassen</a>}
+  </aside>}
   {game&&user&&<GameChat gameId={id} userId={user.id}/>}
 
   {claimResult&&!claimResult.passed&&<div className="claimOverlay" role="dialog" aria-modal="true">

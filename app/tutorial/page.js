@@ -1,208 +1,100 @@
 'use client'
-import {useEffect,useMemo,useRef,useState} from 'react'
-
-const modes=[
- {id:'standard',icon:'🧭',name:'Schatzsuche',text:'Klassisches Spiel ohne Gold-Einsatz. Taler, Technologien, Hinweise, Maschinen und Fallen entscheiden über deine Strategie.'},
- {id:'pay',icon:'✨',name:'Goldsuche',text:'Teilnehmer zahlen Goldstaub-Einsatz. Die Spielmechanik bleibt gleich, aber Gold wird nach den serverseitigen Regeln verteilt.'},
- {id:'sponsor',icon:'🤝',name:'Sponsorspiel',text:'Für Spieler kostenlos. Der Sponsor stiftet den Gold-Pool. Der Schatz wird erst nach bestandener Schatzsicherung endgültig gewonnen.'}
-]
-
-const steps=[
- {title:'Spielmodus verstehen',text:'Wähle zuerst einen Spielmodus. Die Suche selbst funktioniert in allen Modi ähnlich – Unterschiede gibt es vor allem bei Gold und Teilnahme.',action:'Weiter'},
- {title:'Felder gezielt erkunden',text:'Tippe auf dunkle Felder. Aufgedeckte Felder bleiben sichtbar. Im echten Spiel können Technologien mehrere Felder pro Zug öffnen.',action:'2 Felder öffnen'},
- {title:'Taler verdienen & investieren',text:'Leere Felder bringen Taler. Damit kaufst du Technologien. Im Testspiel schaltest du jetzt Erkundung I frei.',action:'Erkundung I kaufen'},
- {title:'Hinweise statt blindem Glück',text:'Nach einer manuellen Suche kannst du einen Analysehinweis kaufen. Hinweise liefern feste Informationen, die du kombinierst.',action:'Analyse kaufen'},
- {title:'Fallen einsetzen',text:'Fallen dürfen auf unbekannte Felder. Sie bleiben aktiv, bis sie ausgelöst werden. Jede neue Platzierung kostet Taler.',action:'Falle für 2 T setzen'},
- {title:'Maschinen verstehen',text:'Maschinen arbeiten automatisch weiter, solange das Spiel aktiv ist. Sie sind Werkzeuge – die Karte bleibt serverautoritativ.',action:'Maschine simulieren'},
- {title:'Schatzteil entdecken',text:'Mehrere Schatzteile können zusammen den Gesamtschatz bilden. Dein Anteil entscheidet am Ende über die Wertung.',action:'Schatzteil suchen'},
- {title:'Schatzsicherung',text:'Ein Fund ist noch nicht endgültig. Merke dir die Symbolfolge und bestätige sie. Im echten Spiel läuft dabei ein sichtbarer Timer.',action:'Schatz sichern'},
- {title:'Wertung & Abschluss',text:'Geschafft. Ranking, Schatzanteil und Spielmodus greifen jetzt zusammen. Du kannst das Tutorial wiederholen oder direkt in die Lobby wechseln.',action:'Fertig'}
-]
+import {useEffect,useState} from 'react'
+import {supabase} from '../../lib/supabase-browser'
 
 export default function Tutorial(){
- const tutorialMapHolder=useRef(null),tutorialMapRef=useRef(null)
- const [step,setStep]=useState(0)
- const [mode,setMode]=useState('standard')
- const [revealed,setRevealed]=useState([12])
- const [taler,setTaler]=useState(8)
- const [tech,setTech]=useState(false)
- const [analysis,setAnalysis]=useState(false)
- const [trap,setTrap]=useState(null)
- const [machineCells,setMachineCells]=useState([])
- const [treasureFound,setTreasureFound]=useState(false)
- const [claimStarted,setClaimStarted]=useState(false)
- const [claimInput,setClaimInput]=useState('')
- const [claimPassed,setClaimPassed]=useState(false)
- const [ranking,setRanking]=useState(false)
- const cells=useMemo(()=>Array.from({length:36},(_,i)=>i),[])
- const code='123241'
- const symbols={1:'▲',2:'●',3:'■',4:'◆'}
- const done=step>=steps.length-1
+ const [loading,setLoading]=useState(true)
+ const [starting,setStarting]=useState(false)
+ const [msg,setMsg]=useState('')
+ const [openGame,setOpenGame]=useState(null)
+ const [settings,setSettings]=useState(null)
 
- function reveal(i){
-  if(step!==1||revealed.includes(i))return
-  const next=[...revealed,i]
-  setRevealed(next)
-  setTaler(v=>v+1.5)
-  if(next.length>=3)setStep(2)
- }
- function action(){
-  if(step===0){setStep(1);return}
-  if(step===1)return
-  if(step===2&&taler>=3){setTaler(v=>v-3);setTech(true);setStep(3);return}
-  if(step===3&&taler>=2){setTaler(v=>v-2);setAnalysis(true);setStep(4);return}
-  if(step===4&&taler>=2){setTaler(v=>v-2);setTrap(27);setStep(5);return}
-  if(step===5){
-    const auto=[7,8,9,13]
-    setMachineCells(auto)
-    setRevealed(v=>[...new Set([...v,...auto])])
-    setStep(6);return
-  }
-  if(step===6){setTreasureFound(true);setRevealed(v=>[...new Set([...v,29])]);setStep(7);return}
-  if(step===7){setClaimStarted(true);return}
-  if(step===8){setRanking(true)}
+ useEffect(()=>{init()},[])
+
+ async function init(){
+  const {data:{user}}=await supabase.auth.getUser()
+  if(!user){location.href='/login';return}
+
+  const [{data:existing},{data:s}]=await Promise.all([
+   supabase.rpc('get_my_open_tutorial_v643'),
+   supabase.from('platform_settings').select('min_game_fields,max_game_fields,min_regen_seconds,max_regen_seconds').eq('id',1).single()
+  ])
+  setOpenGame(existing||null)
+  setSettings(s||null)
+  setLoading(false)
  }
 
- function pressClaim(n){
-  if(!claimStarted||claimPassed||claimInput.length>=6)return
-  setClaimInput(v=>(v+String(n)).slice(0,6))
- }
- function submitClaim(){
-  if(claimInput!==code)return
-  setClaimPassed(true);setRanking(true);setStep(8)
+ async function startTutorial(){
+  if(starting)return
+  setStarting(true);setMsg('Tutorial-Runde wird vorbereitet…')
+
+  const fieldCount=Math.min(
+   Number(settings?.max_game_fields||50000000),
+   Math.max(1000,Number(settings?.min_game_fields||100))
+  )
+  const regen=Math.max(Number(settings?.min_regen_seconds||5),Math.min(8,Number(settings?.max_regen_seconds||3600)))
+
+  const {data:gid,error}=await supabase.rpc('create_game_v612',{
+   p_name:'🎓 Deine erste Schatzsuche',
+   p_field_count:fieldCount,
+   p_cell_size_m:50,
+   p_max_players:3,
+   p_location_mode:'random',
+   p_center_lat:null,
+   p_center_lon:null,
+   p_center_label:'Tutorial-Gebiet',
+   p_regen_seconds:regen,
+   p_max_stored_moves:6,
+   p_is_private:true,
+   p_password:null,
+   p_treasure_count:1,
+   p_gimmick_percent:0.1,
+   p_game_type:'standard',
+   p_entry_gold_ug:0
+  })
+  if(error){setStarting(false);setMsg(error.message);return}
+
+  const {data:configured,error:ce}=await supabase.rpc('configure_tutorial_game_v643',{p_game_id:gid})
+  if(ce){setStarting(false);setMsg('Spiel erstellt, Tutorial konnte aber nicht vorbereitet werden: '+ce.message);return}
+
+  location.href='/game/'+gid+'?tutorial=1'
  }
 
- useEffect(()=>{
-  if(!tutorialMapHolder.current||tutorialMapRef.current)return
-  let cancelled=false
-  ;(async()=>{
-   try{
-    const maplibregl=await import('maplibre-gl')
-    if(cancelled||!tutorialMapHolder.current)return
-    tutorialMapRef.current=new maplibregl.Map({
-     container:tutorialMapHolder.current,
-     style:'https://tiles.openfreemap.org/styles/liberty',
-     center:[7.12,49.52],zoom:12.5,interactive:false,attributionControl:false,maxPitch:0
-    })
-   }catch{}
-  })()
-  return()=>{cancelled=true;try{tutorialMapRef.current?.remove()}catch{};tutorialMapRef.current=null}
- },[])
+ if(loading)return <main className="container"><div className="buildBadge">V6.43</div><div className="panel">Tutorial wird geladen…</div></main>
 
- return <main className="container tutorialPage">
-  <div className="buildBadge">V6.33</div>
+ return <main className="container tutorialLaunchPage">
+  <div className="buildBadge">V6.43</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/hilfe">Hilfe</a></div>
 
-  <section className="panel tutorialHero">
+  <section className="panel tutorialHero realTutorialHero">
    <div>
-    <div className="eyebrow">SIMULIERTES TESTSPIEL</div>
-    <h1>🎓 BoBs Schatzsuche Tutorial</h1>
-    <p className="muted">Ein kompletter Probelauf: Spielmodus wählen, suchen, ausbauen, analysieren, Falle setzen und einen Schatz bergen.</p>
-   </div>
-   <div className="tutorialProgress">{step+1}/{steps.length}</div>
-  </section>
-
-  <section className="tutorialModeStrip">
-   {modes.map(m=><button key={m.id} type="button"
-    className={'tutorialModeCard '+(mode===m.id?'active':'')}
-    onClick={()=>setMode(m.id)}>
-    <span>{m.icon}</span><strong>{m.name}</strong><small>{m.text}</small>
-   </button>)}
-  </section>
-
-  <div className="tutorialLayout">
-   <section className="panel tutorialGame">
-    <div className="tutorialModeBanner">
-     {modes.find(m=>m.id===mode)?.icon} <strong>{modes.find(m=>m.id===mode)?.name}</strong>
-     <span>{mode==='standard'?'ohne Gold-Einsatz':mode==='pay'?'mit Gold-Einsatz':'kostenlos für Spieler'}</span>
-    </div>
-
-    <div className="tutorialHud">
-     <span><small>Taler</small><b>{taler.toFixed(1)}</b></span>
-     <span><small>Felder</small><b>{revealed.length}</b></span>
-     <span><small>Ausbau</small><b>{tech?'1':'0'}</b></span>
-     <span><small>Schatz</small><b>{claimPassed?'100%':treasureFound?'50%':'0%'}</b></span>
-    </div>
-
-    <div className="tutorialMap tutorialMapLarge tutorialMapWorld">
-     <div ref={tutorialMapHolder} className="tutorialRealMap" aria-hidden="true"/>
-     {cells.map(i=><button key={i}
-       className={'tutorialCell '+(revealed.includes(i)?'revealed ':'')+
-        (machineCells.includes(i)?'machine ':'')+(trap===i?'trap ':'')+
-        (treasureFound&&i===29?'treasure ':'')}
-       onClick={()=>reveal(i)}
-       aria-label={'Tutorialfeld '+(i+1)}>
-       {trap===i?'🪤':treasureFound&&i===29?'🧩':machineCells.includes(i)?'⚙️':revealed.includes(i)?'✓':''}
-     </button>)}
-    </div>
-    <div className="tutorialMapAttribution">Echte Kartenbasis: OpenFreeMap / OpenStreetMap · Raster = Spieloverlay</div>
-
-    {analysis&&<div className="tutorialHint">
-      <strong>🧭 Analyse-Hinweis</strong>
-      <span>Der Schatz liegt im südöstlichen Bereich und näher am Kartenrand als am Zentrum.</span>
-    </div>}
-
-    {step===7&&claimStarted&&<div className="tutorialClaim">
-      <div className="tutorialClaimTimer">⏱ 01:42</div>
-      <strong>Merke dir: {code.split('').map((n,i)=><span className={'claimKey k'+n} key={i}>{symbols[n]}</span>)}</strong>
-      <div className="small">Im echten Spiel verschwindet die Folge nach einigen Sekunden.</div>
-      <div className="claimInput">{[0,1,2,3,4,5].map((_,i)=><span key={i}>{claimInput[i]?symbols[claimInput[i]]:'·'}</span>)}</div>
-      <div className="claimButtons">{[1,2,3,4].map(n=><button key={n} onClick={()=>pressClaim(n)}>{symbols[n]}</button>)}</div>
-      <div className="claimSubmitRow">
-       <button className="miniBtn" onClick={()=>setClaimInput('')}>Löschen</button>
-       <button className="btn primary" disabled={claimInput.length!==6} onClick={submitClaim}>Antwort prüfen</button>
-      </div>
-      {claimInput.length===6&&claimInput!==code&&<div className="tutorialSoftError">Im Tutorial bleibt der Versuch offen. Prüfe die Folge noch einmal.</div>}
-    </div>}
-
-    {ranking&&<div className="tutorialRanking">
-      <strong>🏁 Endstand</strong>
-      <div><span>🥇 Du</span><b>100% Schatz</b></div>
-      <div><span>🥈 Alex <em className="tutorialOnline">● online</em></span><b>0%</b></div>
-    </div>}
-   </section>
-
-   <aside className="panel tutorialCoach">
-    <div className="small">SCHRITT {step+1}</div>
-    <h2>{steps[step].title}</h2>
-    <p>{steps[step].text}</p>
-
-    {step===1
-      ? <div className="tutorialCallout">👆 Öffne zwei weitere dunkle Felder.</div>
-      : step===7&&claimStarted
-        ? <div className="tutorialCallout">Merke dir die sechs Symbole und gib sie unten ein.</div>
-        : done
-          ? <div className="tutorialActions"><a className="btn primary" href="/lobby">🚀 Zur Lobby</a><a className="btn" href="/tutorial">Nochmal</a></div>
-          : <button className="btn primary" onClick={action}
-             disabled={(step===2&&taler<3)||(step===3&&taler<2)||(step===4&&taler<2)}>
-             {steps[step].action}
-            </button>}
-
-    {step===2&&<div className="tutorialTechCard"><strong>Erkundung I</strong><span>mehr Felder pro Zug</span><b>3 T</b></div>}
-    {step===3&&<div className="tutorialTechCard"><strong>Analyse I</strong><span>echter Richtungshinweis</span><b>2 T</b></div>}
-    {step===4&&<div className="tutorialTechCard"><strong>Talerfalle</strong><span>zieht beim Opfer einen prozentualen Anteil der aktuellen Taler ab</span><b>2 T je Setzen</b></div>}
-    {step===5&&<div className="tutorialTechCard"><strong>Maschine</strong><span>arbeitet automatisch im Hintergrund des Spiels</span><b>simuliert</b></div>}
-   </aside>
-  </div>
-
-  <section className="panel tutorialGuide">
-   <h2>Spielmodi auf einen Blick</h2>
-   <div className="grid">
-    {modes.map(m=><div className="card" key={m.id}><strong>{m.icon} {m.name}</strong><div className="small">{m.text}</div></div>)}
+    <div className="eyebrow">ECHTES TESTSPIEL</div>
+    <h1>🎓 Deine erste Schatzsuche</h1>
+    <p className="muted">Keine Simulation mehr: Du spielst eine kleine echte Schatzsuche mit ungefähr 1.000 Feldern und bis zu zwei Mitspielern. Währenddessen erklärt dir das Spiel direkt die wichtigsten Funktionen.</p>
    </div>
   </section>
 
-  <section className="panel">
-   <h2>🧠 Der eigentliche Kern: Deduktion</h2>
-   <p>Der Schatz soll nicht einfach durch blindes Anklicken gefunden werden. Gute Spieler kombinieren Suchpunkte, Terrain und Analysehinweise und grenzen das Gebiet schrittweise ein.</p>
-   <div className="grid">
-    <div className="card"><strong>🧭 Sektor</strong><div className="small">Welcher Kartenteil ist grundsätzlich relevant?</div></div>
-    <div className="card"><strong>📐 Entfernung</strong><div className="small">Wie weit liegt der Schatz ungefähr vom Zentrum oder Rand?</div></div>
-    <div className="card"><strong>🌍 Terrain</strong><div className="small">Wald, Wasser, Siedlung, Acker oder andere reale Kartennutzung.</div></div>
-    <div className="card"><strong>📡 Peilung</strong><div className="small">Neue Suchpunkte liefern weitere Richtungsinformationen.</div></div>
-    <div className="card"><strong>🪤 Taktik</strong><div className="small">Fallen kosten beim Setzen Taler und sind damit eine bewusste Investition.</div></div>
-    <div className="card"><strong>🔐 Schatzsicherung</strong><div className="small">Der Schatz wird erst nach einer separaten, zeitlich begrenzten Prüfung gesichert.</div></div>
-   </div>
+  <section className="grid tutorialLaunchGrid">
+   <div className="card"><strong>🗺️ Kleine echte Karte</strong><div className="small">Ca. 1.000 Felder. Groß genug für das echte Spielgefühl, klein genug zum Ausprobieren.</div></div>
+   <div className="card"><strong>👥 Mitspieler</strong><div className="small">Bis zu zwei verfügbare Mitspieler suchen parallel und entwickeln sich wie in normalen Runden.</div></div>
+   <div className="card"><strong>💰 Taler & Technologien</strong><div className="small">Du verdienst echte Spiel-Taler und erforschst die normalen Technologien.</div></div>
+   <div className="card"><strong>🧭 Hinweise</strong><div className="small">Ein Coach blendet im Spiel passend zu deinem Fortschritt kurze Erklärungen ein.</div></div>
+  </section>
+
+  {msg&&<div className="noticeBar">{msg}</div>}
+
+  <section className="panel tutorialStartPanel">
+   {openGame
+    ?<>
+      <h2>Deine Tutorial-Runde läuft noch</h2>
+      <p className="muted">Du kannst direkt weiterspielen.</p>
+      <a className="btn primary" href={'/game/'+openGame+'?tutorial=1'}>🎓 Tutorial fortsetzen</a>
+     </>
+    :<>
+      <h2>Bereit?</h2>
+      <p className="muted">Die Runde zählt nicht als Goldgame und kostet nichts.</p>
+      <button className="btn primary" disabled={starting} onClick={startTutorial}>{starting?'Wird erstellt…':'🚀 Tutorial-Spiel starten'}</button>
+     </>}
   </section>
  </main>
 }

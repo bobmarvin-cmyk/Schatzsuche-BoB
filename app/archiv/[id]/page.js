@@ -40,7 +40,11 @@ export default function ArchivedGame(){
    </div>
    {archive.winner_name&&<div className="archiveWinnerBadge">
     <span>🏆 Sieger</span>
-    <strong>{archive.winner_name}</strong>
+    <strong>{archive.winner_bot_id
+      ?<a className="profileLink" href={'/bot/'+archive.winner_bot_id}>{archive.winner_name}</a>
+      :archive.winner_user_id
+        ?<a className="profileLink" href={'/spieler/'+archive.winner_user_id}>{archive.winner_name}</a>
+        :archive.winner_name}</strong>
     <small>Siegerwertung: {(Number(archive.winner_share_bps||0)/100).toFixed(2)}% Schatz{archive.winner_moves_used!=null?` · ${Number(archive.winner_moves_used).toLocaleString('de-DE')} manuelle Züge`:''}{Number(archive.winner_taler_gold_ug||0)>0?` · ${formatGold(archive.winner_taler_gold_ug)} Talerbonus`:''}</small>
    </div>}
   </div>
@@ -54,7 +58,7 @@ export default function ArchivedGame(){
   <section className="panel">
    <div className="mapHeader">
     <div><h2>🗺️ Endkarte</h2><div className="small">Die Farben zeigen, welcher Spieler die jeweiligen Bereiche erkundet hat. Gold markiert einen Schatzbereich.</div></div>
-    <div className="mapLegend">{players.map(p=><div className="legendItem" key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.display_name||'Spieler'}</div>)}</div>
+    <div className="mapLegend">{players.map(p=><div className="legendItem" key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span><a className="profileLink" href={p.is_bot?'/bot/'+p.bot_id:'/spieler/'+p.user_id}>{p.avatar_emoji?`${p.avatar_emoji} `:''}{p.display_name||'Spieler'}</a></div>)}</div>
    </div>
    <ArchiveMap archive={archive} fields={fields}/>
   </section>
@@ -69,7 +73,7 @@ export default function ArchivedGame(){
    </div>
    <div className="archivePlayerList">
     {players.map(p=><div className="card archivePlayer" key={'gold-'+p.user_id}>
-      <div className="playerNameLine"><span className="colorDot large" style={{background:p.player_color||'#35516d'}}></span><strong>{p.display_name||'Spieler'}</strong></div>
+      <div className="playerNameLine"><span className="colorDot large" style={{background:p.player_color||'#35516d'}}></span><strong><a className="profileLink" href={p.is_bot?'/bot/'+p.bot_id:'/spieler/'+p.user_id}>{p.avatar_emoji?`${p.avatar_emoji} `:''}{p.display_name||'Spieler'}</a></strong></div>
       <div className="stat">✨ {formatGold(p.gold_received_ug)}</div>
       <div className="small">{(Number(p.treasure_share_bps||0)/100).toFixed(2)} % Schatzanteil · {Number(p.treasure_parts_found||0)} Teile</div>
       {Number(p.community_received_ug||0)>0&&<div className="small">Community-Anteil aus diesem Spiel: ✨ {formatGold(p.community_received_ug)}</div>}

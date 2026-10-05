@@ -10,7 +10,7 @@ export default function HallOfFame(){
  async function load(){
   const {data:{user}}=await supabase.auth.getUser()
   if(!user){location.replace('/login');return}
-  const {data,error}=await supabase.rpc('list_game_archive_v683',{p_limit:150})
+  const {data,error}=await supabase.rpc('list_game_archive_v643',{p_limit:150})
   if(error)setMsg(error.message)
   setRows(data||[])
   setLoading(false)
@@ -40,7 +40,11 @@ export default function HallOfFame(){
     </div>
     <h2>{r.name}</h2>
     <div className="hofWinner">
-      {r.winner_name?<><span>🏆</span><strong>{r.winner_name}</strong></>:<span className="muted">Ohne Sieger beendet</span>}
+      {r.winner_name?<><span>🏆</span><strong>{r.winner_bot_id
+       ?<a className="profileLink" href={'/bot/'+r.winner_bot_id} onClick={e=>e.stopPropagation()}>{r.winner_name}</a>
+       :r.winner_user_id
+        ?<a className="profileLink" href={'/spieler/'+r.winner_user_id} onClick={e=>e.stopPropagation()}>{r.winner_name}</a>
+        :r.winner_name}</strong></>:<span className="muted">Ohne Sieger beendet</span>}
     </div>
     <div className="hofFacts">
       <span>👥 {r.player_count} Spieler</span>
