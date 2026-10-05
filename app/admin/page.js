@@ -8,10 +8,22 @@ const NUM=(v)=>v===''?0:Number(v)
 
 const RELEASE_NEWS_TEMPLATES=[
  {
-  id:'v6533',
-  title:'Update V6.53.3 – Bot-Feldtabelle korrigiert',
+  id:'v6534',
+  title:'Update V6.53.4 – Terrain-Trigger für Bots repariert',
   kind:'change',
-  body:`Hotfix V6.53.3:
+  body:`Hotfix V6.53.4:
+
+• Die Ursache der blockierten Bot-Felder lag in einem alten Terrain-Trigger.
+• Bot-Felder besitzen discovered_by_bot_id, aber kein discovered_by.
+• Der alte Trigger behandelte sie dadurch wie einen Spieler ohne Benutzer-ID und verwarf die Zeile.
+• Der Trigger versteht jetzt Bots und prüft deren Terrain-Technologien ter2/ter4/ter5/ter6/ter7 korrekt.`
+ },
+
+ {
+  id:'v6533',
+  title:'Update V6.53.4 – Bot-Feldtabelle korrigiert',
+  kind:'change',
+  body:`Hotfix V6.53.4:
 
 • Die temporäre Tabelle der freien Bot-Felder hatte versehentlich nur x als Primary Key.
 • Dadurch kollidierten Felder mit gleichem x und unterschiedlichem y.
@@ -21,9 +33,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v6532',
-  title:'Update V6.53.3 – Bot-Insert repariert',
+  title:'Update V6.53.4 – Bot-Insert repariert',
   kind:'change',
-  body:`Hotfix V6.53.3:
+  body:`Hotfix V6.53.4:
 
 • Freie Bot-Felder werden jetzt zuerst in einer separaten temporären Tabelle gesammelt.
 • Danach erfolgt ein normaler INSERT in explored_fields statt eines verschachtelten Data-Modifying-CTE.
@@ -33,9 +45,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v6531',
-  title:'Update V6.53.3.1 – Bot-Feldsuche repariert',
+  title:'Update V6.53.4.1 – Bot-Feldsuche repariert',
   kind:'change',
-  body:`Hotfix V6.53.3.1:
+  body:`Hotfix V6.53.4.1:
 
 • Die Bot-Simulation konnte Züge verbrauchen, obwohl 0 Felder geöffnet wurden.
 • Die Feldsuche nutzt jetzt ein deterministisches Rasterfenster statt nur Zufallsstichproben.
@@ -45,9 +57,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v653',
-  title:'Update V6.53.3 – neue Bot-Simulationsengine',
+  title:'Update V6.53.4 – neue Bot-Simulationsengine',
   kind:'change',
-  body:`Neu in V6.53.3:
+  body:`Neu in V6.53.4:
 
 • Computer-Mitspieler sind nicht mehr von ihrem moves_left-Zähler abhängig.
 • Ihre Aktionen werden aus der vergangenen Zeit und der effektiven Zugzeit berechnet.
@@ -59,9 +71,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v6521',
-  title:'Update V6.53.3.1 – Bot-Zugversorgung korrigiert',
+  title:'Update V6.53.4.1 – Bot-Zugversorgung korrigiert',
   kind:'change',
-  body:`Hotfix V6.53.3.1:
+  body:`Hotfix V6.53.4.1:
 
 • Neue Computer-Mitspieler starten jetzt mit gefülltem Zugspeicher statt praktisch nur einem Zug.
 • Bestehende aktive Bots werden beim Update ebenfalls auf den normalen Runden-Zugspeicher aufgefüllt.
@@ -71,9 +83,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v652',
-  title:'Update V6.53.3 – schnellere Computer-Mitspieler',
+  title:'Update V6.53.4 – schnellere Computer-Mitspieler',
   kind:'change',
-  body:`Neu in V6.53.3:
+  body:`Neu in V6.53.4:
 
 • Computer-Mitspieler verarbeiten ihre verfügbaren Züge jetzt in einer gemeinsamen Serveroperation statt Zug für Zug.
 • Dadurch werden große Mengen Felder deutlich effizienter aufgedeckt.
@@ -84,9 +96,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v651',
-  title:'Update V6.53.3 – flüssigere Mitspieler',
+  title:'Update V6.53.4 – flüssigere Mitspieler',
   kind:'change',
-  body:`Neu in V6.53.3:
+  body:`Neu in V6.53.4:
 
 • Computer-Mitspieler verarbeiten ihre echten Züge jetzt in kleinen Batches im Sekundentakt.
 • Dadurch reagieren sie deutlich flüssiger, ohne große Datenbankabfragen zu erzeugen.
@@ -97,9 +109,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v650',
-  title:'Update V6.53.3 – neue Mitspieler-Architektur',
+  title:'Update V6.53.4 – neue Mitspieler-Architektur',
   kind:'change',
-  body:`Neu in V6.53.3:
+  body:`Neu in V6.53.4:
 
 • Computer-Mitspieler besitzen jetzt echte Züge und regenerieren sie wie normale Spieler.
 • Sobald echte Spieler aktiv sind, spielen sie alle verfügbaren Züge aus.
@@ -112,9 +124,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v649',
-  title:'Update V6.53.3 – kompaktere News & stärkere Gegner',
+  title:'Update V6.53.4 – kompaktere News & stärkere Gegner',
   kind:'change',
-  body:`Neu in V6.53.3:
+  body:`Neu in V6.53.4:
 
 • In der Lobby heißt der Bereich jetzt nur noch „News“.
 • Nur die zwei neuesten Meldungen sind direkt sichtbar; ältere News lassen sich platzsparend aufklappen.
@@ -124,9 +136,9 @@ const RELEASE_NEWS_TEMPLATES=[
  },
  {
   id:'v648',
-  title:'Update V6.53.3 – kompakte News & mehr Bot-Power',
+  title:'Update V6.53.4 – kompakte News & mehr Bot-Power',
   kind:'change',
-  body:`Änderungen aus V6.53.3:
+  body:`Änderungen aus V6.53.4:
 
 • Lobby-News wurden kompakter gestaltet.
 • Vollgas-Ratio, Such-Power und maximale Felder/Aktion wurden deutlich erweitert.
@@ -146,9 +158,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v646',
-  title:'Update V6.53.3 – Tutorial, stärkere Mitspieler & Startbonus',
+  title:'Update V6.53.4 – Tutorial, stärkere Mitspieler & Startbonus',
   kind:'change',
-  body:`Neu in V6.53.3:
+  body:`Neu in V6.53.4:
 
 • Tutorial-Erstellung robuster gemacht und den gen_salt/pgcrypto-Fehler abgefangen.
 • Computer-Mitspieler reagieren stärker auf aktive Spiele und erhalten mehr Such-Power.
@@ -161,9 +173,9 @@ Viel Spaß bei der Schatzsuche!`
  },
  {
   id:'v645',
-  title:'Update V6.53.3 – Tutorial-Fix & mehr Gegner-Power',
+  title:'Update V6.53.4 – Tutorial-Fix & mehr Gegner-Power',
   kind:'change',
-  body:`Änderungen aus V6.53.3:
+  body:`Änderungen aus V6.53.4:
 
 • Tutorial-Fix für den Fehler „gen_salt does not exist“.
 • Tutorial-Runde wird ohne Passwortpfad erzeugt und anschließend privat geschaltet.
@@ -700,7 +712,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.53.3</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.53.4</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -1091,7 +1103,7 @@ export default function Admin(){
     <Field label="Max. Felder pro Lauf" value={botConfig.settings?.simulation_max_fields_per_run??8000} onChange={v=>setBotSetting('simulation_max_fields_per_run',v)}/>
     <Field label="Fallback Schatzsicherung (%)" step="0.1" value={botConfig.settings?.base_solve_percent??60} onChange={v=>setBotSetting('base_solve_percent',v)}/>
    </div>
-   <div className="small adminHint">⚡ V6.53.3: Alle verfügbaren Bot-Züge werden pro Bot zu EINER gemeinsamen Feldoperation zusammengefasst. „Max. Bot-Felder pro Tick“ ist nur ein Sicherheitsdeckel gegen Datenbank-Timeouts; übrig gebliebene Züge folgen im nächsten Tick.</div>
+   <div className="small adminHint">⚡ V6.53.4: Alle verfügbaren Bot-Züge werden pro Bot zu EINER gemeinsamen Feldoperation zusammengefasst. „Max. Bot-Felder pro Tick“ ist nur ein Sicherheitsdeckel gegen Datenbank-Timeouts; übrig gebliebene Züge folgen im nächsten Tick.</div>
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.use_real_average} onChange={e=>setBotSetting('use_real_average',e.target.checked)}/> echte durchschnittliche Schatzsicherungsquote verwenden</label>
    <div className="winnerActions"><button className="btn primary" disabled={saving} onClick={saveBotSettings}>Bot-Einstellungen speichern</button></div>
 
