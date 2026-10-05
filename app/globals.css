@@ -1872,3 +1872,17 @@ button:disabled{cursor:not-allowed;opacity:.45}
  .lobbyFilterBar{display:block;padding:8px}.lobbyFilterChips{display:flex;overflow-x:auto;flex-wrap:nowrap;padding-bottom:5px}.filterChip{flex:0 0 auto}.lobbySortControls{min-width:0;width:100%;margin-top:5px}.lobbySortControls .input{flex:1;width:auto}
  .mapModeIconBtn{width:27px;height:27px;font-size:12px}.jobChoiceCards{grid-template-columns:1fr}.adminJobCards{grid-template-columns:1fr}
 }
+
+/* V6.28 – schlanker Assistent/Autopilot */
+.assistantToolbar{
+  display:flex;
+  align-items:center;
+  gap:.45rem;
+  flex-wrap:wrap;
+  margin:.35rem 0 .5rem;
+}
+.assistantToolbar .small{opacity:.82}
+@media (max-width:700px){
+  .assistantToolbar{gap:.3rem}
+  .assistantToolbar .miniBtn{padding:.42rem .55rem}
+}

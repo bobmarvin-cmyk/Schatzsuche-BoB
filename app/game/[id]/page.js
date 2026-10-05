@@ -12,7 +12,11 @@ export default function Game(){
  const [mapChunks,setMapChunks]=useState([]),[mapRenderMode,setMapRenderMode]=useState('overview'),[owned,setOwned]=useState([]),[branch,setBranch]=useState('Erkundung'),[technologies,setTechnologies]=useState([])
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false),[claimTimeLeft,setClaimTimeLeft]=useState(null),[claimResult,setClaimResult]=useState(null),[job,setJob]=useState(null),[jobBusy,setJobBusy]=useState(false),[jobSettings,setJobSettings]=useState({bottlesSeconds:180,bottlesReward:1,scrapSeconds:900,scrapReward:7})
+ const [assistantEnabled,setAssistantEnabled]=useState(false),[assistantWaypoints,setAssistantWaypoints]=useState([]),[assistantPosition,setAssistantPosition]=useState(null),[assistantNextIndex,setAssistantNextIndex]=useState(0),[assistantTarget,setAssistantTarget]=useState(null)
+
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0),chunkSummaryRef=useRef(new Map()),chunkPayloadRef=useRef(new Map()),chunkSinceRef=useRef(null),chunkSyncPromiseRef=useRef(null)
+ const assistantBusyRef=useRef(false),assistantLastStepAtRef=useRef(Date.now()),assistantPendingStepRef=useRef(null),assistantTokenRef=useRef(0)
+
 
  useEffect(()=>{
   chunkSummaryRef.current.clear()
@@ -35,6 +39,30 @@ export default function Game(){
     clearTimeout(viewportTimer.current);clearTimeout(playerReloadTimer.current);clearTimeout(claimTimerRef.current)
   }
  },[id])
+
+ useEffect(()=>{
+  try{
+    const raw=sessionStorage.getItem('assistant_route_'+id)
+    if(!raw)return
+    const saved=JSON.parse(raw)
+    setAssistantWaypoints(Array.isArray(saved.waypoints)?saved.waypoints.slice(0,20):[])
+    setAssistantPosition(saved.position||null)
+    setAssistantNextIndex(Math.max(0,Number(saved.nextIndex||0)))
+    setAssistantEnabled(!!saved.enabled)
+    assistantLastStepAtRef.current=Date.now()
+  }catch{}
+ },[id])
+
+ useEffect(()=>{
+  try{
+    sessionStorage.setItem('assistant_route_'+id,JSON.stringify({
+      enabled:assistantEnabled,
+      waypoints:assistantWaypoints,
+      position:assistantPosition,
+      nextIndex:assistantNextIndex
+    }))
+  }catch{}
+ },[id,assistantEnabled,assistantWaypoints,assistantPosition,assistantNextIndex])
 
  useEffect(()=>{
   if(!user?.id)return
@@ -616,11 +644,11 @@ export default function Game(){
   const req=terrainRequirement(t.type)
   if(req&&!has('ter7')&&!has(req.tech)){
     setMsg(`${t.label||'Dieses Gelände'} · benötigt ${req.name}. Kein Zug verbraucht.`)
-    return
+    return {success:false,blocked:true,reason:'terrain_locked'}
   }
 
   setMsg(`${t.label||'Gelände erkannt'} · Suche startet…`)
-  await reveal(x,y)
+  return await reveal(x,y)
  }
 
  async function loadPendingClaim(){
@@ -770,7 +798,7 @@ export default function Game(){
       }else{
         setMsg(error.message)
       }
-      return
+      return {success:false,reason:error.message||'reveal_failed'}
     }
 
     setMsg(data?.message||'Gebiet untersucht')
@@ -798,8 +826,134 @@ export default function Game(){
     await loadGoldOnly()
     await loadPendingClaim()
     setTimeout(()=>pollLiveState(),350)
+    return {success:true,data}
   }finally{
     revealBusy.current=false
+  }
+ }
+
+ function toggleAssistant(){
+  if(assistantEnabled){
+    setAssistantEnabled(false)
+    setAssistantTarget(null)
+    setMsg('🧭 Assistent pausiert. Kartenklick deckt wieder normal auf.')
+    return
+  }
+  setTrapMode(null)
+  setAssistantEnabled(true)
+  assistantLastStepAtRef.current=Date.now()
+  setMsg(assistantWaypoints.length
+    ?'🧭 Assistent aktiv. Er folgt der Route im normalen Zugtakt.'
+    :'🧭 Assistent aktiv. Tippe auf die Karte, um Wegpunkte zu setzen.')
+ }
+
+ function addAssistantWaypoint(x,y){
+  if(assistantWaypoints.length>=20){
+    setMsg('🧭 Maximal 20 Wegpunkte pro Route.')
+    return
+  }
+  const p={x:Number(x),y:Number(y)}
+  setAssistantWaypoints(prev=>[...prev,p].slice(0,20))
+  setMsg(`🧭 Wegpunkt ${assistantWaypoints.length+1}/20 gesetzt.`)
+ }
+
+ function clearAssistantRoute(){
+  setAssistantWaypoints([])
+  setAssistantPosition(null)
+  setAssistantNextIndex(0)
+  setAssistantTarget(null)
+  assistantPendingStepRef.current=null
+  setAssistantEnabled(false)
+  setMsg('🧭 Assistentenroute gelöscht.')
+ }
+
+ function undoAssistantWaypoint(){
+  setAssistantWaypoints(prev=>{
+    const next=prev.slice(0,-1)
+    if(assistantNextIndex>next.length)setAssistantNextIndex(next.length)
+    return next
+  })
+ }
+
+ function buildAssistantStep(){
+  if(!assistantWaypoints.length)return null
+
+  if(!assistantPosition){
+    const first=assistantWaypoints[0]
+    return {
+      x:Number(first.x),y:Number(first.y),
+      nextIndex:1,
+      reached:true
+    }
+  }
+
+  if(assistantNextIndex>=assistantWaypoints.length)return null
+
+  const target=assistantWaypoints[assistantNextIndex]
+  const dx=Number(target.x)-Number(assistantPosition.x)
+  const dy=Number(target.y)-Number(assistantPosition.y)
+  const dist=Math.sqrt(dx*dx+dy*dy)
+  const stepCells=Math.max(1,Math.round(Math.sqrt(Math.max(1,Number(me?.reveal_power||1)))))
+
+  if(dist<=stepCells){
+    return {
+      x:Number(target.x),y:Number(target.y),
+      nextIndex:assistantNextIndex+1,
+      reached:true
+    }
+  }
+
+  return {
+    x:Math.round(Number(assistantPosition.x)+(dx/dist)*stepCells),
+    y:Math.round(Number(assistantPosition.y)+(dy/dist)*stepCells),
+    nextIndex:assistantNextIndex,
+    reached:false
+  }
+ }
+
+ async function runAssistantStep(){
+  if(assistantBusyRef.current||!assistantEnabled||!assistantWaypoints.length)return
+  if(document.visibilityState!=='visible'||waitingForStart||pendingClaim)return
+  assistantBusyRef.current=true
+  try{
+    const {data,error}=await supabase.rpc('refresh_player_moves',{p_game_id:id})
+    if(error)return
+    setRegenInfo(data)
+    if(Number(data?.moves||0)<=0)return
+
+    const step=buildAssistantStep()
+    if(!step){
+      setAssistantEnabled(false)
+      setMsg('🧭 Assistent hat die Route abgeschlossen.')
+      return
+    }
+
+    assistantPendingStepRef.current=step
+    assistantTokenRef.current+=1
+    setAssistantTarget({
+      x:step.x,y:step.y,
+      token:`${id}:${assistantTokenRef.current}`
+    })
+  }finally{
+    assistantBusyRef.current=false
+  }
+ }
+
+ function handleAssistantStepDone(result){
+  const step=assistantPendingStepRef.current
+  assistantPendingStepRef.current=null
+  setAssistantTarget(null)
+  if(!step)return
+
+  if(result?.success||result?.blocked){
+    setAssistantPosition({x:step.x,y:step.y})
+    setAssistantNextIndex(step.nextIndex)
+    if(step.nextIndex>=assistantWaypoints.length){
+      setAssistantEnabled(false)
+      setMsg(result?.blocked
+        ?'🧭 Route beendet. Letzter Abschnitt konnte wegen Gelände nicht durchsucht werden.'
+        :'🧭 Assistent hat die Route abgeschlossen.')
+    }
   }
  }
 
@@ -952,6 +1106,16 @@ export default function Game(){
  },[tick,joinState,secondsUntilMove])
 
  useEffect(()=>{
+  if(joinState!=='joined'||!assistantEnabled||!assistantWaypoints.length)return
+  if(document.visibilityState!=='visible'||waitingForStart||pendingClaim)return
+  if(assistantTarget)return
+  const intervalMs=Math.max(5000,Number(effectiveRegen||30)*1000)
+  if(Date.now()-assistantLastStepAtRef.current<intervalMs)return
+  assistantLastStepAtRef.current=Date.now()
+  runAssistantStep()
+ },[tick,joinState,assistantEnabled,assistantWaypoints,assistantPosition,assistantNextIndex,assistantTarget,pendingClaim,waitingForStart,effectiveRegen])
+
+ useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(tick%10!==0)return
   if(document.visibilityState!=='visible')return
@@ -961,7 +1125,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.27: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.28: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%5!==0)return
   runMachines()
@@ -1016,7 +1180,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.27</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.28</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1090,10 +1254,25 @@ export default function Game(){
 
   <div className="gameLayout">
    <section className="panel gameMapPanel">
-    <div className="mapHeader"><div><h2>{game?.name||'Schatzsuche'}{game?.center_label?` · ${game.center_label}`:''}</h2><div className="small">Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.</div></div>
+    <div className="mapHeader"><div><h2>{game?.name||'Schatzsuche'}{game?.center_label?` · ${game.center_label}`:''}</h2><div className="small">{assistantEnabled?'Assistent aktiv: Kartenklick setzt Wegpunkte. Normales Aufdecken ist pausiert.':'Zoomen und verschieben ist möglich. Klick auf ein Rasterfeld = erkunden.'}</div></div>
      <div className="mapLegend">{players.map(p=><div className={'legendItem '+(onlineIds.includes(p.user_id)?'online':'offline')} key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span>{p.profiles?.display_name||'Spieler'}{onlineIds.includes(p.user_id)&&<span className="onlineDot" title="online">●</span>}</div>)}</div>
     </div>
-    {game&&<><div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name} · {Number(t.trap_place_cost||0).toFixed(1)} T</button>)}{trapMode&&<button className="miniBtn trapCancelBtn" onClick={()=>setTrapMode(null)}>✕ Fallenmodus beenden</button>}</>}</div><GameMap game={game} mapChunks={mapChunks} mapRenderMode={mapRenderMode} players={players} onReveal={reveal} onTerrainReveal={terrainReveal} onTerrainBatch={cacheTerrainBatch} terrainScanPower={Number(me?.reveal_power||1)+Number(me?.gimmick_reveal_bonus_pending||0)} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}
+    {game&&<>
+     <div className="assistantToolbar">
+      <button className={'miniBtn '+(assistantEnabled?'active':'')} onClick={toggleAssistant}>
+       🧭 Assistent {assistantEnabled?'AN':'AUS'}
+      </button>
+      <span className="small">Route: {assistantWaypoints.length}/20 Wegpunkte{assistantEnabled?' · Kartenklick setzt Wegpunkt':''}</span>
+      {assistantWaypoints.length>0&&<button className="miniBtn" onClick={undoAssistantWaypoint}>↩ Letzten löschen</button>}
+      {assistantWaypoints.length>0&&<button className="miniBtn" onClick={clearAssistantRoute}>🗑 Route löschen</button>}
+     </div>
+     <div className="trapToolbar">{trapTechs.length>0&&<><span>🪤 Falle:</span>{trapTechs.map(t=><button key={t.id} className={'miniBtn '+(trapMode===t.id?'active':'')} disabled={assistantEnabled} onClick={()=>setTrapMode(trapMode===t.id?null:t.id)}>{t.name} · {Number(t.trap_place_cost||0).toFixed(1)} T</button>)}{trapMode&&<button className="miniBtn trapCancelBtn" onClick={()=>setTrapMode(null)}>✕ Fallenmodus beenden</button>}</>}</div><GameMap game={game} mapChunks={mapChunks} mapRenderMode={mapRenderMode} players={players} onReveal={reveal} onTerrainReveal={terrainReveal} onTerrainBatch={cacheTerrainBatch} terrainScanPower={Number(me?.reveal_power||1)+Number(me?.gimmick_reveal_bonus_pending||0)} onTrapPlace={placeTrap} trapMode={trapMode} ownTraps={ownTraps} analysisHint={analysisHint} onViewportChange={handleViewport} analysisFocusToken={analysisFocusToken} onAnalysisFeatures={items=>{setAnalysisFeatures(items);setAnalysisClue(buildAnalysisClue(items))}}
+      waypointMode={assistantEnabled}
+      onWaypoint={addAssistantWaypoint}
+      assistantWaypoints={assistantWaypoints}
+      assistantPosition={assistantPosition}
+      assistantTarget={assistantTarget}
+      onAssistantStepDone={handleAssistantStepDone}
       mobileHud={<div className="mobileMapHud">
        {[
         [Number(me?.coins||0).toFixed(2),'Taler'],
@@ -1104,7 +1283,7 @@ export default function Game(){
        ].map((v,i)=><div className="mobileHudStat" key={i}><span>{v[1]}</span><b>{v[0]}</b></div>)}
       </div>}
       mapInfo={<>
-       <div className="mapInfoMain">{msg||'Karte bereit · Feld antippen zum Erkunden'}</div>
+       <div className="mapInfoMain">{msg||(assistantEnabled?'🧭 Assistent aktiv · Wegpunkte auf der Karte setzen':'Karte bereit · Feld antippen zum Erkunden')}</div>
        <div className="mapInfoTerrain">
         <span>🌊 Wasser</span><span>🌲 Wald</span><span>🌾 Offen</span>
         <span>🚜 Acker</span><span>🏙 Stadt</span><span>🏭 Industrie</span>

@@ -166,7 +166,13 @@ export default function GameMap({
   analysisFocusToken,
   onAnalysisFeatures,
   mobileHud,
-  mapInfo
+  mapInfo,
+  waypointMode=false,
+  onWaypoint,
+  assistantWaypoints=[],
+  assistantPosition=null,
+  assistantTarget=null,
+  onAssistantStepDone
 }){
   const holder=useRef(null)
   const canvasRef=useRef(null)
@@ -185,6 +191,13 @@ export default function GameMap({
   const analysisRef=useRef(analysisHint)
   const viewportRef=useRef(onViewportChange)
   const analysisFeaturesRef=useRef(onAnalysisFeatures)
+  const waypointModeRef=useRef(waypointMode)
+  const onWaypointRef=useRef(onWaypoint)
+  const assistantWaypointsRef=useRef(assistantWaypoints)
+  const assistantPositionRef=useRef(assistantPosition)
+  const assistantTargetRef=useRef(assistantTarget)
+  const onAssistantStepDoneRef=useRef(onAssistantStepDone)
+  const lastAssistantTokenRef=useRef(null)
   const mapModeRef=useRef('satellite')
   const terrainCacheRef=useRef(new Map())
   const drawPendingRef=useRef(false)
@@ -208,6 +221,12 @@ export default function GameMap({
   analysisRef.current=analysisHint
   viewportRef.current=onViewportChange
   analysisFeaturesRef.current=onAnalysisFeatures
+  waypointModeRef.current=waypointMode
+  onWaypointRef.current=onWaypoint
+  assistantWaypointsRef.current=assistantWaypoints
+  assistantPositionRef.current=assistantPosition
+  assistantTargetRef.current=assistantTarget
+  onAssistantStepDoneRef.current=onAssistantStepDone
   mapModeRef.current=mapMode
 
   function scheduleCanvasDraw(){
@@ -400,7 +419,109 @@ export default function GameMap({
     ctx.lineWidth=1.8
     ctx.strokeRect(bx,by,bw,bh)
 
+    // V6.28: Assistentenroute nur lokal zeichnen – kein Netzwerkverkehr.
+    const route=assistantWaypointsRef.current||[]
+    const pos=assistantPositionRef.current
+    if(route.length){
+      ctx.save()
+      ctx.strokeStyle='rgba(255,214,82,.95)'
+      ctx.fillStyle='rgba(255,214,82,.95)'
+      ctx.lineWidth=2.2
+      ctx.setLineDash([6,5])
+      ctx.beginPath()
+      route.forEach((p,i)=>{
+        const px=xFor(Number(p.x)+0.5)
+        const py=yFor(Number(p.y)+0.5)
+        if(i===0)ctx.moveTo(px,py);else ctx.lineTo(px,py)
+      })
+      ctx.stroke()
+      ctx.setLineDash([])
+      route.forEach((p,i)=>{
+        const px=xFor(Number(p.x)+0.5)
+        const py=yFor(Number(p.y)+0.5)
+        ctx.beginPath()
+        ctx.arc(px,py,5,0,Math.PI*2)
+        ctx.fill()
+        ctx.fillStyle='rgba(10,18,28,.95)'
+        ctx.font='10px sans-serif'
+        ctx.textAlign='center'
+        ctx.textBaseline='middle'
+        ctx.fillText(String(i+1),px,py)
+        ctx.fillStyle='rgba(255,214,82,.95)'
+      })
+      ctx.restore()
+    }
+    if(pos){
+      const px=xFor(Number(pos.x)+0.5)
+      const py=yFor(Number(pos.y)+0.5)
+      ctx.save()
+      ctx.fillStyle='rgba(255,255,255,.98)'
+      ctx.strokeStyle='rgba(12,20,30,.95)'
+      ctx.lineWidth=2
+      ctx.beginPath()
+      ctx.arc(px,py,7,0,Math.PI*2)
+      ctx.fill();ctx.stroke()
+      ctx.fillStyle='rgba(12,20,30,.95)'
+      ctx.font='11px sans-serif'
+      ctx.textAlign='center';ctx.textBaseline='middle'
+      ctx.fillText('A',px,py)
+      ctx.restore()
+    }
+
     ctx.restore()
+  }
+
+  async function performExploreAt(x,y){
+    const map=mapRef.current
+    const cg=geometry(gameRef.current)
+    if(!map||!cg)return {success:false,reason:'map_not_ready'}
+    if(x<0||y<0||x>=cg.width||y>=cg.height)return {success:false,reason:'outside'}
+
+    const ignored=['analysis-zone-fill','analysis-zone-line','my-traps-fill','my-traps-line']
+    const classifyCell=(cx,cy)=>{
+      const key=`${cx}:${cy}:${mapModeRef.current}`
+      const cached=terrainCacheRef.current.get(key)
+      if(cached)return cached
+      try{
+        const [w,so,ea,n]=cellBounds(cg,cx,cy,1)
+        const center=map.project([(w+ea)/2,(so+n)/2])
+        const features=map.queryRenderedFeatures(center)||[]
+        const result=terrainFromFeatures(
+          features.filter(f=>!ignored.includes(f.layer?.id))
+        )
+        if(terrainCacheRef.current.size>6000)terrainCacheRef.current.clear()
+        terrainCacheRef.current.set(key,result)
+        return result
+      }catch{
+        return {type:'unknown',label:'❓ Unbekannt'}
+      }
+    }
+
+    const terrain=classifyCell(x,y)
+    const nominal=Math.max(1,Number(terrainScanPowerRef.current||1))
+    const target=Math.min(2400,Math.max(nominal,Math.ceil(nominal*2.25)))
+    const cells=[]
+    let r=0
+    while(cells.length<target&&r<Math.max(cg.width,cg.height)){
+      for(let dy=-r;dy<=r&&cells.length<target;dy++){
+        for(let dx=-r;dx<=r&&cells.length<target;dx++){
+          if(r>0&&Math.max(Math.abs(dx),Math.abs(dy))!==r)continue
+          const cx=x+dx,cy=y+dy
+          if(cx<0||cy<0||cx>=cg.width||cy>=cg.height)continue
+          const t=classifyCell(cx,cy)
+          cells.push({x:cx,y:cy,terrain_type:t.type,terrain_label:t.label})
+        }
+      }
+      r++
+    }
+
+    try{await onTerrainBatchRef.current?.(cells)}catch{}
+    if(onTerrainRevealRef.current){
+      const result=await onTerrainRevealRef.current(x,y,terrain)
+      return result||{success:true}
+    }
+    const result=await onRevealRef.current?.(x,y)
+    return result||{success:true}
   }
 
   useEffect(()=>{
@@ -491,61 +612,18 @@ export default function GameMap({
           const x=Math.floor((e.lngLat.lng-cg.west)*cg.metersLon/cg.cell)
           const y=Math.floor((cg.north-e.lngLat.lat)*METERS_PER_DEG_LAT/cg.cell)
           if(x<0||y<0||x>=cg.width||y>=cg.height)return
+
+          if(waypointModeRef.current){
+            onWaypointRef.current?.(x,y)
+            return
+          }
+
           if(trapModeRef.current){
             onTrapPlaceRef.current?.(x,y)
             return
           }
 
-          const ignored=['analysis-zone-fill','analysis-zone-line','my-traps-fill','my-traps-line']
-          const classifyCell=(cx,cy)=>{
-            const key=`${cx}:${cy}:${mapModeRef.current}`
-            const cached=terrainCacheRef.current.get(key)
-            if(cached)return cached
-            try{
-              const [w,so,ea,n]=cellBounds(cg,cx,cy,1)
-              const center=map.project([(w+ea)/2,(so+n)/2])
-              const features=map.queryRenderedFeatures(center)||[]
-              const result=terrainFromFeatures(
-                features.filter(f=>!ignored.includes(f.layer?.id))
-              )
-              if(terrainCacheRef.current.size>6000)terrainCacheRef.current.clear()
-              terrainCacheRef.current.set(key,result)
-              return result
-            }catch{
-              return {type:'unknown',label:'❓ Unbekannt'}
-            }
-          }
-
-          const terrain=classifyCell(x,y)
-
-          // Terrain wird clientseitig nur als Karten-Hintergrundinformation gelesen.
-          // Die eigentliche Aufdeckung bleibt serverautoritativ.
-          // V6.27: mehr Kandidaten vermessen als nominelle Suchleistung.
-          // Bereits belegte / gesperrte Felder dürfen den Zug nicht künstlich verkleinern.
-          const nominal=Math.max(1,Number(terrainScanPowerRef.current||1))
-          const target=Math.min(2400,Math.max(nominal,Math.ceil(nominal*2.25)))
-          const cells=[]
-          let r=0
-          while(cells.length<target&&r<Math.max(cg.width,cg.height)){
-            for(let dy=-r;dy<=r&&cells.length<target;dy++){
-              for(let dx=-r;dx<=r&&cells.length<target;dx++){
-                if(r>0&&Math.max(Math.abs(dx),Math.abs(dy))!==r)continue
-                const cx=x+dx,cy=y+dy
-                if(cx<0||cy<0||cx>=cg.width||cy>=cg.height)continue
-                const t=classifyCell(cx,cy)
-                cells.push({
-                  x:cx,y:cy,
-                  terrain_type:t.type,
-                  terrain_label:t.label
-                })
-              }
-            }
-            r++
-          }
-
-          try{await onTerrainBatchRef.current?.(cells)}catch{}
-          if(onTerrainRevealRef.current)await onTerrainRevealRef.current(x,y,terrain)
-          else onRevealRef.current?.(x,y)
+          await performExploreAt(x,y)
         })
 
         function updateViewport(){
@@ -593,6 +671,23 @@ export default function GameMap({
       mapRef.current=null
     }
   },[game?.id])
+
+  useEffect(()=>{
+    const target=assistantTarget
+    if(!target?.token)return
+    if(lastAssistantTokenRef.current===target.token)return
+    lastAssistantTokenRef.current=target.token
+    let cancelled=false
+    ;(async()=>{
+      const result=await performExploreAt(Number(target.x),Number(target.y))
+      if(!cancelled)onAssistantStepDoneRef.current?.(result||{success:false})
+    })()
+    return()=>{cancelled=true}
+  },[assistantTarget?.token])
+
+  useEffect(()=>{
+    scheduleCanvasDraw()
+  },[assistantWaypoints,assistantPosition])
 
   useEffect(()=>{
     renderModeRef.current=mapRenderMode

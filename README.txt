@@ -1,20 +1,25 @@
-SCHATZSUCHE ONLINE V6.25.1 – AUTOMATISCHE EXPLORED_FIELDS-BEREINIGUNG
+SCHATZSUCHE ONLINE V6.28
 
-- Standard-Aufbewahrung: 24 Stunden
-- nur Spiele mit status='finished'
-- nur wenn ein game_archive-Eintrag existiert
-- gelöscht werden ausschließlich explored_fields der fertigen Spiele
-- aktive Spiele bleiben unangetastet
-- game_archive / Hall of Fame bleiben erhalten
-- Bereinigung läuft über die bestehende Lobby-Wartung automatisch mit
-- Aufbewahrungsfrist in der Schaltzentrale einstellbar: 1–720 Stunden
+AKTUELLER STAND
+- V6.27: Maschinen als schlanke virtuelle Schatzsuche
+- V6.28: Assistent/Autopilot mit bis zu 20 Wegpunkten
+- Assistent arbeitet nur bei aktiver Spielseite und nutzt normale Züge
+- Keine Offline-Nachholung
+- Satellitenansicht mit Straßen-/Ortsnamen
+- Frei terminierbarer Spielstart
 
-INSTALLATION
-1. ZIP in GitHub ersetzen.
-2. Supabase SQL Editor:
-   NUR supabase/v6_25_1_migration.sql einmal ausführen.
-3. Vercel deployen.
-4. Optional testen:
-   select public.cleanup_finished_explored_fields_v6251();
+DEPLOY
+1. Den Inhalt dieser ZIP als aktuellen Projektstand ins GitHub-Repo übernehmen.
+2. .env.local nicht hochladen.
+3. Für V6.28 ist KEINE neue SQL-Migration nötig.
+4. Vercel deployt anschließend automatisch.
 
-Kein VACUUM FULL erforderlich.
+SUPABASE
+Der Ordner /supabase wurde bewusst bereinigt.
+Enthalten sind nur:
+- setup.sql
+- v6_27_migration.sql
+- README.txt
+
+Die vielen historischen Zwischenmigrationen wurden aus dieser Release-ZIP entfernt.
+Die bestehende produktive Supabase-Datenbank bleibt davon unberührt.
