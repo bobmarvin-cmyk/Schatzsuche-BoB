@@ -1,39 +1,21 @@
-SCHATZSUCHE ONLINE V6.53
+SCHATZSUCHE ONLINE V6.53.1
 
-WARUM DIESER UMBAU
-Die bisherigen Bot-Versionen waren zu stark an moves_left, last_regen_at und Client-Ticks gekoppelt.
-Dadurch konnten Bots sichtbar im Spiel sein, aber praktisch trotzdem stehenbleiben.
+DIAGNOSE AUS V6.53
+Die Bot-Engine lief, aber einzelne Bots meldeten z. B.:
+- 34 Simulationsläufe
+- 1 virtueller Zug
+- 0 geöffnete Felder
 
-V6.53
-- Bots besitzen weiterhin ihre Profile, Taler, Techs, Reveal-Power und Schatzanteile.
-- Ihre Aktivität hängt aber NICHT mehr von moves_left ab.
-- Stattdessen gilt:
-  vergangene Zeit / effektive Zugzeit = virtuelle Bot-Züge.
-- Neue Bots erhalten sofort einen vollen virtuellen Startspeicher.
-- Während ein echter Spieler das Spiel offen hat, wird die Simulation alle 2 Sekunden angestoßen.
-- Bei mehreren Spielern verhindert ein PostgreSQL Advisory Lock doppelte Bot-Züge.
+Damit war klar: Nicht Timer oder RPC waren das Problem, sondern die Feldkandidatensuche.
 
-AKTIV
-- Aktiv-Leistung 100 % = normales Spieltempo.
-- Optional kann die Leistung in der Schaltzentrale erhöht oder reduziert werden.
-- Alle fälligen virtuellen Züge werden in einer gemeinsamen Feldoperation verarbeitet.
-
-LEERES SPIEL
-- Minuten-Cron bleibt bestehen.
-- Dort gilt der Sparmodus-Prozentsatz.
-
-DIAGNOSE
-Schaltzentrale zeigt:
-- fällige virtuelle Züge
-- letzter Simulationslauf
-- Felder im letzten Lauf
-- Reveal-Power
-- Felder gesamt
-- Techs
-- Taler
-- Zahl der Simulationsläufe
-- letzter Fehler
+V6.53.1
+- lokale Bot-Suche wird deterministisch als Rasterfenster um das Ziel aufgebaut
+- zusätzlich globaler Fallback für freie Felder
+- bei 0 geöffneten Feldern wird KEINE virtuelle Zeit mehr verbraucht
+- bei 0 Feldern wird das Ziel verworfen
+- Diagnose schreibt bei Stillstand:
+  Kandidaten=X, frei=Y, bereits=Z, Terrain=T
 
 INSTALLATION
-1. supabase/v6_53_migration.sql EINMAL ausführen.
-2. V6.53 deployen.
+1. supabase/v6_53_1_migration.sql EINMAL ausführen.
+2. V6.53.1 deployen.
