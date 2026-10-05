@@ -3891,3 +3891,38 @@ body{
 .botIconPreset.active{outline:2px solid currentColor}
 .botAdminActions{display:flex;gap:4px;flex-wrap:wrap}
 .miniBtn.danger{border-color:rgba(220,80,80,.45)}
+
+
+/* =========================================================
+   V6.52.1 – Bot-Laufzeitdiagnose
+   ========================================================= */
+.botRuntimeDiag{
+  margin-top:14px;
+  border-top:1px solid rgba(255,255,255,.08);
+  padding-top:8px;
+}
+.botRuntimeDiag>summary{
+  cursor:pointer;
+  font-weight:700;
+  font-size:12px;
+}
+.botRuntimeList{
+  display:grid;
+  gap:5px;
+  margin-top:8px;
+}
+.botRuntimeRow{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px 12px;
+  align-items:center;
+  padding:7px 8px;
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:8px;
+  font-size:11px;
+}
+.botRuntimeError{
+  width:100%;
+  color:#ffb4b4;
+  word-break:break-word;
+}
