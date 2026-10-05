@@ -1886,3 +1886,19 @@ button:disabled{cursor:not-allowed;opacity:.45}
   .assistantToolbar{gap:.3rem}
   .assistantToolbar .miniBtn{padding:.42rem .55rem}
 }
+
+.assistantDoneNotice{
+  display:flex;
+  align-items:center;
+  gap:.55rem;
+  flex-wrap:wrap;
+  padding:.55rem .7rem;
+  margin:.2rem 0 .55rem;
+  border:1px solid rgba(255,214,82,.45);
+  border-radius:10px;
+  background:rgba(255,214,82,.08);
+}
+.assistantDoneNotice span{font-size:.86rem;opacity:.86}
+@media (max-width:700px){
+  .assistantDoneNotice{align-items:flex-start}
+}
