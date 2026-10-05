@@ -227,17 +227,9 @@ export default function Game(){
       await handleRealtimeGameEvent(evt)
     }
 
-    if(data.status==='finished'&&data.winner_id&&!winnerHandledRef.current){
+    if(data.status==='finished'&&!winnerHandledRef.current){
       winnerHandledRef.current=true
-      const {data:{user:meNow}}=await supabase.auth.getUser()
-      setWinnerCelebration({
-        won:meNow?.id===data.winner_id,
-        name:data.winner_name||'Spieler',
-        moves:Number(data.winner_moves_used||0),
-        opened:0,
-        share:Number(data.winner_share_bps||0),
-        talerGold:Number(data.winner_taler_gold_ug||0)
-      })
+      await loadWinnerFromServer()
     }
   }finally{
     livePollBusy.current=false
@@ -297,7 +289,7 @@ export default function Game(){
   const {data:{user}}=await supabase.auth.getUser(); if(!user)return
   const [w,gt]=await Promise.all([
    supabase.from('gold_wallets').select('balance_ug').eq('user_id',user.id).maybeSingle(),
-   supabase.rpc('get_treasure_status_v610',{p_game_id:id})
+   supabase.rpc('get_treasure_status_v650',{p_game_id:id})
   ])
   setWallet(w.data);setGoldTreasures(gt.data||[])
  }
@@ -324,14 +316,47 @@ export default function Game(){
  }
 
  async function loadGameBots(){
-  const {data,error}=await supabase.rpc('get_game_bots_v641',{p_game_id:id})
+  const {data,error}=await supabase.rpc('get_game_bots_v650',{p_game_id:id})
   if(!error)setBotPlayers(Array.isArray(data)?data:[])
   return data||[]
  }
 
+ async function loadWinnerFromServer(){
+  const {data:gw,error:ge}=await supabase.from('games')
+    .select('status,winner_id,winner_bot_id')
+    .eq('id',id).single()
+  if(ge||!gw||gw.status!=='finished')return null
+
+  const [{data:humanRows},bots]=await Promise.all([
+    supabase.from('game_players')
+      .select('user_id,moves_used,treasure_share_bps,profiles(display_name)')
+      .eq('game_id',id),
+    loadGameBots()
+  ])
+
+  let won=false,name='Spieler',share=0,moves=0
+
+  if(gw.winner_bot_id){
+    const b=(Array.isArray(bots)?bots:[]).find(x=>x.bot_id===gw.winner_bot_id)
+    name=b?.display_name||'Spieler'
+    share=Number(b?.treasure_share_bps||0)
+    moves=Number(b?.moves_used||0)
+  }else if(gw.winner_id){
+    const h=(humanRows||[]).find(x=>x.user_id===gw.winner_id)
+    name=h?.profiles?.display_name||'Spieler'
+    share=Number(h?.treasure_share_bps||0)
+    moves=Number(h?.moves_used||0)
+    won=user?.id===gw.winner_id
+  }
+
+  const celebration={won,name,share,moves,talerGold:0}
+  setWinnerCelebration(celebration)
+  return celebration
+ }
+
  async function runBots(){
   if(document.visibilityState!=='visible')return
-  const {data,error}=await supabase.rpc('run_bot_game_tick_v649',{
+  const {data,error}=await supabase.rpc('run_bot_game_tick_v650',{
     p_game_id:id,
     p_active_humans:Math.max(1,onlineIds.length)
   })
@@ -344,7 +369,7 @@ export default function Game(){
     await loadGameBots()
   }
   if(Number(data?.actions||0)>0||Number(data?.opened||0)>0){
-    await Promise.all([loadGameBots(),loadGameActivity()])
+    await Promise.all([loadGameBots(),loadGameActivity(),loadGoldOnly()])
     if(currentViewport.current)scheduleVisibleReload(180)
     setTimeout(()=>pollLiveState(),250)
   }
@@ -511,7 +536,7 @@ export default function Game(){
       supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,fields_revealed,endgame_reveal_buys,endgame_machine_buys,endgame_reveal_power_bonus,endgame_machine_power_bonus,assistant_unlocked,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
-      supabase.rpc('get_treasure_status_v610',{p_game_id:id}),
+      supabase.rpc('get_treasure_status_v650',{p_game_id:id}),
       supabase.rpc('get_active_technologies_v6241'),
       supabase.from('platform_settings').select('analysis_price_l1,analysis_price_l2,analysis_price_l3,analysis_price_l4,analysis_price_l5,analysis_price_l6,job_bottles_duration_seconds,job_bottles_reward_taler,job_scrap_duration_seconds,job_scrap_reward_taler,endgame_reveal_start_cost,endgame_reveal_price_factor,endgame_reveal_bonus,endgame_machine_start_cost,endgame_machine_price_factor,endgame_machine_bonus').eq('id',1).single()
     ])
@@ -862,14 +887,7 @@ export default function Game(){
     })
     await Promise.all([loadGoldOnly(),loadPlayersOnly(),loadGameOnly(),loadAnalysisClues()])
     if(data?.game_over){
-      setWinnerCelebration({
-        won:user?.id===data.winner_id,
-        name:data.winner_name||'Spieler',
-        moves:Number(data.winner_moves_used||0),
-        opened:0,
-        share:Number(data.winner_share_bps||0),
-        talerGold:Number(data.winner_taler_gold_ug||0)
-      })
+      await loadWinnerFromServer()
     }
   }else{
     await Promise.all([loadPlayersOnly(),loadAnalysisClues(),loadCluePositions()])
@@ -926,14 +944,7 @@ export default function Game(){
     ))
     await loadPlayersOnly()
     if(data?.game_over){
-      setWinnerCelebration({
-        won:!!data.won,
-        name:data.winner_name||'Spieler',
-        moves:Number(data.winner_moves_used||0),
-        opened:Number(data.opened||0),
-        share:Number(data.winner_share_bps||0),
-        talerGold:Number(data.winner_taler_gold_ug||0)
-      })
+      await loadWinnerFromServer()
     }
     // Der Server schickt nicht mehr tausende Feldobjekte zurück.
     // Nur der sichtbare Ausschnitt wird einmal kompakt neu geladen.
@@ -1348,7 +1359,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.49.1: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.50: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%2!==0)return
   runMachines()
@@ -1405,7 +1416,8 @@ export default function Game(){
     coins:b.coins,
     fields_revealed:b.fields_revealed,
     treasure_share_bps:b.treasure_share_bps,
-    tech_count:b.tech_count
+    tech_count:b.tech_count,
+    moves_used:b.moves_used
   }))
  ]
  const isTutorial=!!game?.is_tutorial
@@ -1442,7 +1454,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.49.1</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.50</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1482,16 +1494,18 @@ export default function Game(){
    <summary>
     <span>🧩 Schatz</span>
     <strong>{(Number(me?.treasure_share_bps||0)/100).toFixed(2)}%</strong>
-    <span>{goldTreasures.filter(t=>!t.found_by).length}/{goldTreasures.length||game.treasure_count||1} offen</span>
+    <span>{goldTreasures.filter(t=>!t.found_by&&!t.found_by_bot_id).length}/{goldTreasures.length||game.treasure_count||1} offen</span>
     {(game.game_type==='pay'||game.game_type==='sponsor')&&<span>{formatGold(game.gold_prize_pool_ug)}</span>}
    </summary>
    <div className="compactTreasureBody">
     <div className="treasurePills">{goldTreasures.map((t,i)=>{
      const finder=players.find(p=>p.user_id===t.found_by)
-     return <span key={t.id} className={'treasurePill '+(t.found_by?'found':'')}>
-       {t.found_by?'✅':'🧩'} {i+1}: {(Number(t.share_bps||0)/10000).toFixed(3)}
+     const botFinder=botPlayers.find(b=>b.bot_id===t.found_by_bot_id)
+     const found=!!(t.found_by||t.found_by_bot_id)
+     return <span key={t.id} className={'treasurePill '+(found?'found':'')}>
+       {found?'✅':'🧩'} {i+1}: {(Number(t.share_bps||0)/10000).toFixed(3)}
        {(game.game_type==='pay'||game.game_type==='sponsor')&&<> · {formatGold(t.amount_ug)}</>}
-       {t.found_by&&<> · {finder?.profiles?.display_name||'gefunden'}</>}
+       {found&&<> · {botFinder?`${botFinder.avatar_emoji||'🙂'} ${botFinder.display_name}`:(finder?.profiles?.display_name||'gefunden')}</>}
      </span>
     })}</div>
     <div className="small">Gesamtschatz 1,000 · Spielende erst nach allen Teilen · größter Gesamtanteil gewinnt.</div>

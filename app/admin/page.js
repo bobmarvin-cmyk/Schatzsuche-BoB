@@ -8,10 +8,25 @@ const NUM=(v)=>v===''?0:Number(v)
 
 const RELEASE_NEWS_TEMPLATES=[
  {
-  id:'v649',
-  title:'Update V6.49.1 – kompaktere News & stärkere Gegner',
+  id:'v650',
+  title:'Update V6.50 – neue Mitspieler-Architektur',
   kind:'change',
-  body:`Neu in V6.49.1:
+  body:`Neu in V6.50:
+
+• Computer-Mitspieler besitzen jetzt echte Züge und regenerieren sie wie normale Spieler.
+• Sobald echte Spieler aktiv sind, spielen sie alle verfügbaren Züge aus.
+• Sie kaufen automatisch alle aktuell möglichen Technologien.
+• Schatzteile werden nur noch durch tatsächlich aufgedeckte Felder gefunden und erscheinen sichtbar auf der Karte.
+• Menschliche und Computer-Spieler laufen durch eine gemeinsame Siegerwertung.
+• Der Fehler, bei dem ein Spieler mit 0,00 % gewinnen konnte, obwohl Mitspieler Schatzanteile hatten, wurde behoben.
+• Ohne echte Spieler laufen Computer-Mitspieler nur im einstellbaren Sparmodus.`
+ },
+
+ {
+  id:'v649',
+  title:'Update V6.50 – kompaktere News & stärkere Gegner',
+  kind:'change',
+  body:`Neu in V6.50:
 
 • In der Lobby heißt der Bereich jetzt nur noch „News“.
 • Nur die zwei neuesten Meldungen sind direkt sichtbar; ältere News lassen sich platzsparend aufklappen.
@@ -21,9 +36,9 @@ const RELEASE_NEWS_TEMPLATES=[
  },
  {
   id:'v648',
-  title:'Update V6.49.1 – kompakte News & mehr Bot-Power',
+  title:'Update V6.50 – kompakte News & mehr Bot-Power',
   kind:'change',
-  body:`Änderungen aus V6.49.1:
+  body:`Änderungen aus V6.50:
 
 • Lobby-News wurden kompakter gestaltet.
 • Vollgas-Ratio, Such-Power und maximale Felder/Aktion wurden deutlich erweitert.
@@ -43,9 +58,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v646',
-  title:'Update V6.49.1 – Tutorial, stärkere Mitspieler & Startbonus',
+  title:'Update V6.50 – Tutorial, stärkere Mitspieler & Startbonus',
   kind:'change',
-  body:`Neu in V6.49.1:
+  body:`Neu in V6.50:
 
 • Tutorial-Erstellung robuster gemacht und den gen_salt/pgcrypto-Fehler abgefangen.
 • Computer-Mitspieler reagieren stärker auf aktive Spiele und erhalten mehr Such-Power.
@@ -58,9 +73,9 @@ Viel Spaß bei der Schatzsuche!`
  },
  {
   id:'v645',
-  title:'Update V6.49.1 – Tutorial-Fix & mehr Gegner-Power',
+  title:'Update V6.50 – Tutorial-Fix & mehr Gegner-Power',
   kind:'change',
-  body:`Änderungen aus V6.49.1:
+  body:`Änderungen aus V6.50:
 
 • Tutorial-Fix für den Fehler „gen_salt does not exist“.
 • Tutorial-Runde wird ohne Passwortpfad erzeugt und anschließend privat geschaltet.
@@ -486,20 +501,12 @@ export default function Admin(){
   if(!botConfig?.settings)return
   setSaving(true);setMsg('')
   const s=botConfig.settings
-  const {data,error}=await supabase.rpc('admin_save_bot_settings_v649',{
+  const {data,error}=await supabase.rpc('admin_save_bot_settings_v650',{
     p_enabled:!!s.enabled,
     p_bots_per_auto_game:NUM(s.bots_per_auto_game),
-    p_active_power_ratio:NUM(s.active_power_ratio??1),
-    p_power_multiplier:NUM(s.power_multiplier??3),
-    p_active_burst_actions:NUM(s.active_burst_actions??2),
-    p_idle_action_seconds:NUM(s.idle_action_seconds??45),
-    p_catchup_enabled:!!s.catchup_enabled,
-    p_catchup_max_multiplier:NUM(s.catchup_max_multiplier??3),
-    p_catchup_start_ratio:NUM(s.catchup_start_ratio??0.8),
-    p_tech_catchup_bonus:NUM(s.tech_catchup_bonus??2),
+    p_idle_spend_percent:NUM(s.idle_spend_percent??10),
     p_base_solve_percent:NUM(s.base_solve_percent),
-    p_use_real_average:!!s.use_real_average,
-    p_max_fields_per_action:NUM(s.max_fields_per_action??10000)
+    p_use_real_average:!!s.use_real_average
   })
   setSaving(false)
   setMsg(error?error.message:(data?.message||'Bot-Einstellungen gespeichert.'))
@@ -588,7 +595,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.49.1</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.50</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -973,18 +980,10 @@ export default function Admin(){
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.enabled} onChange={e=>setBotSetting('enabled',e.target.checked)}/> Mitspieler in Schatzsuchen aktiv</label>
    <div className="adminGrid">
     <Field label="Mitspieler je Spiel" value={botConfig.settings?.bots_per_auto_game??3} onChange={v=>setBotSetting('bots_per_auto_game',v)}/>
-    <Field label="Vollgas-Ratio" step="0.05" value={botConfig.settings?.active_power_ratio??1} onChange={v=>setBotSetting('active_power_ratio',v)}/>
-    <Field label="Such-Power Multiplikator" step="0.25" value={botConfig.settings?.power_multiplier??3} onChange={v=>setBotSetting('power_multiplier',v)}/>
-    <Field label="Vollgas-Aktionen pro Zug" value={botConfig.settings?.active_burst_actions??2} onChange={v=>setBotSetting('active_burst_actions',v)}/>
-    <label className="adminToggle"><input type="checkbox" checked={botConfig.settings?.catchup_enabled!==false} onChange={e=>setBotSetting('catchup_enabled',e.target.checked)}/> Aufhol-Druck aktiv</label>
-    <Field label="Max. Aufhol-Multiplikator" step="0.25" value={botConfig.settings?.catchup_max_multiplier??3} onChange={v=>setBotSetting('catchup_max_multiplier',v)}/>
-    <Field label="Aufholen ab Verhältnis" step="0.05" value={botConfig.settings?.catchup_start_ratio??0.8} onChange={v=>setBotSetting('catchup_start_ratio',v)}/>
-    <Field label="Tech-Aufholbonus" value={botConfig.settings?.tech_catchup_bonus??2} onChange={v=>setBotSetting('tech_catchup_bonus',v)}/>
-    <Field label="Leerlauf-Aktion alle (s)" value={botConfig.settings?.idle_action_seconds??45} onChange={v=>setBotSetting('idle_action_seconds',v)}/>
-    <Field label="Fallback Lösequote (%)" step="0.1" value={botConfig.settings?.base_solve_percent??60} onChange={v=>setBotSetting('base_solve_percent',v)}/>
-    <Field label="Max. Felder/Aktion" value={botConfig.settings?.max_fields_per_action??10000} onChange={v=>setBotSetting('max_fields_per_action',v)}/>
+    <Field label="Sparmodus ohne echte Spieler (%)" step="1" value={botConfig.settings?.idle_spend_percent??10} onChange={v=>setBotSetting('idle_spend_percent',v)}/>
+    <Field label="Fallback Schatzsicherung (%)" step="0.1" value={botConfig.settings?.base_solve_percent??60} onChange={v=>setBotSetting('base_solve_percent',v)}/>
    </div>
-   <div className="small adminHint">⚡ Vollgas + Konkurrenzdruck: Liegt ein Computer-Spieler bei Feldern oder Technologien deutlich hinter echten Spielern, wird er automatisch stärker. Der maximale Aufhol-Multiplikator begrenzt diesen Boost.</div>
+   <div className="small adminHint">🎮 Bot-Architektur 2.0: Bots besitzen echte gespeicherte Züge. Ist ein echter Spieler aktiv, verbrauchen sie alle verfügbaren Züge und kaufen automatisch jede aktuell mögliche Technologie. Ohne echte Spieler wird nur der eingestellte Prozentsatz ihrer Züge verwendet.</div>
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.use_real_average} onChange={e=>setBotSetting('use_real_average',e.target.checked)}/> echte durchschnittliche Schatzsicherungsquote verwenden</label>
    <div className="winnerActions"><button className="btn primary" disabled={saving} onClick={saveBotSettings}>Bot-Einstellungen speichern</button></div>
 
