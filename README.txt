@@ -1,42 +1,41 @@
-SCHATZSUCHE ONLINE V6.46
+SCHATZSUCHE ONLINE V6.47
 
-DIESES RELEASE ENTHÄLT V6.45.
-Wenn dein produktiver Stand V6.44 ist, nur v6_46_migration.sql ausführen.
+TUTORIAL
+- Fehler mit nicht vorhandener Spalte password_hash entfernt.
+- Tutorial wird erst normal erstellt und danach serverseitig privat markiert.
+- Keine Passwortspalte wird vorausgesetzt.
 
-LOBBY-NEWS-VORLAGEN
-In der Schaltzentrale unter „Lobby-News“ gibt es jetzt fertige Release-Vorlagen:
-- V6.46
-- V6.45
-- V6.44
-- V6.43
+COMPUTER-SPIELER
+Felder/min bleibt nur als Aktivitätsanzeige und steuert die Bots nicht mehr.
 
-Mit „… übernehmen“ werden Titel, Kategorie und Text in den News-Editor geladen.
-Danach lässt sich alles frei bearbeiten, kürzen oder ergänzen, bevor du veröffentlichst.
+LEERLAUF:
+- kein echter Spieler aktiv
+- 1 Feld je Leerlauf-Aktion
+- Standard 45 Sekunden
+- keine aggressive Entwicklung
 
-STARTGOLD → STARTBONUS
-- Das bisherige Test-/Startgold heißt jetzt Startbonus.
-- Der Bonus wird ganz normal im Gold-Wallet gutgeschrieben.
-- Er kann innerhalb des Spiels verwendet werden.
-- Solange niemand eine reale/physische Auszahlung anfragt, passiert nichts.
-- Beim ERSTEN physischen Auszahlungswunsch wird der noch offene Startbonus einmalig
-  aus dem frei verfügbaren Goldstaub zurückgeführt.
-- Danach ist der Bonus erledigt und wird niemals erneut abgezogen.
-- Reicht der freie Goldbestand zum Zurückführen des Bonus nicht aus, wird die
-  Auszahlungsanfrage noch nicht angenommen. Das System zeigt den fehlenden Betrag.
-- Digitale Barren bleiben weiterhin möglich; relevant wird der Bonus erst bei
-  einer tatsächlichen physischen Auszahlung.
+VOLLGAS:
+- sobald ein echter Spieler die Runde geöffnet hat
+- Bots werden sofort aufgeweckt
+- Aktionszeit orientiert sich an regen_seconds des Spiels
+- reveal_power/Techstand wird voll genutzt
+- Such-Power-Multiplikator wirkt voll
+- bis zu 3 bezahlbare Technologien pro Aktivität
+- Ratio drosselt oder verstärkt
 
-ANZEIGE
-- Lobby zeigt, welcher Anteil des Wallets noch Startbonus ist.
-- Profil zeigt enthaltenen Startbonus.
-- Prämien-/Barrenseite erklärt den einmaligen Abzug vor physischer Auszahlung.
+SCHALTZENTRALE
+- Mitspieler je Spiel
+- Vollgas-Ratio
+- Such-Power Multiplikator
+- Leerlauf-Aktion alle X Sekunden
+- Schatzsicherungsquote
+- Max. Felder/Aktion
 
-AUSSERDEM ENTHALTEN
-- V6.45 gen_salt/pgcrypto Tutorial-Fix
-- stärkeres Bot-/Mitspieler-Verhalten
-- Such-Power Multiplikator und Aktivitäts-Boost
+V6.46 ebenfalls enthalten:
+- Lobby-News-Vorlagen
+- Startgold als rückzahlbarer Startbonus
 
 INSTALLATION
-1. supabase/v6_46_migration.sql EINMAL ausführen.
-2. V6.46 deployen.
-3. V6.45 NICHT separat ausführen.
+1. supabase/v6_47_migration.sql EINMAL ausführen.
+2. V6.47 deployen.
+3. V6.45/V6.46 NICHT separat ausführen.

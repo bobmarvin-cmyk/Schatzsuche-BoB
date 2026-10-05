@@ -54,16 +54,16 @@ export default function Tutorial(){
   })
   if(error){setStarting(false);setMsg(error.message);return}
 
-  const {data:configured,error:ce}=await supabase.rpc('configure_tutorial_game_v645',{p_game_id:gid})
+  const {data:configured,error:ce}=await supabase.rpc('configure_tutorial_game_v647',{p_game_id:gid})
   if(ce){setStarting(false);setMsg('Spiel erstellt, Tutorial konnte aber nicht vorbereitet werden: '+ce.message);return}
 
   location.href='/game/'+gid+'?tutorial=1'
  }
 
- if(loading)return <main className="container"><div className="buildBadge">V6.46</div><div className="panel">Tutorial wird geladen…</div></main>
+ if(loading)return <main className="container"><div className="buildBadge">V6.47</div><div className="panel">Tutorial wird geladen…</div></main>
 
  return <main className="container tutorialLaunchPage">
-  <div className="buildBadge">V6.46</div>
+  <div className="buildBadge">V6.47</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/hilfe">Hilfe</a></div>
 
   <section className="panel tutorialHero realTutorialHero">

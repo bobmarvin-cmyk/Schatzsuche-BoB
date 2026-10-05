@@ -9,9 +9,9 @@ const NUM=(v)=>v===''?0:Number(v)
 const RELEASE_NEWS_TEMPLATES=[
  {
   id:'v646',
-  title:'Update V6.46 – Tutorial, stärkere Mitspieler & Startbonus',
+  title:'Update V6.47 – Tutorial, stärkere Mitspieler & Startbonus',
   kind:'change',
-  body:`Neu in V6.46:
+  body:`Neu in V6.47:
 
 • Tutorial-Erstellung robuster gemacht und den gen_salt/pgcrypto-Fehler abgefangen.
 • Computer-Mitspieler reagieren stärker auf aktive Spiele und erhalten mehr Such-Power.
@@ -24,9 +24,9 @@ Viel Spaß bei der Schatzsuche!`
  },
  {
   id:'v645',
-  title:'Update V6.46 – Tutorial-Fix & mehr Gegner-Power',
+  title:'Update V6.47 – Tutorial-Fix & mehr Gegner-Power',
   kind:'change',
-  body:`Änderungen aus V6.46:
+  body:`Änderungen aus V6.47:
 
 • Tutorial-Fix für den Fehler „gen_salt does not exist“.
 • Tutorial-Runde wird ohne Passwortpfad erzeugt und anschließend privat geschaltet.
@@ -452,14 +452,12 @@ export default function Admin(){
   if(!botConfig?.settings)return
   setSaving(true);setMsg('')
   const s=botConfig.settings
-  const {data,error}=await supabase.rpc('admin_save_bot_settings_v645',{
+  const {data,error}=await supabase.rpc('admin_save_bot_settings_v647',{
     p_enabled:!!s.enabled,
     p_bots_per_auto_game:NUM(s.bots_per_auto_game),
-    p_activity_ratio:NUM(s.activity_ratio??1),
-    p_idle_fields_per_min:NUM(s.idle_fields_per_min??5),
-    p_max_fields_per_min:NUM(s.max_fields_per_min??90),
+    p_active_power_ratio:NUM(s.active_power_ratio??1),
     p_power_multiplier:NUM(s.power_multiplier??3),
-    p_activity_boost:NUM(s.activity_boost??1.35),
+    p_idle_action_seconds:NUM(s.idle_action_seconds??45),
     p_base_solve_percent:NUM(s.base_solve_percent),
     p_use_real_average:!!s.use_real_average,
     p_max_fields_per_action:NUM(s.max_fields_per_action)
@@ -551,7 +549,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.46</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.47</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -935,16 +933,14 @@ export default function Admin(){
 
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.enabled} onChange={e=>setBotSetting('enabled',e.target.checked)}/> Mitspieler in Schatzsuchen aktiv</label>
    <div className="adminGrid">
-    <Field label="Bots je Spiel" value={botConfig.settings?.bots_per_auto_game??3} onChange={v=>setBotSetting('bots_per_auto_game',v)}/>
-    <Field label="Aktivitäts-Verhältnis" step="0.05" value={botConfig.settings?.activity_ratio??1} onChange={v=>setBotSetting('activity_ratio',v)}/>
-    <Field label="Grundtempo Felder/min" step="0.5" value={botConfig.settings?.idle_fields_per_min??5} onChange={v=>setBotSetting('idle_fields_per_min',v)}/>
-    <Field label="Max. Felder/min pro Mitspieler" step="1" value={botConfig.settings?.max_fields_per_min??90} onChange={v=>setBotSetting('max_fields_per_min',v)}/>
+    <Field label="Mitspieler je Spiel" value={botConfig.settings?.bots_per_auto_game??3} onChange={v=>setBotSetting('bots_per_auto_game',v)}/>
+    <Field label="Vollgas-Ratio" step="0.05" value={botConfig.settings?.active_power_ratio??1} onChange={v=>setBotSetting('active_power_ratio',v)}/>
     <Field label="Such-Power Multiplikator" step="0.25" value={botConfig.settings?.power_multiplier??3} onChange={v=>setBotSetting('power_multiplier',v)}/>
-    <Field label="Aktivitäts-Boost" step="0.05" value={botConfig.settings?.activity_boost??1.35} onChange={v=>setBotSetting('activity_boost',v)}/>
+    <Field label="Leerlauf-Aktion alle (s)" value={botConfig.settings?.idle_action_seconds??45} onChange={v=>setBotSetting('idle_action_seconds',v)}/>
     <Field label="Fallback Lösequote (%)" step="0.1" value={botConfig.settings?.base_solve_percent??60} onChange={v=>setBotSetting('base_solve_percent',v)}/>
-    <Field label="Max. Bot-Felder/Aktion" value={botConfig.settings?.max_fields_per_action??350} onChange={v=>setBotSetting('max_fields_per_action',v)}/>
+    <Field label="Max. Felder/Aktion" value={botConfig.settings?.max_fields_per_action??5000} onChange={v=>setBotSetting('max_fields_per_action',v)}/>
    </div>
-   <div className="small adminHint">⚡ Stärke: Verhältnis steuert das Mitziehen, Aktivitäts-Boost macht aktive Runden aggressiver und Such-Power vervielfacht die Felder pro Aktion.</div>
+   <div className="small adminHint">⚡ Neuer Modus: Solange kein echter Spieler aktiv im Spiel ist, laufen die Computer-Spieler nur im Leerlauf. Sobald ein echter Spieler die Runde geöffnet hat, spielen sie mit voller Zugtaktung. Die Vollgas-Ratio drosselt oder verstärkt sie.</div>
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.use_real_average} onChange={e=>setBotSetting('use_real_average',e.target.checked)}/> echte durchschnittliche Schatzsicherungsquote verwenden</label>
    <div className="winnerActions"><button className="btn primary" disabled={saving} onClick={saveBotSettings}>Bot-Einstellungen speichern</button></div>
 
