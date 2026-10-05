@@ -188,6 +188,7 @@ export default function Admin(){
   setSaving(true);setMsg('')
   const payload={
     enabled:!!autoGame.enabled,
+    random_names:!!autoGame.random_names,
     interval_minutes:NUM(autoGame.interval_minutes),
     name_prefix:autoGame.name_prefix||'Auto-Runde',
     field_count:NUM(autoGame.field_count),
@@ -204,13 +205,13 @@ export default function Admin(){
     center_lon:autoGame.center_lon??'',
     center_label:autoGame.center_label||''
   }
-  const {data,error}=await supabase.rpc('admin_save_auto_game_config_v6141',{p:payload})
+  const {data,error}=await supabase.rpc('admin_save_auto_game_config_v644',{p:payload})
   setSaving(false);setMsg(error?error.message:(data?.message||'Auto-Game gespeichert'))
   if(!error)await load()
  }
  async function generateAutoGameNow(){
   setSaving(true);setMsg('Erzeuge Auto-Game…')
-  const {data,error}=await supabase.rpc('admin_generate_auto_game_v6141')
+  const {data,error}=await supabase.rpc('admin_generate_auto_game_v644')
   setSaving(false)
   if(error){setMsg(error.message);return}
   setMsg(data?.created?'Auto-Game wurde erstellt.':'Kein Game erstellt.')
@@ -389,11 +390,12 @@ export default function Admin(){
   if(!botConfig?.settings)return
   setSaving(true);setMsg('')
   const s=botConfig.settings
-  const {data,error}=await supabase.rpc('admin_save_bot_settings_v642',{
+  const {data,error}=await supabase.rpc('admin_save_bot_settings_v644',{
     p_enabled:!!s.enabled,
     p_bots_per_auto_game:NUM(s.bots_per_auto_game),
-    p_action_seconds:NUM(s.action_seconds),
-    p_actions_per_tick:NUM(s.actions_per_tick??4),
+    p_activity_ratio:NUM(s.activity_ratio??0.8),
+    p_idle_fields_per_min:NUM(s.idle_fields_per_min??2),
+    p_max_fields_per_min:NUM(s.max_fields_per_min??40),
     p_base_solve_percent:NUM(s.base_solve_percent),
     p_use_real_average:!!s.use_real_average,
     p_max_fields_per_action:NUM(s.max_fields_per_action)
@@ -485,7 +487,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.43</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.44</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -821,9 +823,10 @@ export default function Admin(){
    <h2>🤖 Automatische Games</h2>
    <p className="small">Erzeugt öffentliche Spiele automatisch. Der Zeitplan wird serverseitig alle 5 Minuten geprüft, sofern pg_cron verfügbar ist.</p>
    <label className="adminToggle"><input type="checkbox" checked={!!autoGame.enabled} onChange={e=>setAuto('enabled',e.target.checked)}/> automatische Erstellung aktiv</label>
+   <label className="adminToggle"><input type="checkbox" checked={!!autoGame.random_names} onChange={e=>setAuto('random_names',e.target.checked)}/> 🎲 für jedes Autogame einen Zufallsnamen aus dem Namenspool verwenden</label>
    <div className="adminGrid">
     <Field label="Alle X Minuten" value={autoGame.interval_minutes} onChange={v=>setAuto('interval_minutes',v)}/>
-    <Field label="Namenspräfix" type="text" value={autoGame.name_prefix} onChange={v=>setAuto('name_prefix',v)}/>
+    <Field label="Namenspräfix (wenn Zufallsnamen aus)" type="text" value={autoGame.name_prefix} onChange={v=>setAuto('name_prefix',v)}/>
     <Field label="Kartenfelder" value={autoGame.field_count} onChange={v=>setAuto('field_count',v)}/>
     <Field label="Feldkante (m)" step="1" value={autoGame.cell_size_m} onChange={v=>setAuto('cell_size_m',v)}/>
     <Field label="Max. Spieler" value={autoGame.max_players} onChange={v=>setAuto('max_players',v)}/>
@@ -855,19 +858,21 @@ export default function Admin(){
    <div className="sectionTitleRow">
     <div>
      <h2>🤖 Bots</h2>
-     <p className="small">Persistente Bot-Profile für kostenlose Auto-Games. Gold- und Sponsorspiele bleiben botfrei.</p>
+     <p className="small">Persistente Mitspieler-Profile für normale Schatzsuchen. Gold- und Sponsorspiele bleiben botfrei.</p>
     </div>
     <span className="adminStatus">Ø Sicherung {Number(botConfig.effective_solve_percent||0).toFixed(1)}%</span>
    </div>
 
-   <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.enabled} onChange={e=>setBotSetting('enabled',e.target.checked)}/> Bots in Auto-Games aktiv</label>
+   <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.enabled} onChange={e=>setBotSetting('enabled',e.target.checked)}/> Mitspieler in Schatzsuchen aktiv</label>
    <div className="adminGrid">
-    <Field label="Bots je Auto-Game" value={botConfig.settings?.bots_per_auto_game??3} onChange={v=>setBotSetting('bots_per_auto_game',v)}/>
-    <Field label="Aktion alle (Sekunden)" value={botConfig.settings?.action_seconds??12} onChange={v=>setBotSetting('action_seconds',v)}/>
-    <Field label="Suchimpulse je Aktion" value={botConfig.settings?.actions_per_tick??4} onChange={v=>setBotSetting('actions_per_tick',v)}/>
+    <Field label="Bots je Spiel" value={botConfig.settings?.bots_per_auto_game??3} onChange={v=>setBotSetting('bots_per_auto_game',v)}/>
+    <Field label="Aktivitäts-Verhältnis" step="0.05" value={botConfig.settings?.activity_ratio??0.8} onChange={v=>setBotSetting('activity_ratio',v)}/>
+    <Field label="Grundtempo Felder/min" step="0.1" value={botConfig.settings?.idle_fields_per_min??2} onChange={v=>setBotSetting('idle_fields_per_min',v)}/>
+    <Field label="Max. Felder/min pro Bot" step="0.5" value={botConfig.settings?.max_fields_per_min??40} onChange={v=>setBotSetting('max_fields_per_min',v)}/>
     <Field label="Fallback Lösequote (%)" step="0.1" value={botConfig.settings?.base_solve_percent??60} onChange={v=>setBotSetting('base_solve_percent',v)}/>
     <Field label="Max. Bot-Felder/Aktion" value={botConfig.settings?.max_fields_per_action??350} onChange={v=>setBotSetting('max_fields_per_action',v)}/>
    </div>
+   <div className="small adminHint">⚡ Adaptive Aktivität: Verhältnis 0,80 bedeutet, dass ein Mitspieler ungefähr 80 % der durchschnittlichen menschlichen Felder/min anpeilt. Bei ruhigen Spielen gilt das Grundtempo.</div>
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.use_real_average} onChange={e=>setBotSetting('use_real_average',e.target.checked)}/> echte durchschnittliche Schatzsicherungsquote verwenden</label>
    <div className="winnerActions"><button className="btn primary" disabled={saving} onClick={saveBotSettings}>Bot-Einstellungen speichern</button></div>
 

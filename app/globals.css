@@ -3720,3 +3720,28 @@ body{
     width:auto;
   }
 }
+
+
+/* =========================================================
+   V6.44 – Aktivitätsindikator
+   ========================================================= */
+.gameActivityBadge{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-top:6px;
+  padding:4px 8px;
+  border-radius:999px;
+  border:1px solid #40546e;
+  background:#142033;
+  color:#bcd0e6;
+  font-size:10px;
+  font-weight:700;
+}
+.adminHint{
+  margin:8px 0;
+  padding:8px 10px;
+  border:1px solid #33465e;
+  border-radius:9px;
+  background:#111d2d;
+}

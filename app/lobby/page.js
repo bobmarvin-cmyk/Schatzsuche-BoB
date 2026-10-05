@@ -35,6 +35,7 @@ export default function Lobby(){
  const [news,setNews]=useState([])
  const [joinedGameIds,setJoinedGameIds]=useState(new Set())
  const [botCounts,setBotCounts]=useState({})
+ const [activityByGame,setActivityByGame]=useState({})
 
  useEffect(()=>{
    setName(creativeGameName(namePool))
@@ -50,8 +51,16 @@ export default function Lobby(){
    await supabase.rpc('run_game_maintenance_v66')
    const {data:adminFlag}=await supabase.rpc('is_admin_v67')
    setIsAdmin(!!adminFlag)
-   await Promise.all([loadGames(),loadWallet(),loadSettings(),loadNamePool(),loadNews(),loadJoinedGames(),loadBotCounts()])
+   await Promise.all([loadGames(),loadWallet(),loadSettings(),loadNamePool(),loadNews(),loadJoinedGames(),loadBotCounts(),loadActivity()])
    setAuthReady(true)
+ }
+
+ async function loadActivity(){
+   const {data,error}=await supabase.rpc('get_lobby_activity_v644')
+   if(error)return
+   const next={}
+   for(const row of data||[])next[String(row.game_id)]=Number(row.fields_per_min||0)
+   setActivityByGame(next)
  }
 
  async function loadBotCounts(){
@@ -261,7 +270,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.43</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.44</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -483,6 +492,7 @@ export default function Lobby(){
       const count=Number(g.player_count||0)
       const botInfo=botCounts[String(g.id)]||{count:0,blocked:false}
       const botCount=Number(botInfo.count||0)
+      const activity=Number(activityByGame[String(g.id)]||0)
       const isPay=g.game_type==='pay'
       const isSponsor=g.game_type==='sponsor'
       return <div className={'card '+(isPay?'payGameCard':isSponsor?'sponsorGameCard':'')} key={g.id}>
@@ -496,7 +506,7 @@ export default function Lobby(){
        {isSponsor&&<div className="payFacts sponsorFacts">
         <span>Sponsor: <b>{g.sponsor_name||'Sponsor'}</b></span><span>Teilnahme: <b>kostenlos</b></span><span>Pool: <b>{formatGold(g.gold_prize_pool_ug)}</b></span>
        </div>}
-       <div className="capacityLine"><span>👥 {Math.min(Number(g.max_players||0),count+botCount)} / {g.max_players}</span><span>🟢 aktiv</span></div>
+       <div className="capacityLine"><span>👥 {Math.min(Number(g.max_players||0),count+botCount)} / {g.max_players}</span><span>⚡ {activity.toFixed(1)} Felder/min</span></div>
        <div className="gameProgressLine">
         <div><span style={{width:`${Math.round(gameProgress(g)*100)}%`}}/></div>
         <small>{(gameProgress(g)*100).toFixed(1)} % erkundet</small>
