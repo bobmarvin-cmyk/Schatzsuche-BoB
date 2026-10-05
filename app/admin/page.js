@@ -8,10 +8,23 @@ const NUM=(v)=>v===''?0:Number(v)
 
 const RELEASE_NEWS_TEMPLATES=[
  {
-  id:'v651',
-  title:'Update V6.51 – flüssigere Mitspieler',
+  id:'v652',
+  title:'Update V6.52 – schnellere Computer-Mitspieler',
   kind:'change',
-  body:`Neu in V6.51:
+  body:`Neu in V6.52:
+
+• Computer-Mitspieler verarbeiten ihre verfügbaren Züge jetzt in einer gemeinsamen Serveroperation statt Zug für Zug.
+• Dadurch werden große Mengen Felder deutlich effizienter aufgedeckt.
+• Ein Sicherheitsdeckel begrenzt nur extreme Feldmengen; übrige Züge folgen im nächsten Tick.
+• Die Aktivitätsanzeige über der Karte wurde entfernt.
+• Zielgebiete, echte Züge, Technologien, Terrain und gemeinsame Siegerlogik bleiben erhalten.`
+ },
+
+ {
+  id:'v651',
+  title:'Update V6.52 – flüssigere Mitspieler',
+  kind:'change',
+  body:`Neu in V6.52:
 
 • Computer-Mitspieler verarbeiten ihre echten Züge jetzt in kleinen Batches im Sekundentakt.
 • Dadurch reagieren sie deutlich flüssiger, ohne große Datenbankabfragen zu erzeugen.
@@ -22,9 +35,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v650',
-  title:'Update V6.51 – neue Mitspieler-Architektur',
+  title:'Update V6.52 – neue Mitspieler-Architektur',
   kind:'change',
-  body:`Neu in V6.51:
+  body:`Neu in V6.52:
 
 • Computer-Mitspieler besitzen jetzt echte Züge und regenerieren sie wie normale Spieler.
 • Sobald echte Spieler aktiv sind, spielen sie alle verfügbaren Züge aus.
@@ -37,9 +50,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v649',
-  title:'Update V6.51 – kompaktere News & stärkere Gegner',
+  title:'Update V6.52 – kompaktere News & stärkere Gegner',
   kind:'change',
-  body:`Neu in V6.51:
+  body:`Neu in V6.52:
 
 • In der Lobby heißt der Bereich jetzt nur noch „News“.
 • Nur die zwei neuesten Meldungen sind direkt sichtbar; ältere News lassen sich platzsparend aufklappen.
@@ -49,9 +62,9 @@ const RELEASE_NEWS_TEMPLATES=[
  },
  {
   id:'v648',
-  title:'Update V6.51 – kompakte News & mehr Bot-Power',
+  title:'Update V6.52 – kompakte News & mehr Bot-Power',
   kind:'change',
-  body:`Änderungen aus V6.51:
+  body:`Änderungen aus V6.52:
 
 • Lobby-News wurden kompakter gestaltet.
 • Vollgas-Ratio, Such-Power und maximale Felder/Aktion wurden deutlich erweitert.
@@ -71,9 +84,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v646',
-  title:'Update V6.51 – Tutorial, stärkere Mitspieler & Startbonus',
+  title:'Update V6.52 – Tutorial, stärkere Mitspieler & Startbonus',
   kind:'change',
-  body:`Neu in V6.51:
+  body:`Neu in V6.52:
 
 • Tutorial-Erstellung robuster gemacht und den gen_salt/pgcrypto-Fehler abgefangen.
 • Computer-Mitspieler reagieren stärker auf aktive Spiele und erhalten mehr Such-Power.
@@ -86,9 +99,9 @@ Viel Spaß bei der Schatzsuche!`
  },
  {
   id:'v645',
-  title:'Update V6.51 – Tutorial-Fix & mehr Gegner-Power',
+  title:'Update V6.52 – Tutorial-Fix & mehr Gegner-Power',
   kind:'change',
-  body:`Änderungen aus V6.51:
+  body:`Änderungen aus V6.52:
 
 • Tutorial-Fix für den Fehler „gen_salt does not exist“.
 • Tutorial-Runde wird ohne Passwortpfad erzeugt und anschließend privat geschaltet.
@@ -514,11 +527,11 @@ export default function Admin(){
   if(!botConfig?.settings)return
   setSaving(true);setMsg('')
   const s=botConfig.settings
-  const {data,error}=await supabase.rpc('admin_save_bot_settings_v651',{
+  const {data,error}=await supabase.rpc('admin_save_bot_settings_v652',{
     p_enabled:!!s.enabled,
     p_bots_per_auto_game:NUM(s.bots_per_auto_game),
     p_idle_spend_percent:NUM(s.idle_spend_percent??10),
-    p_active_batch_moves:NUM(s.active_batch_moves??4),
+    p_max_active_fields_per_tick:NUM(s.max_active_fields_per_tick??6000),
     p_base_solve_percent:NUM(s.base_solve_percent),
     p_use_real_average:!!s.use_real_average
   })
@@ -620,7 +633,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.51</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.52</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -1005,11 +1018,11 @@ export default function Admin(){
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.enabled} onChange={e=>setBotSetting('enabled',e.target.checked)}/> Mitspieler in Schatzsuchen aktiv</label>
    <div className="adminGrid">
     <Field label="Mitspieler je Spiel" value={botConfig.settings?.bots_per_auto_game??3} onChange={v=>setBotSetting('bots_per_auto_game',v)}/>
-    <Field label="Züge pro Aktiv-Batch" value={botConfig.settings?.active_batch_moves??4} onChange={v=>setBotSetting('active_batch_moves',v)}/>
+    <Field label="Max. Bot-Felder pro Tick" value={botConfig.settings?.max_active_fields_per_tick??6000} onChange={v=>setBotSetting('max_active_fields_per_tick',v)}/>
     <Field label="Sparmodus ohne echte Spieler (%)" step="1" value={botConfig.settings?.idle_spend_percent??10} onChange={v=>setBotSetting('idle_spend_percent',v)}/>
     <Field label="Fallback Schatzsicherung (%)" step="0.1" value={botConfig.settings?.base_solve_percent??60} onChange={v=>setBotSetting('base_solve_percent',v)}/>
    </div>
-   <div className="small adminHint">🎮 Bot-Executor V6.51: Bei aktiven echten Spielern werden jede Sekunde mehrere echte Bot-Züge als kleiner Batch verarbeitet. So reagieren sie flüssig, ohne mit riesigen SQL-Läufen in ein Statement-Timeout zu geraten. Ohne echte Spieler gilt weiter der Sparmodus.</div>
+   <div className="small adminHint">⚡ V6.52: Alle verfügbaren Bot-Züge werden pro Bot zu EINER gemeinsamen Feldoperation zusammengefasst. „Max. Bot-Felder pro Tick“ ist nur ein Sicherheitsdeckel gegen Datenbank-Timeouts; übrig gebliebene Züge folgen im nächsten Tick.</div>
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.use_real_average} onChange={e=>setBotSetting('use_real_average',e.target.checked)}/> echte durchschnittliche Schatzsicherungsquote verwenden</label>
    <div className="winnerActions"><button className="btn primary" disabled={saving} onClick={saveBotSettings}>Bot-Einstellungen speichern</button></div>
 

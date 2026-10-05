@@ -1,46 +1,35 @@
-SCHATZSUCHE ONLINE V6.51
+SCHATZSUCHE ONLINE V6.52
 
-FLÜSSIGERE COMPUTER-MITSPIELER
-- Der Browser stößt die Bot-Logik nun etwa jede Sekunde an.
-- Gleichzeitige Bot-Ticks werden verhindert.
-- Pro Bot werden mehrere echte gespeicherte Züge in einem kleinen Batch verarbeitet.
-- Standard: 4 Züge pro Batch; in der Schaltzentrale 1–12 einstellbar.
-- Das vermeidet riesige Einzel-SQL-Läufe und reduziert Statement-Timeout-Risiko.
+WARUM V6.51 NOCH LAHM WIRKTE
+V6.51 hatte zwar Batches, führte intern aber weiterhin jeden einzelnen Zug
+nacheinander durch. Dadurch blieben viele SQL-Schritte pro Bot bestehen.
 
-ZIELGEBIETE
-- Jeder Bot erhält ein aktuelles Zielgebiet.
-- Er bleibt mehrere Züge dort und bewegt das Ziel leicht weiter.
-- Ist das Gebiet leer, sucht er ein neues unbekanntes Gebiet.
-- Die Karte sollte dadurch zusammenhängendere, menschlichere Suchspuren zeigen.
+V6.52
+- Ein Bot-Tick berechnet alle aktuell nutzbaren Züge zusammen.
+- Daraus entsteht EIN gemeinsames Feldbudget.
+- Freie Felder werden in EINER Kandidatenmenge gesucht.
+- explored_fields wird in EINEM Bulk-Insert geschrieben.
+- Schatzprüfung und Statistik werden gesammelt verarbeitet.
+- Technologien werden vor und nach dem Bulk-Zug aktualisiert.
 
-TECHNOLOGIEN
-- Weiterhin echte Taler und echte Tech-Voraussetzungen.
-- Vor dem Batch und nach jedem Zug werden alle bezahlbaren Entwicklungen geprüft.
-- Die Charakter-/Persönlichkeitslogik wurde bewusst NICHT erweitert.
+AKTIVE SPIELER
+- Sobald mindestens ein echter Spieler aktiv ist, nutzt der Bot grundsätzlich
+  alle aktuell verfügbaren Züge.
+- Nur der Sicherheitsdeckel „Max. Bot-Felder pro Tick“ kann einen extrem großen
+  Block auf mehrere unmittelbar folgende Ticks verteilen.
+- Standard: 6.000 Felder pro Bot/Tick.
 
 SPARMODUS
-- Sind echte Spieler aktiv: schneller Batchbetrieb.
-- Ist niemand aktiv: weiterhin nur der eingestellte Prozentanteil.
+- Ohne echte Spieler bleibt der prozentuale Sparmodus erhalten.
+
+KARTE
+- Aktivitätsanzeige über der Karte entfernt.
+- Terrain/Wald/Wasser aus V6.51 bleibt erhalten.
+- persönliche Feld-Deckkraft bleibt erhalten.
 
 BOT-VERWALTUNG
-- Icon weiterhin frei als Emoji eintragbar.
-- Zusätzlich direkte Icon-Auswahl per Buttons.
-- „Löschen“ ist möglich.
-- Ist der Bot in einem laufenden Spiel aktiv, wird Löschen verhindert.
-- Ohne Historie: echte Löschung.
-- Mit Historie: Archivierung, damit alte Spielstände/Schatzfinder/Sieger erhalten bleiben.
-
-NEWS
-- V6.51-Vorlage ergänzt.
+- Iconauswahl und Löschen/Archivieren aus V6.51 bleiben erhalten.
 
 INSTALLATION
-1. supabase/v6_51_migration.sql EINMAL ausführen.
-2. V6.51 deployen.
-
-
-TERRAIN / WALD / WASSER
-- Terrain-Klassifizierung war im Code noch vorhanden, wirkte in der Standard-Satellitenansicht aber praktisch nicht mehr.
-- Ursache: reine Raster-Satellitenkacheln liefern keine auswertbaren Wald-/Wasser-/Flächenmerkmale.
-- V6.51 nutzt für die Satellitenansicht jetzt wieder die Vektorkarte als technische Basis und legt das Satellitenbild darunter.
-- Dadurch bleiben Wald, Wasser, Feuchtgebiet, Industrie usw. für die Terrain-Regeln auswertbar, obwohl der Spieler weiterhin Satellitenbild sieht.
-- Terrain-Technologien ter2/ter4/ter5/ter6/ter7 bleiben aktiv.
+1. supabase/v6_52_migration.sql EINMAL ausführen.
+2. V6.52 deployen.
