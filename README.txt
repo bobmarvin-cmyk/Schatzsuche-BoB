@@ -1,18 +1,22 @@
-SCHATZSUCHE ONLINE V6.35
+SCHATZSUCHE ONLINE V6.36
 
-HOTFIX TECHNOLOGIEN
+TECHNOLOGIEN-HOTFIX
 
-- Alle Technologiearten bleiben über eine horizontal scrollbarere Tab-Leiste erreichbar.
-- Tabs werden nicht mehr abgeschnitten.
-- Aktiver Tab scrollt automatisch in die Mitte.
-- Technologiebaum hat einen eigenen echten horizontalen Scrollbereich.
-- sichtbarer Scrollbalken auf Desktop.
-- Touch-/Trackpad-Scrolling auf Mobil und Notebook verbessert.
-- Der restliche Spielbereich bleibt auf Bildschirmbreite; nur der Techbaum scrollt seitlich.
-- kleiner Hinweis „↔ Seitlich scrollen …“ im Baum.
+- Technologiearten jetzt vollständig untereinander statt horizontal scrollbar.
+- Jeder Zweig hat einen eigenen kompakten Abschnitt.
+- Fortschritt pro Zweig oben als kleine Leiste.
+- aktuell kaufbare Technologie direkt sichtbar.
+- darunter der Zweig vertikal:
+  Technologie
+      ↓
+  Technologie
+      ↓
+  Technologie
+- dadurch kein horizontaler Scrollbalken mehr nötig.
+- „Erforschen“-Buttons repariert: sie rufen wieder die echte Kauf-/Forschungsfunktion auf.
 - keine neue SQL-Migration nötig, wenn V6.33 bereits installiert ist.
 
 DEPLOY:
 1. Kein SQL nötig.
-2. Projektdateien hochladen.
+2. Dateien hochladen.
 3. Vercel deployen lassen.

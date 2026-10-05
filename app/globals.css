@@ -3147,3 +3147,160 @@ body{
     font-size:9px;
   }
 }
+
+
+/* =========================================================
+   V6.36 – Technologien ohne horizontales Scrollen
+   ========================================================= */
+.technologyTabsShell,
+.technologyTabs,
+.techBranchMapPanel,
+.techGraphScroller,
+.techGraphScrollHint,
+.techGraph{
+  display:none!important;
+}
+
+.technologyBranchStack{
+  display:grid;
+  gap:14px;
+  margin-top:10px;
+}
+
+.technologyBranchSection{
+  border:1px solid #2d3d53;
+  border-radius:12px;
+  background:#0f1928;
+  padding:11px;
+}
+
+.technologyBranchHeader{
+  display:grid;
+  gap:7px;
+  margin-bottom:9px;
+}
+.technologyBranchHeader > div:first-child{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+.technologyBranchHeader strong{
+  font-size:14px;
+}
+.technologyBranchHeader span{
+  color:#8fa3bb;
+  font-size:10px;
+}
+
+.technologyBranchProgress{
+  display:flex;
+  gap:4px;
+}
+.technologyBranchProgress span{
+  height:5px;
+  flex:1 1 0;
+  min-width:3px;
+  border-radius:999px;
+  background:#2b394e;
+}
+.technologyBranchProgress span.done{background:#3c9f70}
+.technologyBranchProgress span.current{background:#d0a84d}
+.technologyBranchProgress span.future{background:#334258;opacity:.65}
+
+.branchAvailableTechs{
+  display:grid;
+  gap:6px;
+  margin-bottom:10px;
+}
+.branchAvailableCard{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+  padding:8px 9px;
+  border:1px solid #5b4c29;
+  border-radius:9px;
+  background:#211b0d;
+}
+.branchAvailableCard strong{
+  display:block;
+  margin-bottom:2px;
+}
+.primaryTechAction{
+  border-color:#a98232!important;
+  background:#d5ad50!important;
+  color:#172033!important;
+  white-space:nowrap;
+}
+
+.branchTechPath{
+  display:grid;
+  gap:0;
+}
+.branchTechStepWrap{
+  display:grid;
+  gap:3px;
+}
+.branchTechConnector{
+  justify-self:start;
+  margin-left:13px;
+  color:#5e7189;
+  font-size:13px;
+  line-height:1;
+}
+.branchTechStep{
+  border:1px solid #2d3e55;
+  border-radius:9px;
+  background:#111c2c;
+  padding:8px 9px;
+}
+.branchTechStep.done{
+  border-color:#315b49;
+  background:#10231c;
+}
+.branchTechStep.current{
+  border-color:#7c6733;
+  background:#211b0e;
+}
+.branchTechStep.future{
+  opacity:.55;
+}
+.branchTechStepTop{
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  gap:7px;
+  align-items:center;
+}
+.branchTechState{
+  width:20px;
+  height:20px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#27364a;
+  font-size:10px;
+}
+.branchTechState.done{background:#2e6d52;color:#e3f8ee}
+.branchTechState.current{background:#9a772d;color:#fff3cb}
+.branchTechState.future{background:#34445a;color:#9fb0c5}
+.branchTechCost{
+  color:#97abc1;
+  font-size:10px;
+  white-space:nowrap;
+}
+.branchResearchBtn{
+  margin-top:7px;
+}
+
+@media(max-width:700px){
+  .technologyBranchSection{
+    padding:9px;
+  }
+  .branchAvailableCard{
+    grid-template-columns:1fr;
+  }
+  .primaryTechAction{
+    width:100%;
+  }
+}
