@@ -1,0 +1,28 @@
+SCHATZSUCHE ONLINE V6.27
+
+MASCHINEN KOMPLETT UMGESTELLT
+
+- Maschinen decken keine echten Kartenfelder mehr auf.
+- Keine Terrainprüfung, keine Feldsuche, keine explored_fields-Schreiblast.
+- Bestehende machine_auto_fields-Werte bleiben erhalten und heißen nun
+  "virtuelle Suchfelder pro Takt".
+- Pro fälligem Takt gibt es genau einen kleinen serverseitigen Wahrscheinlichkeitswurf.
+- Trefferchance steigt mit:
+    Maschinenleistung
+    Anzahl offener Schatzteile
+  und sinkt mit:
+    Anzahl noch unbekannter Felder
+- Bei Treffer wird direkt eine normale Schatzsicherung für ein offenes Schatzteil erzeugt.
+- Bei Niete passiert außer dem Maschinen-Takt praktisch nichts.
+- Die Karte wird durch Maschinen nicht mehr eingefärbt/aktualisiert.
+- Endspiel-Schutz V6.26 bleibt zuständig, falls die Karte vollständig erforscht ist.
+
+FORMEL
+Trefferchance = min(100 %, Maschinenleistung × offene Schatzteile / unbekannte Felder)
+
+INSTALLATION
+1. Projektdateien ins Repo übernehmen.
+2. In Supabase SQL Editor EINMAL ausführen:
+   supabase/v6_27_migration.sql
+3. Alte Migrationen NICHT erneut ausführen.
+4. Vercel deployen lassen.

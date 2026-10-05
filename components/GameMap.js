@@ -520,7 +520,7 @@ export default function GameMap({
 
           // Terrain wird clientseitig nur als Karten-Hintergrundinformation gelesen.
           // Die eigentliche Aufdeckung bleibt serverautoritativ.
-          // V6.25.2: mehr Kandidaten vermessen als nominelle Suchleistung.
+          // V6.27: mehr Kandidaten vermessen als nominelle Suchleistung.
           // Bereits belegte / gesperrte Felder dürfen den Zug nicht künstlich verkleinern.
           const nominal=Math.max(1,Number(terrainScanPowerRef.current||1))
           const target=Math.min(2400,Math.max(nominal,Math.ceil(nominal*2.25)))

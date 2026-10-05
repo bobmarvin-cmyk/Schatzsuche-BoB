@@ -90,7 +90,7 @@ export default function Tutorial(){
  },[])
 
  return <main className="container tutorialPage">
-  <div className="buildBadge">V6.25.2</div>
+  <div className="buildBadge">V6.27</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/hilfe">Hilfe</a></div>
 
   <section className="panel tutorialHero">

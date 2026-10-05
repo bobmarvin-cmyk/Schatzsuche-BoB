@@ -927,10 +927,8 @@ export default function Game(){
  const machinePower=technologies
    .filter(t=>owned.includes(t.id))
    .reduce((sum,t)=>sum+Number(t.machine_auto_fields||0),0)
- const machineBatchSize=Math.min(75,Math.max(0,machinePower))
- const machineBatchInterval=machinePower>0
-   ? Math.max(1,Math.round(effectiveRegen*(machineBatchSize/machinePower)))
-   : effectiveRegen
+ const machineBatchSize=machinePower
+ const machineBatchInterval=effectiveRegen
  const secondsUntilMachine=(()=>{
    if(!me||!game||machinePower<=0)return null
    const last=new Date(me.machine_last_run_at||Date.now()).getTime()
@@ -956,18 +954,16 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(tick%10!==0)return
-  if(document.visibilityState!=='visible'||!document.hasFocus())return
+  if(document.visibilityState!=='visible')return
   supabase.rpc('machine_presence_v690',{p_game_id:id})
  },[tick,joinState,machinePower,id])
 
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.26.1.1: Maschinenlauf nicht mehr vom lokalen Countdown abhängig.
-  // Alle 3 Sekunden wird kurz beim Server geprüft; "noch nicht fällig"
-  // wird dort ohne Wirkung verworfen. Dadurch kann ein veralteter
-  // machine_last_run_at-Wert die Automatik nicht mehr festhalten.
-  if(tick%3!==0)return
+  // V6.27: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
+  if(tick%5!==0)return
   runMachines()
  },[tick,joinState,machinePower])
 
@@ -979,7 +975,7 @@ export default function Game(){
   if(Number(t.analysis_level))effects.push(`Analyse Stufe ${t.analysis_level}`)
   if(Number(t.capacity_bonus))effects.push(`+${t.capacity_bonus} Zugspeicher`)
   if(Number(t.regen_reduction))effects.push(`${Math.round(Number(t.regen_reduction)*100)}% schnellere Regeneration`)
-  if(Number(t.machine_auto_fields))effects.push(`${Number(t.machine_auto_fields).toLocaleString('de-DE')} automatische Felder/Takt`)
+  if(Number(t.machine_auto_fields))effects.push(`${Number(t.machine_auto_fields).toLocaleString('de-DE')} virtuelle Suchfelder/Takt`)
   if(t.exclusive_per_game)effects.push('🔒 exklusiv: nur 1 Spieler pro Game')
   if(t.trap_type)effects.push(`🪤 ${t.trap_type} · Stärke ${Number(t.trap_power||0)} · max. ${Number(t.trap_limit||0)} aktiv`)
   if(t.id==='ter2')effects.push('🌲 Wald freigeschaltet')
@@ -1020,7 +1016,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.25.2</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.27</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1036,7 +1032,7 @@ export default function Game(){
      [me?.reveal_power??1,'Felder/Zug'],
      [(me?.reward_multiplier??1)+'×','Bonus'],
      ['Stufe '+(me?.analysis_level??0),'Analyse'],
-     [machinePower>0?`${machinePower.toLocaleString('de-DE')} / ${secondsUntilMachine===null?'–':secondsUntilMachine+'s'}`:'0','Maschinenfelder / nächster Takt'],
+     [machinePower>0?`${machinePower.toLocaleString('de-DE')} / ${secondsUntilMachine===null?'–':secondsUntilMachine+'s'}`:'0','Maschinenleistung / nächster Takt'],
      [`${Number(game?.gimmick_percent||0).toFixed(2)}% · ${Number(game?.gimmicks_found_count||0).toLocaleString('de-DE')}/${Number(game?.gimmick_target_count||0).toLocaleString('de-DE')}`,'Gimmicks'],
      [fieldsPerMinute.toFixed(1),'Felder/Min'],
      [left.toLocaleString('de-DE'),'Felder übrig']
