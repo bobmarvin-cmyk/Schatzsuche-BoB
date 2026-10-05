@@ -1,20 +1,24 @@
-SCHATZSUCHE ONLINE V6.54
+SCHATZSUCHE ONLINE V6.55
 
-BOT-SUCHE
-- Aufgedeckt wird nur noch lokal um das aktuelle Bot-Zielzentrum.
-- Keine zufälligen Einzel-Felder mehr quer über die Karte.
-- Wird ein lokales Gebiet knapp, sucht der Bot ein neues Zentrum in mittlerer Entfernung.
-- Nur wenn dort nichts Sinnvolles gefunden wird, darf global ein neues Zentrum gewählt werden.
-- Auch dann wird NICHT sofort global aufgedeckt; der nächste Lauf sucht wieder lokal um dieses Zentrum.
+ENDGAME
+Wenn alle Kartenfelder erkundet sind, aber noch offene Schatzteile existieren:
+- die Runde bleibt nicht mehr hängen
+- das System ermittelt den Entdecker des jeweiligen Schatzfeldes
+- das Schatzteil wird diesem Spieler/Bot zugerechnet
+- anschließend läuft die normale gemeinsame Siegerwertung
 
-LOBBY
-- „Weiterspielen“ heißt jetzt „Mitspielen“.
-- Der Lebenszyklus-Hinweis im Lobby-Kopf wurde entfernt.
+AUTO-GAMES
+Neue Einstellung in der Schaltzentrale:
+Einladevorlauf (Minuten)
 
-SCHALTZENTRALE
-- Bot-Iconauswahl ist einklappbar.
-- News-Vorlagen zeigen nur noch die 10 neuesten Releases.
+Beispiele:
+0   = sofort starten
+10  = Spiel wird erstellt und startet 10 Minuten später
+30  = 30 Minuten Einladephase
+60  = 1 Stunde Einladephase
+
+Während der Einladephase sammeln Bots keine virtuelle Spielzeit.
 
 INSTALLATION
-1. supabase/v6_54_migration.sql EINMAL ausführen.
-2. V6.54 deployen.
+1. supabase/v6_55_migration.sql EINMAL ausführen.
+2. V6.55 deployen.
