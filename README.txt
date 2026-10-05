@@ -1,28 +1,20 @@
-SCHATZSUCHE ONLINE V6.53.5
+SCHATZSUCHE ONLINE V6.54
 
-WARUM BOTS TROTZ FUNKTIONIERENDEM INSERT NUR 0–2 FELDER SCHAFFTEN
+BOT-SUCHE
+- Aufgedeckt wird nur noch lokal um das aktuelle Bot-Zielzentrum.
+- Keine zufälligen Einzel-Felder mehr quer über die Karte.
+- Wird ein lokales Gebiet knapp, sucht der Bot ein neues Zentrum in mittlerer Entfernung.
+- Nur wenn dort nichts Sinnvolles gefunden wird, darf global ein neues Zentrum gewählt werden.
+- Auch dann wird NICHT sofort global aufgedeckt; der nächste Lauf sucht wieder lokal um dieses Zentrum.
 
-Menschen:
-- Karte lädt Vektordaten
-- Terrain wird clientseitig klassifiziert
-- Feld wird danach aufgedeckt
+LOBBY
+- „Weiterspielen“ heißt jetzt „Mitspielen“.
+- Der Lebenszyklus-Hinweis im Lobby-Kopf wurde entfernt.
 
-Bots:
-- kein Browser-Kartenclient
-- viele Felder besitzen keinen game_terrain_cells-Eintrag
-- Terrain-Trigger blockierte diese Felder
-
-V6.53.5
-- fehlende Terrain-Klassifikation gilt für Bots vorläufig als offenes Gelände
-- bekannte Terrainwerte werden weiterhin korrekt gesperrt:
-  Wald ter2
-  Wasser ter4
-  Feuchtgebiet ter5
-  Industrie/Sondergebiet ter6
-  ter7 alles
-
-Menschen bleiben unverändert streng terrainbasiert.
+SCHALTZENTRALE
+- Bot-Iconauswahl ist einklappbar.
+- News-Vorlagen zeigen nur noch die 10 neuesten Releases.
 
 INSTALLATION
-1. supabase/v6_53_5_migration.sql EINMAL ausführen.
-2. V6.53.5 deployen.
+1. supabase/v6_54_migration.sql EINMAL ausführen.
+2. V6.54 deployen.

@@ -3926,3 +3926,30 @@ body{
   color:#ffb4b4;
   word-break:break-word;
 }
+
+
+/* V6.54 – kompakte Bot-Iconauswahl */
+.botIconPicker{
+  margin-top:4px;
+  position:relative;
+}
+.botIconPicker>summary{
+  cursor:pointer;
+  list-style:none;
+  font-size:11px;
+  opacity:.85;
+  user-select:none;
+}
+.botIconPicker>summary::-webkit-details-marker{display:none}
+.botIconPicker[open] .botIconPresets{
+  margin-top:6px;
+  padding:6px;
+  max-width:220px;
+  display:grid;
+  grid-template-columns:repeat(8,minmax(0,1fr));
+  gap:4px;
+}
+.botIconPicker .botIconPreset{
+  min-width:0;
+  padding:4px;
+}

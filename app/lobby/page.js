@@ -270,7 +270,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.52.1</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.54</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -285,7 +285,7 @@ export default function Lobby(){
 
   <div className="panel heroPanel">
    <div className="heroSplit">
-    <div><h1>Lobby</h1><p className="muted">Finde eine passende Runde oder starte deine eigene Schatzsuche. Schnelle Spiele, Langzeitrunden, Goldspiele und Sponsorspiele lassen sich unten gezielt filtern und sortieren.</p><p className="small">Spiele ohne Zug werden nach {inactivityHours} Stunden automatisch geschlossen. Die großen Live-Daten geschlossener Spiele werden nach {Math.round(retentionHours/24)} Tagen bereinigt; der Endstand bleibt dauerhaft in der Hall of Fame.</p></div>
+    <div><h1>Lobby</h1><p className="muted">Finde eine passende Runde oder starte deine eigene Schatzsuche. Schnelle Spiele, Langzeitrunden, Goldspiele und Sponsorspiele lassen sich unten gezielt filtern und sortieren.</p></div>
     <div className="goldWalletCard">
      <div className="small">Goldstaub</div>
      <div className="goldBalance">✨ {formatGold(wallet?.balance_ug||0)}</div>
@@ -525,7 +525,7 @@ export default function Lobby(){
         const alreadyJoined=joinedGameIds.has(String(g.id))
         return <button className={'btn '+(isPay?'goldBtn':'primary')+' wideOnMobile'} disabled={!alreadyJoined&&count>=g.max_players} onClick={()=>joinPublic(g)}>
          {alreadyJoined
-          ?'Weiterspielen'
+          ?'Mitspielen'
           :count>=g.max_players
             ?'Voll'
             :isPay
