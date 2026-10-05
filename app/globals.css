@@ -2325,3 +2325,223 @@ button:disabled{cursor:not-allowed;opacity:.45}
     padding:9px;
   }
 }
+
+
+/* =========================================================
+   V6.32 – News, Changelog, Techbaum, Hinweis-Markierungen
+   ========================================================= */
+.gameChangelogPanel summary,
+.techTreeOverview summary{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  cursor:pointer;
+}
+.gameChangelogList{
+  display:grid;
+  gap:6px;
+  margin-top:9px;
+  max-height:360px;
+  overflow:auto;
+}
+.gameChangelogItem{
+  padding:8px 9px;
+  border:1px solid #2f425e;
+  border-radius:9px;
+  background:#131f31;
+}
+.gameChangelogMeta{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:3px;
+  font-size:9px;
+  color:#8fa5bd;
+  text-transform:uppercase;
+}
+.gameChangelogMeta time{
+  text-transform:none;
+  white-space:nowrap;
+}
+
+.techTreeOverview{
+  margin-top:13px;
+  border-top:1px solid rgba(255,255,255,.08);
+  padding-top:9px;
+}
+.techTreeLanes{
+  display:grid;
+  gap:9px;
+  margin-top:9px;
+}
+.techTreeLane{
+  min-width:0;
+}
+.techTreeLaneTitle{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-bottom:5px;
+  font-size:11px;
+}
+.techTreeLaneTitle span{
+  color:#91a6bf;
+}
+.techTreeScroller{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  overflow-x:auto;
+  padding-bottom:5px;
+  scrollbar-width:thin;
+}
+.techTreeChainItem{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  flex:0 0 auto;
+}
+.techTreeArrow{
+  color:#607994;
+  font-size:14px;
+}
+.techTreeNode{
+  width:132px;
+  min-height:67px;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+  padding:7px 8px;
+  border-radius:9px;
+  border:1px solid #334760;
+  background:#141f30;
+}
+.techTreeNode strong{
+  font-size:11px;
+  line-height:1.2;
+}
+.techTreeNode span,
+.techTreeNode small{
+  font-size:8px;
+  line-height:1.15;
+  color:#90a4bc;
+}
+.techTreeNode.done{
+  border-color:#347e62;
+  background:#153329;
+}
+.techTreeNode.current{
+  border-color:#b88933;
+  background:#332811;
+}
+.techTreeNode.future{
+  opacity:.58;
+}
+.clueActions{
+  margin-top:6px;
+  display:flex;
+  gap:5px;
+  flex-wrap:wrap;
+}
+
+.lobbyNewsPanel{
+  overflow:hidden;
+}
+.lobbyNewsHead{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  margin-bottom:8px;
+}
+.lobbyNewsHead h2{
+  margin:0 0 2px;
+}
+.lobbyNewsList{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:8px;
+}
+.lobbyNewsItem{
+  padding:10px 11px;
+  border:1px solid #31445f;
+  border-radius:11px;
+  background:#121e30;
+  min-width:0;
+}
+.lobbyNewsItem.pinned{
+  border-color:#75602c;
+  background:#231e10;
+}
+.lobbyNewsItem h3{
+  margin:5px 0 5px;
+  font-size:14px;
+  overflow-wrap:anywhere;
+}
+.lobbyNewsItem p{
+  margin:0;
+  font-size:12px;
+  line-height:1.45;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+.lobbyNewsMeta{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  color:#90a4bc;
+  font-size:9px;
+}
+.lobbyNewsMeta time{
+  white-space:nowrap;
+}
+
+.adminNewsList{
+  display:grid;
+  gap:7px;
+  margin-top:12px;
+}
+.adminNewsItem{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:start;
+  padding:9px 10px;
+  border:1px solid #30425d;
+  border-radius:9px;
+  background:#121d2e;
+}
+.adminNewsItem strong,
+.adminNewsItem span{
+  display:block;
+}
+.adminNewsItem p{
+  margin:5px 0 0;
+  white-space:pre-wrap;
+  overflow-wrap:anywhere;
+}
+
+@media(max-width:700px){
+  .gameChangelogMeta,
+  .lobbyNewsMeta{
+    display:block;
+  }
+  .gameChangelogMeta time,
+  .lobbyNewsMeta time{
+    display:block;
+    margin-top:2px;
+  }
+  .lobbyNewsList{
+    grid-template-columns:1fr;
+  }
+  .techTreeNode{
+    width:118px;
+  }
+  .adminNewsItem{
+    grid-template-columns:1fr;
+  }
+  .adminNewsItem .miniBtn{
+    width:100%;
+  }
+}

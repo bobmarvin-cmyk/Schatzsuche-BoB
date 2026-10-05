@@ -1,38 +1,43 @@
-SCHATZSUCHE ONLINE V6.31
+SCHATZSUCHE ONLINE V6.32
 
-NEU / KORRIGIERT
+NEU
 
-ASSISTENT
-- Kaufstatus stabilisiert: nach erfolgreicher Freischaltung springt die UI nicht mehr
-  zwischen "kaufen" und AN/AUS hin und her.
-- Während der Kaufstatus noch geladen wird, erscheint kein falscher Kaufen-Button.
-- Der Assistent darf über bereits erforschte/belegte Bereiche weiterlaufen.
-- In bereits erforschtem Gebiet sucht er einfach nach noch erreichbaren freien Feldern.
-- Findet er an einem Schritt nichts Neues, bleibt die Route trotzdem nicht hängen.
-- Keine Offline-Nachholung; weiterhin höchstens ein Schritt pro normalem Zugtakt.
+1. SPIEL-CHANGELOG
+- Jedes Spiel hat einen aufklappbaren Ereignisverlauf.
+- Vorhandene game_events werden dauerhaft nachvollziehbar angezeigt.
+- Neue Realtime-Ereignisse erscheinen sofort im Changelog.
+- Bis zu 80 aktuelle Ereignisse werden angezeigt.
 
-ENTWICKLUNG
-- Der lange Technologie-Scrollbereich wurde durch eine kompakte Entwicklungszentrale ersetzt.
-- Pro Entwicklungszweig sieht man Fortschritt und den zuletzt erreichten Stand.
-- Alte und zukünftige Stufen bleiben als Fortschrittsleiste sichtbar.
-- Es werden nur die aktuell möglichen nächsten bis zu 3 Entwicklungen als Kaufkarten gezeigt.
-- Endgame-Ausbau bleibt nach vollständigem normalen Techbaum sichtbar.
+2. LOBBY-NEWS
+- Neue Sektion "News & Änderungen" in der Lobby.
+- Admin kann in der Schaltzentrale Beiträge veröffentlichen:
+  News / Änderung / Wartung / Event.
+- Beiträge können angeheftet und gelöscht werden.
 
-ANALYSE / HINWEISE
-- Lange Stufenübersicht aus der Hauptansicht entfernt.
-- Neue kompakte "Suchzentrale".
-- Ein klarer Button für den nächsten Hinweis.
-- Aktueller Hinweis direkt sichtbar.
-- Bisherige Hinweise kompakt aufklappbar.
-- Die bestehende serverseitige Hinweislogik bleibt unverändert; geändert wurde der
-  unübersichtliche Aufbau der Oberfläche.
+3. TECHNOLOGIEN
+- Aktuell kaufbare Technologien stehen jetzt OBEN.
+- Maximal drei aktuelle Entscheidungen gleichzeitig.
+- Darunter ein kompakter Entwicklungsbaum.
+- Jeder Entwicklungszweig ist eine horizontale Kette.
+- Erforscht = grün, aktuell möglich = gold, später = dunkel.
+- Voraussetzungen werden direkt am Knoten angezeigt.
+- Dadurch bleibt sichtbar, woher man kommt und worauf etwas aufbaut,
+  ohne wieder einen langen Technologie-Scrollbereich zu erzeugen.
 
-SQL
-- V6.31 benötigt KEINE neue Migration.
-- Wenn V6.30 bereits installiert ist: kein SQL ausführen.
-- Wenn V6.30 noch nicht installiert ist: supabase/v6_30_migration.sql einmal ausführen.
+4. ANALYSE / HINWEISE
+- Neue Analysehinweise speichern den Suchstandpunkt, an dem sie gekauft wurden.
+- Im Hinweisbuch gibt es "📍 Standort zeigen".
+- Die Karte springt zu diesem damaligen Punkt und markiert ihn pulsierend.
+- Alte Hinweise vor V6.32 haben naturgemäß noch keinen gespeicherten Standort.
+
+5. DESIGN
+- Kein radikales Redesign in dieser Version.
+- Neue Bereiche folgen der bestehenden dunklen Expeditionsoptik.
+- Ein eigener UI-Design-Pass kann anschließend Buttons, Typografie,
+  Panel-Hierarchie und Abstände vereinheitlichen, ohne die Identität zu verlieren.
 
 DEPLOY
-1. Projektdateien ins Repo übernehmen.
-2. .env.local nicht hochladen.
-3. Vercel deployen lassen.
+1. supabase/v6_32_migration.sql EINMAL ausführen.
+2. Danach Projektdateien ins Repo übernehmen.
+3. .env.local nicht hochladen.
+4. Vercel deployen lassen.

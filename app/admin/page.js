@@ -30,6 +30,11 @@ export default function Admin(){
  const [namePoolLeft,setNamePoolLeft]=useState('')
  const [namePoolRight,setNamePoolRight]=useState('')
  const [claimStats,setClaimStats]=useState(null)
+ const [newsPosts,setNewsPosts]=useState([])
+ const [newsTitle,setNewsTitle]=useState('')
+ const [newsBody,setNewsBody]=useState('')
+ const [newsKind,setNewsKind]=useState('news')
+ const [newsPinned,setNewsPinned]=useState(false)
 
  useEffect(()=>{init()},[])
 
@@ -57,6 +62,8 @@ export default function Admin(){
   setSettings(s);setTechs(t||[]);setGoldOverview(go||null);setAutoGame(ag||null);setAdminGames(games||[]);setBarOverview(bars||null)
   const {data:cs}=await supabase.rpc('admin_treasure_claim_stats_v630')
   setClaimStats(cs||null)
+  const {data:newsData}=await supabase.rpc('get_lobby_news_v632',{p_limit:50})
+  setNewsPosts(Array.isArray(newsData)?newsData:[])
   setBarSizesText((s?.allowed_bar_sizes_mg||[100,250,500,1000,2500,5000]).join(', '))
   setGeoGameId(current=>current||games?.[0]?.id||'')
   setNamePoolLeft((namePool?.left||[]).join('\n'))
@@ -337,6 +344,34 @@ export default function Admin(){
   }
  }
 
+ async function publishNews(){
+  if(!newsTitle.trim()||!newsBody.trim()){
+    setMsg('Titel und Text für die Ankündigung fehlen.')
+    return
+  }
+  setSaving(true);setMsg('')
+  const {data,error}=await supabase.rpc('admin_publish_news_v632',{
+    p_title:newsTitle,
+    p_body:newsBody,
+    p_kind:newsKind,
+    p_is_pinned:newsPinned
+  })
+  setSaving(false)
+  if(error){setMsg(error.message);return}
+  setNewsTitle('');setNewsBody('');setNewsPinned(false)
+  setMsg(data?.message||'Ankündigung veröffentlicht.')
+  await load()
+ }
+
+ async function deleteNews(id){
+  if(!confirm('Ankündigung wirklich löschen?'))return
+  setSaving(true)
+  const {data,error}=await supabase.rpc('admin_delete_news_v632',{p_id:id})
+  setSaving(false)
+  setMsg(error?error.message:(data?.message||'Ankündigung gelöscht.'))
+  if(!error)await load()
+ }
+
  async function saveTech(t){
   setSaving(true);setMsg('')
   const {data,error}=await supabase.rpc('admin_update_technology_v624',{
@@ -372,7 +407,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.31</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.32</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -382,8 +417,29 @@ export default function Admin(){
 
   {msg&&<div className="noticeBar">{msg}</div>}
   <nav className="adminJumpNav">
-   <a href="#admin-members">👥 Mitglieder</a><a href="#admin-jobs">🧰 Jobs & Namen</a><a href="#admin-games">🎮 Spiele</a><a href="#admin-geo">🌍 Geodaten</a><a href="#admin-auto">🤖 Auto</a><a href="#admin-economy">✨ Gold</a><a href="#admin-rules">⚙️ Regeln</a><a href="#admin-claims">📊 Schatzsicherung</a><a href="#admin-tech">🧠 Technologien</a>
+   <a href="#admin-news">📰 News</a><a href="#admin-members">👥 Mitglieder</a><a href="#admin-jobs">🧰 Jobs & Namen</a><a href="#admin-games">🎮 Spiele</a><a href="#admin-geo">🌍 Geodaten</a><a href="#admin-auto">🤖 Auto</a><a href="#admin-economy">✨ Gold</a><a href="#admin-rules">⚙️ Regeln</a><a href="#admin-claims">📊 Schatzsicherung</a><a href="#admin-tech">🧠 Technologien</a>
   </nav>
+
+  <section className="panel" id="admin-news">
+   <div className="sectionTitleRow">
+    <div><h2>📰 Lobby-News</h2><p className="small">Ankündigungen, Änderungen, Wartungen oder Events direkt in der Lobby veröffentlichen.</p></div>
+   </div>
+   <div className="adminGrid">
+    <Field label="Titel" type="text" value={newsTitle} onChange={setNewsTitle}/>
+    <label className="adminField"><span>Kategorie</span><select className="input" value={newsKind} onChange={e=>setNewsKind(e.target.value)}>
+     <option value="news">News</option><option value="change">Änderung</option><option value="maintenance">Wartung</option><option value="event">Event</option>
+    </select></label>
+    <label className="adminCheck"><input type="checkbox" checked={newsPinned} onChange={e=>setNewsPinned(e.target.checked)}/> Oben anheften</label>
+    <div className="adminField span2"><label>Text</label><textarea className="input adminTextarea" maxLength={4000} value={newsBody} onChange={e=>setNewsBody(e.target.value)}/></div>
+   </div>
+   <button className="btn primary" disabled={saving||!newsTitle.trim()||!newsBody.trim()} onClick={publishNews}>Veröffentlichen</button>
+   {newsPosts.length>0&&<div className="adminNewsList">
+    {newsPosts.map(n=><div className="adminNewsItem" key={n.id}>
+     <div><strong>{n.is_pinned?'📌 ':''}{n.title}</strong><span className="small">{n.kind} · {n.created_at?new Date(n.created_at).toLocaleString('de-DE'):'–'}</span><p>{n.body}</p></div>
+     <button className="miniBtn" onClick={()=>deleteNews(n.id)}>Löschen</button>
+    </div>)}
+   </div>}
+  </section>
 
   <section className="panel" id="admin-jobs">
    <div className="sectionTitleRow">

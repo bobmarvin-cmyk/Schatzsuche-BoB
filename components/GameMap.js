@@ -172,7 +172,8 @@ export default function GameMap({
   assistantWaypoints=[],
   assistantPosition=null,
   assistantTarget=null,
-  onAssistantStepDone
+  onAssistantStepDone,
+  clueMarker=null
 }){
   const holder=useRef(null)
   const canvasRef=useRef(null)
@@ -197,6 +198,8 @@ export default function GameMap({
   const assistantPositionRef=useRef(assistantPosition)
   const assistantTargetRef=useRef(assistantTarget)
   const onAssistantStepDoneRef=useRef(onAssistantStepDone)
+  const clueMarkerRef=useRef(clueMarker)
+  const lastClueMarkerTokenRef=useRef(null)
   const lastAssistantTokenRef=useRef(null)
   const mapModeRef=useRef('satellite')
   const terrainCacheRef=useRef(new Map())
@@ -227,6 +230,7 @@ export default function GameMap({
   assistantPositionRef.current=assistantPosition
   assistantTargetRef.current=assistantTarget
   onAssistantStepDoneRef.current=onAssistantStepDone
+  clueMarkerRef.current=clueMarker
   mapModeRef.current=mapMode
 
   function scheduleCanvasDraw(){
@@ -419,7 +423,7 @@ export default function GameMap({
     ctx.lineWidth=1.8
     ctx.strokeRect(bx,by,bw,bh)
 
-    // V6.31: Assistentenroute nur lokal zeichnen – kein Netzwerkverkehr.
+    // V6.32: Assistentenroute nur lokal zeichnen – kein Netzwerkverkehr.
     const route=assistantWaypointsRef.current||[]
     const pos=assistantPositionRef.current
     if(route.length){
@@ -465,6 +469,26 @@ export default function GameMap({
       ctx.font='11px sans-serif'
       ctx.textAlign='center';ctx.textBaseline='middle'
       ctx.fillText('A',px,py)
+      ctx.restore()
+    }
+
+    const clue=clueMarkerRef.current
+    if(clue&&Number.isFinite(Number(clue.x))&&Number.isFinite(Number(clue.y))){
+      const px=xFor(Number(clue.x)+0.5)
+      const py=yFor(Number(clue.y)+0.5)
+      const pulse=10+4*Math.sin(Date.now()/220)
+      ctx.save()
+      ctx.strokeStyle='rgba(255,214,82,.98)'
+      ctx.fillStyle='rgba(255,214,82,.22)'
+      ctx.lineWidth=2.5
+      ctx.beginPath()
+      ctx.arc(px,py,pulse,0,Math.PI*2)
+      ctx.fill();ctx.stroke()
+      ctx.fillStyle='rgba(255,245,200,.98)'
+      ctx.font='bold 11px sans-serif'
+      ctx.textAlign='center'
+      ctx.textBaseline='bottom'
+      ctx.fillText(String(clue.label||'Hinweis'),px,py-12)
       ctx.restore()
     }
 
@@ -687,7 +711,7 @@ export default function GameMap({
 
   useEffect(()=>{
     scheduleCanvasDraw()
-  },[assistantWaypoints,assistantPosition])
+  },[assistantWaypoints,assistantPosition,clueMarker])
 
   useEffect(()=>{
     renderModeRef.current=mapRenderMode
@@ -714,6 +738,27 @@ export default function GameMap({
     const src=map?.getSource?.('my-traps')
     if(src)src.setData(trapCollection(gameRef.current,ownTraps))
   },[ownTraps])
+
+  useEffect(()=>{
+    const map=mapRef.current
+    const marker=clueMarker
+    if(!map||!marker?.token)return
+    if(lastClueMarkerTokenRef.current===marker.token)return
+    lastClueMarkerTokenRef.current=marker.token
+    const g=geometry(gameRef.current)
+    try{
+      const lon=g.west+(Number(marker.x)+0.5)*g.cell/g.metersLon
+      const lat=g.north-(Number(marker.y)+0.5)*g.cell/METERS_PER_DEG_LAT
+      map.easeTo({center:[lon,lat],zoom:Math.max(map.getZoom(),14),duration:650})
+      let frames=0
+      const pulse=()=>{
+        scheduleCanvasDraw()
+        frames++
+        if(frames<36)requestAnimationFrame(pulse)
+      }
+      requestAnimationFrame(pulse)
+    }catch{}
+  },[clueMarker?.token])
 
   useEffect(()=>{
     const map=mapRef.current

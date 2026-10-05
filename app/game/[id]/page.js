@@ -13,7 +13,7 @@ export default function Game(){
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false),[claimTimeLeft,setClaimTimeLeft]=useState(null),[claimResult,setClaimResult]=useState(null),[job,setJob]=useState(null),[jobBusy,setJobBusy]=useState(false),[jobSettings,setJobSettings]=useState({bottlesSeconds:180,bottlesReward:1,scrapSeconds:900,scrapReward:7})
  const [assistantEnabled,setAssistantEnabled]=useState(false),[assistantWaypoints,setAssistantWaypoints]=useState([]),[assistantPosition,setAssistantPosition]=useState(null),[assistantNextIndex,setAssistantNextIndex]=useState(0),[assistantTarget,setAssistantTarget]=useState(null),[assistantUnlocked,setAssistantUnlocked]=useState(null),[assistantUnlockBusy,setAssistantUnlockBusy]=useState(false),[assistantRouteDone,setAssistantRouteDone]=useState(false)
- const [endgameStatus,setEndgameStatus]=useState(null),[endgameBusy,setEndgameBusy]=useState(false)
+ const [endgameStatus,setEndgameStatus]=useState(null),[endgameBusy,setEndgameBusy]=useState(false),[gameChangelog,setGameChangelog]=useState([]),[cluePositions,setCluePositions]=useState({}),[selectedClueMarker,setSelectedClueMarker]=useState(null)
 
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0),chunkSummaryRef=useRef(new Map()),chunkPayloadRef=useRef(new Map()),chunkSinceRef=useRef(null),chunkSyncPromiseRef=useRef(null)
  const assistantBusyRef=useRef(false),assistantLastStepAtRef=useRef(Date.now()),assistantPendingStepRef=useRef(null),assistantTokenRef=useRef(0)
@@ -93,6 +93,10 @@ export default function Game(){
 
  async function handleRealtimeGameEvent(evt){
   if(!evt)return
+  setGameChangelog(prev=>{
+    const next=[evt,...prev.filter(x=>String(x.id)!==String(evt.id))]
+    return next.slice(0,80)
+  })
   if(evt.id){
     const eid=Number(evt.id||0)
     if(eid<=lastEventId.current)return
@@ -389,6 +393,33 @@ export default function Game(){
   return data||[]
  }
 
+ async function loadGameChangelog(){
+  const {data,error}=await supabase.rpc('get_game_changelog_v632',{p_game_id:id,p_limit:80})
+  if(!error)setGameChangelog(Array.isArray(data)?data:[])
+  return data||[]
+ }
+
+ async function loadCluePositions(){
+  const {data,error}=await supabase.rpc('get_my_analysis_clue_positions_v632',{p_game_id:id})
+  if(!error)setCluePositions(data||{})
+  return data||{}
+ }
+
+ function showClueOnMap(clue){
+  const pos=cluePositions?.[String(clue.clue_no)]
+  if(!pos||pos.x===null||pos.y===null){
+    setMsg('Für diesen älteren Hinweis wurde noch kein Standort gespeichert.')
+    return
+  }
+  setSelectedClueMarker({
+    x:Number(pos.x),
+    y:Number(pos.y),
+    label:`Hinweis #${clue.clue_no}`,
+    token:`clue:${clue.clue_no}:${Date.now()}`
+  })
+  setMsg(`📍 Standort von Hinweis #${clue.clue_no} markiert.`)
+ }
+
  async function loadActiveGames(){
   const {data}=await supabase.rpc('my_active_games_v613')
   if(data)setActiveGames(data)
@@ -470,7 +501,7 @@ export default function Game(){
       scrapSeconds:Number(ps.data?.job_scrap_duration_seconds||900),
       scrapReward:Number(ps.data?.job_scrap_reward_taler||7)
     })
-    loadActiveGames();loadOwnTraps();loadCompetition();loadPendingClaim();loadAnalysisClues();loadJob();loadEndgameStatus()
+    loadActiveGames();loadOwnTraps();loadCompetition();loadPendingClaim();loadAnalysisClues();loadCluePositions();loadGameChangelog();loadJob();loadEndgameStatus()
   }catch(err){
     setMsg('Fehler beim Laden der Karte: '+(err?.message||String(err)))
   }
@@ -782,7 +813,7 @@ export default function Game(){
       })
     }
   }else{
-    await Promise.all([loadPlayersOnly(),loadAnalysisClues()])
+    await Promise.all([loadPlayersOnly(),loadAnalysisClues(),loadCluePositions()])
     setAnalysisHint(null)
     if(currentViewport.current)scheduleVisibleReload(100)
   }
@@ -1092,7 +1123,7 @@ export default function Game(){
  async function buyAnalysis(){
   if(analysisBuying)return
   setAnalysisBuying(true);setMsg('Deduktionsanalyse läuft…')
-  const {data,error}=await supabase.rpc('buy_analysis_hint_v621',{p_game_id:id})
+  const {data,error}=await supabase.rpc('buy_analysis_hint_v632',{p_game_id:id})
   setAnalysisBuying(false)
   if(error){setMsg(error.message);return}
   setAnalysisHint(data)
@@ -1200,7 +1231,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.31: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.32: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%5!==0)return
   runMachines()
@@ -1255,7 +1286,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.31</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.32</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1361,6 +1392,7 @@ export default function Game(){
       assistantPosition={assistantPosition}
       assistantTarget={assistantTarget}
       onAssistantStepDone={handleAssistantStepDone}
+      clueMarker={selectedClueMarker}
       mobileHud={<div className="mobileMapHud">
        {[
         [Number(me?.coins||0).toFixed(2),'Taler'],
@@ -1431,6 +1463,9 @@ export default function Game(){
           <span>Schatz {c.treasure_no}</span>
          </div>
          <div>{c.text}</div>
+         <div className="clueActions">
+          <button className="miniBtn" onClick={()=>showClueOnMap(c)}>📍 Standort zeigen</button>
+         </div>
         </div>)}
        </div>
       </details>}
@@ -1439,26 +1474,11 @@ export default function Game(){
 
    <aside className="panel developmentPanel">
     <div className="developmentHead">
-     <div><h2>🧠 Entwicklung</h2><div className="small">Dein Weg bleibt sichtbar – kaufen musst du nur die nächsten Schritte.</div></div>
-    </div>
-
-    <div className="developmentTracks">
-     {techProgress.map(track=><div className="developmentTrack" key={track.branch}>
-      <div className="developmentTrackHead">
-       <strong>{track.branch}</strong>
-       <span>{track.completed}/{track.total}</span>
-      </div>
-      <div className="developmentDots" aria-label={`${track.completed} von ${track.total} erforscht`}>
-       {track.items.map(t=><span key={t.id} title={t.name} className={has(t.id)?'done':(t.requires||[]).every(has)?'current':'future'}></span>)}
-      </div>
-      <div className="developmentTrail small">
-       {track.completed>0?`Zuletzt: ${track.items.filter(t=>has(t.id)).slice(-1)[0]?.name||'–'}`:'Noch nicht begonnen'}
-      </div>
-     </div>)}
+     <div><h2>🧠 Entwicklung</h2><div className="small">Oben deine nächsten Entscheidungen, darunter der gesamte Entwicklungsweg als Baum.</div></div>
     </div>
 
     {!endgameStatus?.ready&&<>
-     <div className="nextDevelopmentsTitle">Nächste Entwicklung</div>
+     <div className="nextDevelopmentsTitle">Jetzt möglich</div>
      <div className="nextDevelopments">
       {currentTechChoices.map(t=>{
        const enough=Number(me?.coins||0)>=Number(t.cost)
@@ -1495,8 +1515,45 @@ export default function Game(){
        </button>
       </div>
     </div>}
+
+    <details className="techTreeOverview" open>
+     <summary><span>🌳 Entwicklungsbaum</span><span className="small">{owned.length}/{technologies.length} erforscht</span></summary>
+     <div className="techTreeLanes">
+      {techProgress.map(track=><div className="techTreeLane" key={track.branch}>
+       <div className="techTreeLaneTitle"><strong>{track.branch}</strong><span>{track.completed}/{track.total}</span></div>
+       <div className="techTreeScroller">
+        {track.items.map((t,i)=>{
+         const reqNames=(t.requires||[]).map(id=>technologies.find(x=>x.id===id)?.name||id)
+         const state=has(t.id)?'done':(t.requires||[]).every(has)?'current':'future'
+         return <div className="techTreeChainItem" key={t.id}>
+          {i>0&&<span className="techTreeArrow">→</span>}
+          <div className={'techTreeNode '+state}>
+           <strong>{t.name}</strong>
+           <span>{state==='done'?'✓ erforscht':state==='current'?'jetzt möglich':'später'}</span>
+           {reqNames.length>0&&<small>nach {reqNames.join(' + ')}</small>}
+          </div>
+         </div>
+        })}
+       </div>
+      </div>)}
+     </div>
+    </details>
    </aside>
   </div>
+
+  <details className="panel gameChangelogPanel">
+   <summary><span>📜 Spiel-Changelog</span><span className="small">{gameChangelog.length} Ereignisse</span></summary>
+   <div className="gameChangelogList">
+    {gameChangelog.length===0&&<div className="muted small">Noch keine protokollierten Spielereignisse.</div>}
+    {gameChangelog.map(evt=><div className="gameChangelogItem" key={evt.id}>
+     <div className="gameChangelogMeta">
+      <span>{evt.event_type||'event'}</span>
+      <time>{evt.created_at?new Date(evt.created_at).toLocaleString('de-DE'):'–'}</time>
+     </div>
+     <div>{evt.message||'Spielereignis'}</div>
+    </div>)}
+   </div>
+  </details>
 
   <details className="panel ingameRanking" open={rankOpen} onToggle={e=>setRankOpen(e.currentTarget.open)}>
    <summary><span>🏁 Ingame-Ranking</span><span className="small">{competition.length} Spieler</span></summary>

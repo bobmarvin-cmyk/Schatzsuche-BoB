@@ -31,6 +31,7 @@ export default function Lobby(){
  const [sortMode,setSortMode]=useState('players')
  const [sortDir,setSortDir]=useState('desc')
  const [gameFilter,setGameFilter]=useState('all')
+ const [news,setNews]=useState([])
 
  useEffect(()=>{
    setName(creativeGameName(namePool))
@@ -46,8 +47,13 @@ export default function Lobby(){
    await supabase.rpc('run_game_maintenance_v66')
    const {data:adminFlag}=await supabase.rpc('is_admin_v67')
    setIsAdmin(!!adminFlag)
-   await Promise.all([loadGames(),loadWallet(),loadSettings(),loadNamePool()])
+   await Promise.all([loadGames(),loadWallet(),loadSettings(),loadNamePool(),loadNews()])
    setAuthReady(true)
+ }
+
+ async function loadNews(){
+   const {data,error}=await supabase.rpc('get_lobby_news_v632',{p_limit:12})
+   if(!error)setNews(Array.isArray(data)?data:[])
  }
 
  async function loadNamePool(){
@@ -228,7 +234,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.31</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.32</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -251,6 +257,22 @@ export default function Lobby(){
     </div>
    </div>
   </div>
+
+  {news.length>0&&<section className="panel lobbyNewsPanel">
+   <div className="lobbyNewsHead">
+    <div><h2>📰 News & Änderungen</h2><div className="small">Ankündigungen der Spielleitung und wichtige Änderungen.</div></div>
+   </div>
+   <div className="lobbyNewsList">
+    {news.slice(0,6).map(n=><article className={'lobbyNewsItem '+(n.is_pinned?'pinned':'')} key={n.id}>
+     <div className="lobbyNewsMeta">
+      <span>{n.kind==='change'?'🔧 Änderung':n.kind==='maintenance'?'🛠 Wartung':n.kind==='event'?'🎉 Event':'📣 News'}</span>
+      <time>{n.created_at?new Date(n.created_at).toLocaleString('de-DE'):'–'}</time>
+     </div>
+     <h3>{n.is_pinned?'📌 ':''}{n.title}</h3>
+     <p>{n.body}</p>
+    </article>)}
+   </div>
+  </section>}
 
   <div className="lobbyColumns">
    <details className="panel createGamePanel createGameDetails">
