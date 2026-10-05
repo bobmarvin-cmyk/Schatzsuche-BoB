@@ -389,10 +389,11 @@ export default function Admin(){
   if(!botConfig?.settings)return
   setSaving(true);setMsg('')
   const s=botConfig.settings
-  const {data,error}=await supabase.rpc('admin_save_bot_settings_v639',{
+  const {data,error}=await supabase.rpc('admin_save_bot_settings_v642',{
     p_enabled:!!s.enabled,
     p_bots_per_auto_game:NUM(s.bots_per_auto_game),
     p_action_seconds:NUM(s.action_seconds),
+    p_actions_per_tick:NUM(s.actions_per_tick??4),
     p_base_solve_percent:NUM(s.base_solve_percent),
     p_use_real_average:!!s.use_real_average,
     p_max_fields_per_action:NUM(s.max_fields_per_action)
@@ -484,7 +485,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.41</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.42</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -862,7 +863,8 @@ export default function Admin(){
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.enabled} onChange={e=>setBotSetting('enabled',e.target.checked)}/> Bots in Auto-Games aktiv</label>
    <div className="adminGrid">
     <Field label="Bots je Auto-Game" value={botConfig.settings?.bots_per_auto_game??3} onChange={v=>setBotSetting('bots_per_auto_game',v)}/>
-    <Field label="Aktion alle (Sekunden)" value={botConfig.settings?.action_seconds??30} onChange={v=>setBotSetting('action_seconds',v)}/>
+    <Field label="Aktion alle (Sekunden)" value={botConfig.settings?.action_seconds??12} onChange={v=>setBotSetting('action_seconds',v)}/>
+    <Field label="Suchimpulse je Aktion" value={botConfig.settings?.actions_per_tick??4} onChange={v=>setBotSetting('actions_per_tick',v)}/>
     <Field label="Fallback Lösequote (%)" step="0.1" value={botConfig.settings?.base_solve_percent??60} onChange={v=>setBotSetting('base_solve_percent',v)}/>
     <Field label="Max. Bot-Felder/Aktion" value={botConfig.settings?.max_fields_per_action??350} onChange={v=>setBotSetting('max_fields_per_action',v)}/>
    </div>

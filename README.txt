@@ -1,36 +1,30 @@
-SCHATZSUCHE ONLINE V6.41
+SCHATZSUCHE ONLINE V6.42
 
-BOT-FIX + NORMALE SPIELERDARSTELLUNG
+BOT-AKTIVITÄT DEUTLICH ERHÖHT
 
-SPIELDARSTELLUNG
-- Computer-Spieler werden im Spiel nicht mehr als „Bot“ gekennzeichnet.
-- Sie erscheinen oben in derselben Mitspieler-Leiste wie alle anderen Spieler.
-- gleiche Farbpunkte
-- gleicher grüner Online-Punkt
-- individuelle Profil-Icons wirken wie normale Avatare
-- Ranking ohne Bot-Badge
-- Teilnehmerkarten ohne „Bot“-Kennzeichnung
-- öffentliche Computer-Spieler-Profile sehen wie normale Spielerprofile aus
-- im Archiv keine besondere Bot-Markierung
+Vorher:
+- ein Bot wurde fällig
+- machte effektiv einen kleinen Suchschritt
+- danach längere Ruhe
 
-BOT-AKTIVITÄT
-- Bot-Zuglogik komplett robuster aufgebaut.
-- Bewegung ist von Technologie- und Schatzlogik getrennt.
-- Ein Fehler beim Technologieausbau oder Schatztest rollt die bereits aufgedeckten
-  Felder nicht mehr zurück.
-- Bestehende Bots werden beim Update sofort wieder aktionsbereit.
-- Der Client stößt weiterhin regelmäßig an; leere Spiele laufen zusätzlich über Cron,
-  sofern pg_cron verfügbar ist.
-- Fehler werden je Spieler intern gespeichert, statt unbemerkt den kompletten Tick zu stoppen.
+Jetzt:
+- Standardintervall: 12 Sekunden
+- Standardmäßig 4 Suchimpulse pro fälligem Bot
+- „locker“ etwas weniger
+- „aktiv“ etwas mehr
+- jeder Impuls nutzt die aktuelle reveal_power
+- nach jedem Impuls kann direkt eine bezahlbare Technologie ausgebaut werden
+- Schatzchance wird pro Suchimpuls geprüft
 
-SPIELERPLÄTZE
-- Computer-Spieler belegen nur freie Plätze.
-- Wenn echte Spieler beitreten, werden überzählige Computer-Spieler automatisch
-  deaktiviert und machen Platz.
-- Bei wieder freien Plätzen können sie wieder aufgefüllt werden.
-- „Bots sperren“ bei der Spielerstellung bleibt erhalten.
-- Gold- und Sponsorspiele bleiben ohne Computer-Spieler.
+Schaltzentrale:
+- „Aktion alle (Sekunden)“
+- „Suchimpulse je Aktion“
+- beide Werte frei einstellbar
 
-INSTALLATION
-1. supabase/v6_41_migration.sql EINMAL ausführen.
-2. V6.41 deployen.
+Empfehlung für lebendige, aber nicht übertriebene Bots:
+- 10–15 Sekunden
+- 3–5 Suchimpulse
+
+INSTALLATION:
+1. supabase/v6_42_migration.sql einmal ausführen
+2. V6.42 deployen
