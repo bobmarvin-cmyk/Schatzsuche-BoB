@@ -1,28 +1,22 @@
-SCHATZSUCHE ONLINE V6.30
+SCHATZSUCHE ONLINE V6.30.1
 
-NEU
-- Wiederholbarer Endgame-Ausbau erscheint erst nach komplettem normalen Techbaum.
-- Exklusive Technologien blockieren die Endgame-Freischaltung nicht.
-- Expeditionsausbau erhöht Felder/Zug dauerhaft im aktuellen Spiel.
-- Maschinenoptimierung erhöht die virtuelle Maschinenleistung dauerhaft im aktuellen Spiel.
-- Beide Upgrades sind beliebig oft kaufbar.
-- Preis steigt nach Formel:
-  Startpreis × Preisfaktor ^ bisherige Käufe
-- Startpreis, Preisfaktor und Bonus je Kauf sind in der Schaltzentrale einstellbar.
-- Schatzsicherungs-Statistik in der Schaltzentrale:
-  Gesamtversuche, bestanden, falsch, abgelaufen, Lösungsquote,
-  Durchschnittsversuche pro Schatz und Werte je Aufgabentyp.
-- Maschinen bleiben technisch weiterhin die schlanke V6.27-Wahrscheinlichkeitssuche.
-  Der Endgame-Ausbau addiert lediglich virtuelle Suchleistung.
+MOBILE-HOTFIX
+- Handyansicht hart auf eine Spalte begrenzt.
+- Kein Spielelement darf breiter als der Bildschirm werden.
+- Assistentenleiste auf Mobilgeräten kompakt als 2-spaltiges Raster.
+- Route-beendet-Meldung mobil sauber gestapelt.
+- Endgame-Ausbaukarten mobil einspaltig.
+- Technologiebuttons und lange Texte dürfen sauber umbrechen.
+- Karte und Kartencontainer auf 100 % Bildschirmbreite begrenzt.
+- Auf sehr schmalen Geräten wird das Karten-HUD auf 3 Spalten / 2 Reihen verteilt.
+- Keine SQL-Änderung gegenüber V6.30.
 
 DEPLOY
-1. ZUERST supabase/v6_30_migration.sql EINMAL ausführen.
-2. Danach Projektdateien ins Repo übernehmen.
-3. .env.local nicht hochladen.
-4. Vercel deployen lassen.
+Wenn v6_30_migration.sql bereits ausgeführt wurde:
+1. KEIN weiteres SQL ausführen.
+2. Projektdateien hochladen.
+3. Vercel deployen lassen.
 
-RELEASE-ORDNER
-Bewusst bereinigt. Im Supabase-Ordner liegen nur:
-- setup.sql
-- v6_30_migration.sql
-- README.txt
+Wenn V6.30 noch gar nicht installiert wurde:
+1. supabase/v6_30_migration.sql einmal ausführen.
+2. Danach V6.30.1 deployen.

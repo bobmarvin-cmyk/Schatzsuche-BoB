@@ -1948,3 +1948,211 @@ button:disabled{cursor:not-allowed;opacity:.45}
   .endgameUpgradeCard{align-items:flex-start}
   .claimTypeRow{grid-template-columns:1fr 1fr}
 }
+
+
+/* =========================================================
+   V6.30.1 – Mobile layout hardening
+   ========================================================= */
+@media (max-width:900px){
+  html,body,.siteShell{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden;
+  }
+
+  .gamePage,
+  .gameLayout,
+  .gameMapPanel,
+  .gameMapPanel > *,
+  .worldMapShell,
+  .worldMap,
+  .gameLayout > section,
+  .gameLayout > aside{
+    min-width:0!important;
+    max-width:100%!important;
+  }
+
+  .gameLayout{
+    display:block!important;
+    width:100%!important;
+  }
+
+  .gameMapPanel,
+  .gameLayout > aside.panel{
+    width:100%!important;
+    overflow:hidden;
+  }
+
+  .mapHeader{
+    display:block!important;
+    min-width:0;
+  }
+  .mapHeader h2{
+    max-width:100%;
+    overflow-wrap:anywhere;
+    word-break:break-word;
+  }
+  .mapLegend{
+    justify-content:flex-start!important;
+    max-width:100%;
+    overflow:hidden;
+  }
+  .legendItem{
+    min-width:0;
+    max-width:100%;
+    overflow-wrap:anywhere;
+  }
+
+  .worldMapShell{
+    width:100%!important;
+    overflow:hidden;
+  }
+  .worldMap{
+    width:100%!important;
+    max-width:100%!important;
+    min-width:0!important;
+  }
+
+  .assistantToolbar{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:5px!important;
+    width:100%;
+    max-width:100%;
+    align-items:stretch;
+  }
+  .assistantToolbar > .small{
+    grid-column:1 / -1;
+    min-width:0;
+    white-space:normal;
+    overflow-wrap:anywhere;
+    line-height:1.25;
+  }
+  .assistantToolbar .miniBtn{
+    width:100%;
+    min-width:0!important;
+    max-width:100%;
+    white-space:normal;
+    line-height:1.15;
+    padding:6px 7px!important;
+  }
+
+  .assistantDoneNotice{
+    display:grid!important;
+    grid-template-columns:1fr;
+    width:100%;
+    max-width:100%;
+    gap:5px!important;
+  }
+  .assistantDoneNotice > *{
+    min-width:0;
+    max-width:100%;
+  }
+  .assistantDoneNotice .miniBtn{
+    width:100%;
+  }
+
+  .branchTabs{
+    width:100%;
+    max-width:100%;
+  }
+  .branchTab{
+    min-width:0!important;
+    overflow-wrap:anywhere;
+  }
+
+  .techList,
+  .techCard,
+  .techBottom{
+    min-width:0;
+    max-width:100%;
+  }
+  .techCard{
+    overflow:hidden;
+  }
+  .techBottom{
+    flex-wrap:wrap;
+  }
+  .techBottom .btn{
+    max-width:100%;
+  }
+
+  .endgameUpgradePanel{
+    width:100%;
+    max-width:100%;
+    min-width:0;
+    overflow:hidden;
+  }
+  .endgameUpgradeHead{
+    display:block!important;
+  }
+  .endgameUpgradeHead span{
+    display:block;
+    margin-top:3px;
+    white-space:normal;
+  }
+  .endgameUpgradeCard{
+    display:grid!important;
+    grid-template-columns:1fr;
+    align-items:stretch!important;
+    gap:6px!important;
+  }
+  .endgameUpgradeCard > div{
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+  .endgameUpgradeCard .btn{
+    width:100%;
+    min-width:0!important;
+  }
+
+  .mapInfoDock{
+    max-width:calc(100% - 14px);
+  }
+  .mapInfoMain{
+    max-width:100%;
+  }
+
+  .mobileSecondaryStats{
+    max-width:100%;
+  }
+
+  .playerStatusCard,
+  .playerNameLine{
+    min-width:0;
+    max-width:100%;
+  }
+  .playerNameLine strong,
+  .profileLink{
+    min-width:0;
+    overflow-wrap:anywhere;
+  }
+}
+
+@media (max-width:520px){
+  .container.gamePage{
+    padding-left:6px!important;
+    padding-right:6px!important;
+  }
+
+  .gameMapPanel{
+    padding-left:7px!important;
+    padding-right:7px!important;
+  }
+
+  .mobileMapHud{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+
+  .assistantToolbar{
+    grid-template-columns:1fr 1fr!important;
+  }
+
+  .branchTabs{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+
+  .mapInfoTerrain{
+    max-width:100%;
+  }
+}
