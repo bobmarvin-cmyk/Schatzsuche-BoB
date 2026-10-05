@@ -3873,3 +3873,21 @@ body{
     width:100%;
   }
 }
+
+
+/* =========================================================
+   V6.51 – Bot-Iconeditor
+   ========================================================= */
+.botIconEditor{display:grid;gap:5px}
+.botIconPresets{display:flex;flex-wrap:wrap;gap:3px;max-width:210px}
+.botIconPreset{
+  border:1px solid rgba(255,255,255,.1);
+  background:#111b29;
+  border-radius:6px;
+  min-width:28px;
+  height:28px;
+  cursor:pointer;
+}
+.botIconPreset.active{outline:2px solid currentColor}
+.botAdminActions{display:flex;gap:4px;flex-wrap:wrap}
+.miniBtn.danger{border-color:rgba(220,80,80,.45)}

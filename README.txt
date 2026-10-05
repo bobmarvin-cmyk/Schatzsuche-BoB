@@ -1,69 +1,46 @@
-SCHATZSUCHE ONLINE V6.50
+SCHATZSUCHE ONLINE V6.51
 
-BOT-ARCHITEKTUR 2.0
+FLÜSSIGERE COMPUTER-MITSPIELER
+- Der Browser stößt die Bot-Logik nun etwa jede Sekunde an.
+- Gleichzeitige Bot-Ticks werden verhindert.
+- Pro Bot werden mehrere echte gespeicherte Züge in einem kleinen Batch verarbeitet.
+- Standard: 4 Züge pro Batch; in der Schaltzentrale 1–12 einstellbar.
+- Das vermeidet riesige Einzel-SQL-Läufe und reduziert Statement-Timeout-Risiko.
 
-Das bisherige Bot-System wurde grundlegend geändert.
+ZIELGEBIETE
+- Jeder Bot erhält ein aktuelles Zielgebiet.
+- Er bleibt mehrere Züge dort und bewegt das Ziel leicht weiter.
+- Ist das Gebiet leer, sucht er ein neues unbekanntes Gebiet.
+- Die Karte sollte dadurch zusammenhängendere, menschlichere Suchspuren zeigen.
 
-VORHER
-- Bots bekamen künstliche Suchleistung.
-- Schatzfunde wurden teilweise statistisch simuliert.
-- Bot-Anteile und normale Spieler-Siegerlogik konnten auseinanderlaufen.
-- Dadurch konnte z. B. ein Mensch mit 0,00 % als Sieger erscheinen, obwohl Bots Schatzanteile besaßen.
+TECHNOLOGIEN
+- Weiterhin echte Taler und echte Tech-Voraussetzungen.
+- Vor dem Batch und nach jedem Zug werden alle bezahlbaren Entwicklungen geprüft.
+- Die Charakter-/Persönlichkeitslogik wurde bewusst NICHT erweitert.
 
-JETZT
-1. ECHTE ZÜGE
-- Jeder Bot besitzt moves_left und last_regen_at.
-- Züge regenerieren wie bei Menschen.
-- Zugspeicher-Technologien erhöhen die Kapazität.
-- Regenerations-Technologien verkürzen die Zugzeit.
+SPARMODUS
+- Sind echte Spieler aktiv: schneller Batchbetrieb.
+- Ist niemand aktiv: weiterhin nur der eingestellte Prozentanteil.
 
-2. VOLLGAS WENN SPIELER ONLINE
-- Ist mindestens ein echter Spieler aktiv, spielt jeder Bot ALLE verfügbaren Züge.
-- Keine künstlichen Power- oder Catch-up-Multiplikatoren mehr notwendig.
-
-3. SPARMODUS OHNE SPIELER
-- Wenn niemand aktiv ist, wird nur ein einstellbarer Prozentsatz der verfügbaren Bot-Züge verbraucht.
-- Standard: 10 %.
-- Dadurch bleiben leere Spiele lebendig, ohne alleine durchzulaufen.
-
-4. ECHTE FELDSUCHE
-- Ein Bot-Zug sucht eine zusammenhängende Fläche um einen echten Zielpunkt.
-- Anzahl der Felder entspricht seiner reveal_power.
-- Terrain-Technologien werden berücksichtigt.
-- Aufgedeckte Felder landen normal in explored_fields und damit in der Karten-/Chunkdarstellung.
-
-5. ECHTE SCHATZFELDER
-- Keine statistischen Schatztreffer mehr.
-- Ein Bot kann einen Schatz nur finden, wenn sein echter Suchbereich das Schatzfeld trifft.
-- Bei erfolgreicher Sicherung wird dieses konkrete Feld is_treasure=true.
-- Bot-Name und Schatzanteil erscheinen in der Schatzanzeige.
-- Scheitert die Bot-Sicherung, wird der Schatz wie bei Menschen neu versteckt.
-
-6. TECHNOLOGIEN
-- Vor der Suche und nach jedem Zug kauft ein Bot alle aktuell bezahlbaren und freigeschalteten Technologien.
-- Voraussetzungsketten werden berücksichtigt.
-- Suchleistung, Zugspeicher, Regeneration, Talerbonus, Analyse und Maschinenwerte werden aus dem Techstand berechnet.
-- Exklusive Technologien können auch Bots sichern.
-
-7. GEMEINSAME SIEGERLOGIK
-- Menschliche Spieler und Bots werden nach Schatzanteil gemeinsam verglichen.
-- Bei Gleichstand zählt zunächst die Zahl der Schatzteile.
-- Ein Mensch mit 0,00 % gewinnt nicht mehr gegen einen Bot mit echtem Schatzanteil.
-- Auch wenn ein Mensch den letzten Schatz sichert, werden vorhandene Bot-Anteile bei der Siegerermittlung berücksichtigt.
-
-SCHALTZENTRALE
-Bot-Regeln sind wieder einfacher:
-- Mitspieler je Spiel
-- Sparmodus ohne echte Spieler (%)
-- Schatzsicherungsquote
-- optional reale durchschnittliche Sicherungsquote
+BOT-VERWALTUNG
+- Icon weiterhin frei als Emoji eintragbar.
+- Zusätzlich direkte Icon-Auswahl per Buttons.
+- „Löschen“ ist möglich.
+- Ist der Bot in einem laufenden Spiel aktiv, wird Löschen verhindert.
+- Ohne Historie: echte Löschung.
+- Mit Historie: Archivierung, damit alte Spielstände/Schatzfinder/Sieger erhalten bleiben.
 
 NEWS
-- V6.50-Vorlage wurde ergänzt.
-
-FELD-DECKKRAFT
-- Die persönliche 10–100-%-Einstellung aus V6.49.1 bleibt erhalten.
+- V6.51-Vorlage ergänzt.
 
 INSTALLATION
-1. supabase/v6_50_migration.sql EINMAL ausführen.
-2. V6.50 deployen.
+1. supabase/v6_51_migration.sql EINMAL ausführen.
+2. V6.51 deployen.
+
+
+TERRAIN / WALD / WASSER
+- Terrain-Klassifizierung war im Code noch vorhanden, wirkte in der Standard-Satellitenansicht aber praktisch nicht mehr.
+- Ursache: reine Raster-Satellitenkacheln liefern keine auswertbaren Wald-/Wasser-/Flächenmerkmale.
+- V6.51 nutzt für die Satellitenansicht jetzt wieder die Vektorkarte als technische Basis und legt das Satellitenbild darunter.
+- Dadurch bleiben Wald, Wasser, Feuchtgebiet, Industrie usw. für die Terrain-Regeln auswertbar, obwohl der Spieler weiterhin Satellitenbild sieht.
+- Terrain-Technologien ter2/ter4/ter5/ter6/ter7 bleiben aktiv.

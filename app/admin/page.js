@@ -8,10 +8,23 @@ const NUM=(v)=>v===''?0:Number(v)
 
 const RELEASE_NEWS_TEMPLATES=[
  {
-  id:'v650',
-  title:'Update V6.50 – neue Mitspieler-Architektur',
+  id:'v651',
+  title:'Update V6.51 – flüssigere Mitspieler',
   kind:'change',
-  body:`Neu in V6.50:
+  body:`Neu in V6.51:
+
+• Computer-Mitspieler verarbeiten ihre echten Züge jetzt in kleinen Batches im Sekundentakt.
+• Dadurch reagieren sie deutlich flüssiger, ohne große Datenbankabfragen zu erzeugen.
+• Jeder Mitspieler behält ein Zielgebiet und sucht dort mehrere Züge weiter, statt bei jedem Zug zufällig über die ganze Karte zu springen.
+• Die Bot-Verwaltung kann Icons bequem wechseln.
+• Nicht mehr benötigte Bots können entfernt werden; vorhandene Spielhistorie bleibt dabei erhalten.`
+ },
+
+ {
+  id:'v650',
+  title:'Update V6.51 – neue Mitspieler-Architektur',
+  kind:'change',
+  body:`Neu in V6.51:
 
 • Computer-Mitspieler besitzen jetzt echte Züge und regenerieren sie wie normale Spieler.
 • Sobald echte Spieler aktiv sind, spielen sie alle verfügbaren Züge aus.
@@ -24,9 +37,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v649',
-  title:'Update V6.50 – kompaktere News & stärkere Gegner',
+  title:'Update V6.51 – kompaktere News & stärkere Gegner',
   kind:'change',
-  body:`Neu in V6.50:
+  body:`Neu in V6.51:
 
 • In der Lobby heißt der Bereich jetzt nur noch „News“.
 • Nur die zwei neuesten Meldungen sind direkt sichtbar; ältere News lassen sich platzsparend aufklappen.
@@ -36,9 +49,9 @@ const RELEASE_NEWS_TEMPLATES=[
  },
  {
   id:'v648',
-  title:'Update V6.50 – kompakte News & mehr Bot-Power',
+  title:'Update V6.51 – kompakte News & mehr Bot-Power',
   kind:'change',
-  body:`Änderungen aus V6.50:
+  body:`Änderungen aus V6.51:
 
 • Lobby-News wurden kompakter gestaltet.
 • Vollgas-Ratio, Such-Power und maximale Felder/Aktion wurden deutlich erweitert.
@@ -58,9 +71,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v646',
-  title:'Update V6.50 – Tutorial, stärkere Mitspieler & Startbonus',
+  title:'Update V6.51 – Tutorial, stärkere Mitspieler & Startbonus',
   kind:'change',
-  body:`Neu in V6.50:
+  body:`Neu in V6.51:
 
 • Tutorial-Erstellung robuster gemacht und den gen_salt/pgcrypto-Fehler abgefangen.
 • Computer-Mitspieler reagieren stärker auf aktive Spiele und erhalten mehr Such-Power.
@@ -73,9 +86,9 @@ Viel Spaß bei der Schatzsuche!`
  },
  {
   id:'v645',
-  title:'Update V6.50 – Tutorial-Fix & mehr Gegner-Power',
+  title:'Update V6.51 – Tutorial-Fix & mehr Gegner-Power',
   kind:'change',
-  body:`Änderungen aus V6.50:
+  body:`Änderungen aus V6.51:
 
 • Tutorial-Fix für den Fehler „gen_salt does not exist“.
 • Tutorial-Runde wird ohne Passwortpfad erzeugt und anschließend privat geschaltet.
@@ -172,7 +185,7 @@ export default function Admin(){
   setClaimStats(cs||null)
   const {data:newsData}=await supabase.rpc('get_lobby_news_v632',{p_limit:50})
   setNewsPosts(Array.isArray(newsData)?newsData:[])
-  const {data:botData}=await supabase.rpc('admin_get_bot_config_v639')
+  const {data:botData}=await supabase.rpc('admin_get_bot_config_v651')
   setBotConfig(botData||null)
   setBarSizesText((s?.allowed_bar_sizes_mg||[100,250,500,1000,2500,5000]).join(', '))
   setGeoGameId(current=>current||games?.[0]?.id||'')
@@ -501,10 +514,11 @@ export default function Admin(){
   if(!botConfig?.settings)return
   setSaving(true);setMsg('')
   const s=botConfig.settings
-  const {data,error}=await supabase.rpc('admin_save_bot_settings_v650',{
+  const {data,error}=await supabase.rpc('admin_save_bot_settings_v651',{
     p_enabled:!!s.enabled,
     p_bots_per_auto_game:NUM(s.bots_per_auto_game),
     p_idle_spend_percent:NUM(s.idle_spend_percent??10),
+    p_active_batch_moves:NUM(s.active_batch_moves??4),
     p_base_solve_percent:NUM(s.base_solve_percent),
     p_use_real_average:!!s.use_real_average
   })
@@ -540,6 +554,17 @@ export default function Admin(){
   setMsg(error?error.message:(data?.message||'Bot gespeichert.'))
   if(!error)await load()
  }
+
+ async function deleteBot(bot){
+  if(!confirm(`Bot „${bot.display_name}“ wirklich entfernen?\n\nBei vorhandener Historie wird er archiviert, damit alte Spiele korrekt bleiben.`))return
+  setSaving(true);setMsg('')
+  const {data,error}=await supabase.rpc('admin_delete_bot_v651',{p_bot_id:bot.id})
+  setSaving(false)
+  setMsg(error?error.message:(data?.message||'Bot entfernt.'))
+  if(!error)await load()
+ }
+
+ const BOT_ICONS=['🤖','🧭','✨','☄️','👾','🦊','🐺','🦉','🦝','🛰️','🦜','🐾','🌙','⭐','🪐','🌿']
 
  async function seedBots(gameId){
   setSaving(true);setMsg('')
@@ -595,7 +620,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.50</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.51</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -980,10 +1005,11 @@ export default function Admin(){
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.enabled} onChange={e=>setBotSetting('enabled',e.target.checked)}/> Mitspieler in Schatzsuchen aktiv</label>
    <div className="adminGrid">
     <Field label="Mitspieler je Spiel" value={botConfig.settings?.bots_per_auto_game??3} onChange={v=>setBotSetting('bots_per_auto_game',v)}/>
+    <Field label="Züge pro Aktiv-Batch" value={botConfig.settings?.active_batch_moves??4} onChange={v=>setBotSetting('active_batch_moves',v)}/>
     <Field label="Sparmodus ohne echte Spieler (%)" step="1" value={botConfig.settings?.idle_spend_percent??10} onChange={v=>setBotSetting('idle_spend_percent',v)}/>
     <Field label="Fallback Schatzsicherung (%)" step="0.1" value={botConfig.settings?.base_solve_percent??60} onChange={v=>setBotSetting('base_solve_percent',v)}/>
    </div>
-   <div className="small adminHint">🎮 Bot-Architektur 2.0: Bots besitzen echte gespeicherte Züge. Ist ein echter Spieler aktiv, verbrauchen sie alle verfügbaren Züge und kaufen automatisch jede aktuell mögliche Technologie. Ohne echte Spieler wird nur der eingestellte Prozentsatz ihrer Züge verwendet.</div>
+   <div className="small adminHint">🎮 Bot-Executor V6.51: Bei aktiven echten Spielern werden jede Sekunde mehrere echte Bot-Züge als kleiner Batch verarbeitet. So reagieren sie flüssig, ohne mit riesigen SQL-Läufen in ein Statement-Timeout zu geraten. Ohne echte Spieler gilt weiter der Sparmodus.</div>
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.use_real_average} onChange={e=>setBotSetting('use_real_average',e.target.checked)}/> echte durchschnittliche Schatzsicherungsquote verwenden</label>
    <div className="winnerActions"><button className="btn primary" disabled={saving} onClick={saveBotSettings}>Bot-Einstellungen speichern</button></div>
 
@@ -1001,13 +1027,16 @@ export default function Admin(){
     {(botConfig.bots||[]).map(bot=><div className="botAdminRow" key={bot.id}>
      <div className="botAdminIdentity"><span className="botAdminAvatar">{bot.avatar_emoji||'🤖'}</span><div><strong>{bot.display_name}</strong><span className="small">{Number(bot.total_games||0)} Spiele · {Number(bot.total_fields_revealed||0).toLocaleString('de-DE')} Felder</span></div></div>
      <input className="input" value={bot.display_name} onChange={e=>setBotValue(bot.id,'display_name',e.target.value)}/>
-     <input className="input botIconInput" value={bot.avatar_emoji||'🤖'} maxLength={12} onChange={e=>setBotValue(bot.id,'avatar_emoji',e.target.value)}/>
+     <div className="botIconEditor">
+      <input className="input botIconInput" value={bot.avatar_emoji||'🤖'} maxLength={12} onChange={e=>setBotValue(bot.id,'avatar_emoji',e.target.value)}/>
+      <div className="botIconPresets">{BOT_ICONS.map(icon=><button type="button" className={'botIconPreset '+(bot.avatar_emoji===icon?'active':'')} key={icon} onClick={()=>setBotValue(bot.id,'avatar_emoji',icon)}>{icon}</button>)}</div>
+     </div>
      <select className="input" value={bot.difficulty||'normal'} onChange={e=>setBotValue(bot.id,'difficulty',e.target.value)}>
       <option value="locker">locker</option><option value="normal">normal</option><option value="aktiv">aktiv</option>
      </select>
      <input className="input botColorInput" type="color" value={bot.player_color||'#6f86a8'} onChange={e=>setBotValue(bot.id,'player_color',e.target.value)}/>
      <label className="adminCheck"><input type="checkbox" checked={!!bot.active} onChange={e=>setBotValue(bot.id,'active',e.target.checked)}/> aktiv</label>
-     <button className="miniBtn" disabled={saving} onClick={()=>saveBot(bot)}>Speichern</button>
+     <div className="botAdminActions"><button className="miniBtn" disabled={saving} onClick={()=>saveBot(bot)}>Speichern</button><button className="miniBtn danger" disabled={saving} onClick={()=>deleteBot(bot)}>Löschen</button></div>
     </div>)}
    </div>
 

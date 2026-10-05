@@ -43,6 +43,53 @@ const FALLBACK_STYLE={
   layers:[{id:'osm',type:'raster',source:'osm'}]
 }
 
+
+function enableSatelliteTerrainComposite(map){
+  try{
+    if(!map.getSource('satellite-terrain-base')){
+      map.addSource('satellite-terrain-base',{
+        type:'raster',
+        tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+        tileSize:256,
+        attribution:'Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+      })
+    }
+
+    if(!map.getLayer('satellite-terrain-base')){
+      const layers=map.getStyle()?.layers||[]
+      const before=(layers.find(l=>l.type!=='background')||{}).id
+      map.addLayer({
+        id:'satellite-terrain-base',
+        type:'raster',
+        source:'satellite-terrain-base',
+        paint:{'raster-opacity':1}
+      },before)
+    }
+
+    // Vektordaten bleiben aktiv und damit für terrainFromFeatures abfragbar.
+    // Visuell werden Flächen fast transparent, damit das Satellitenbild sichtbar bleibt.
+    for(const layer of map.getStyle()?.layers||[]){
+      if(layer.id==='satellite-terrain-base')continue
+      try{
+        if(layer.type==='background'){
+          map.setPaintProperty(layer.id,'background-opacity',0)
+        }else if(layer.type==='fill'){
+          map.setPaintProperty(layer.id,'fill-opacity',0.015)
+        }else if(layer.type==='fill-extrusion'){
+          map.setPaintProperty(layer.id,'fill-extrusion-opacity',0.02)
+        }else if(layer.type==='circle'){
+          map.setPaintProperty(layer.id,'circle-opacity',0.18)
+        }else if(layer.type==='line'){
+          map.setPaintProperty(layer.id,'line-opacity',0.38)
+        }else if(layer.type==='symbol'){
+          map.setPaintProperty(layer.id,'text-opacity',0.82)
+          map.setPaintProperty(layer.id,'icon-opacity',0.72)
+        }
+      }catch{}
+    }
+  }catch{}
+}
+
 function geometry(game){
   const lat=Number(game?.center_lat||0)
   const lon=Number(game?.center_lon||0)
@@ -568,7 +615,7 @@ export default function GameMap({
         const g=geometry(game)
         const map=new maplibregl.Map({
           container:holder.current,
-          style:SATELLITE_STYLE,
+          style:MAP_STYLE,
           center:[g.lon,g.lat],
           zoom:10,
           attributionControl:true,
@@ -583,6 +630,9 @@ export default function GameMap({
           if(cancelled)return
           clearTimeout(slowTimer)
           setStatus('')
+          if(mapModeRef.current==='satellite'){
+            enableSatelliteTerrainComposite(map)
+          }
           if(!fitted){
             map.fitBounds([[g.west,g.south],[g.east,g.north]],{
               padding:35,duration:0,maxZoom:17
@@ -630,7 +680,7 @@ export default function GameMap({
           if(cancelled)return
           if(!map.isStyleLoaded?.()){
             setStatus('Kartenserver langsam – wechsle auf Ersatzkarte…')
-            try{map.setStyle(FALLBACK_STYLE)}catch{}
+            try{map.setStyle(MAP_STYLE)}catch{}
           }
         },7000)
 
@@ -841,17 +891,9 @@ export default function GameMap({
     terrainCacheRef.current.clear()
     setStatus(mode==='satellite'?'Satellitenkarte wird geladen…':'Karte wird geladen…')
     try{
-      map.setStyle(mode==='satellite'?SATELLITE_STYLE:MAP_STYLE)
-      if(mode==='satellite'){
-        setTimeout(()=>{
-          if(mapModeRef.current==='satellite'&&!map.isStyleLoaded?.()){
-            setStatus('Satellitenquelle langsam – zurück zur Karte…')
-            setMapMode('map')
-            mapModeRef.current='map'
-            try{map.setStyle(MAP_STYLE)}catch{}
-          }
-        },8000)
-      }
+      // Beide Ansichten basieren auf derselben Vektorkarte.
+      // In Satellitenansicht wird das Luftbild daruntergelegt; so bleibt Terrain auswertbar.
+      map.setStyle(MAP_STYLE)
     }catch{
       setStatus('Kartenstil konnte nicht gewechselt werden.')
     }

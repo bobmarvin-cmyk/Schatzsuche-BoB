@@ -19,6 +19,7 @@ export default function Game(){
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0),chunkSummaryRef=useRef(new Map()),chunkPayloadRef=useRef(new Map()),chunkSinceRef=useRef(null),chunkSyncPromiseRef=useRef(null)
  const assistantBusyRef=useRef(false),assistantLastStepAtRef=useRef(Date.now()),assistantPendingStepRef=useRef(null),assistantTokenRef=useRef(0)
  const eventPopupsReadyRef=useRef(false)
+ const botTickBusyRef=useRef(false)
 
 
  useEffect(()=>{
@@ -316,7 +317,7 @@ export default function Game(){
  }
 
  async function loadGameBots(){
-  const {data,error}=await supabase.rpc('get_game_bots_v650',{p_game_id:id})
+  const {data,error}=await supabase.rpc('get_game_bots_v651',{p_game_id:id})
   if(!error)setBotPlayers(Array.isArray(data)?data:[])
   return data||[]
  }
@@ -355,23 +356,35 @@ export default function Game(){
  }
 
  async function runBots(){
-  if(document.visibilityState!=='visible')return
-  const {data,error}=await supabase.rpc('run_bot_game_tick_v650',{
-    p_game_id:id,
-    p_active_humans:Math.max(1,onlineIds.length)
-  })
-  if(error){setMsg('Spieler-Automatik: '+error.message);return}
-  if(data?.reason==='error'&&data?.error){setMsg('Spieler-Automatik: '+data.error);return}
-  if(data&&data.human_fields_per_min!==undefined){
-    setGameActivity(v=>({...v,fields_per_min:Number(data.human_fields_per_min||0)}))
-  }
-  if(Number(data?.errors||0)>0&&Number(data?.opened||0)===0){
-    await loadGameBots()
-  }
-  if(Number(data?.actions||0)>0||Number(data?.opened||0)>0){
-    await Promise.all([loadGameBots(),loadGameActivity(),loadGoldOnly()])
-    if(currentViewport.current)scheduleVisibleReload(180)
-    setTimeout(()=>pollLiveState(),250)
+  if(document.visibilityState!=='visible'||botTickBusyRef.current)return
+  botTickBusyRef.current=true
+  try{
+    const {data,error}=await supabase.rpc('run_bot_game_tick_v651',{
+      p_game_id:id,
+      p_active_humans:Math.max(1,onlineIds.length)
+    })
+    if(error){setMsg('Spieler-Automatik: '+error.message);return}
+    if(data?.reason==='error'&&data?.error){setMsg('Spieler-Automatik: '+data.error);return}
+
+    const changed=
+      Number(data?.moves_used||0)>0||
+      Number(data?.opened||0)>0||
+      Number(data?.technologies_bought||0)>0||
+      Number(data?.parts_found||0)>0||
+      !!data?.game_over
+
+    if(changed){
+      await Promise.all([loadGameBots(),loadGameActivity(),loadGoldOnly()])
+      if(currentViewport.current)scheduleVisibleReload(60)
+      await pollLiveState()
+    }
+
+    if(data?.game_over){
+      winnerHandledRef.current=true
+      await loadWinnerFromServer()
+    }
+  }finally{
+    botTickBusyRef.current=false
   }
  }
 
@@ -1359,7 +1372,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.50: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.51: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%2!==0)return
   runMachines()
@@ -1375,7 +1388,6 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||botPlayers.length===0)return
   if(document.visibilityState!=='visible')return
-  if(tick%5!==0)return
   runBots()
  },[tick,joinState,botPlayers.length])
 
@@ -1454,7 +1466,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.50</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.51</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
