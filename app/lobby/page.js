@@ -93,7 +93,7 @@ export default function Lobby(){
  async function loadWallet(){
    const {data:{user}}=await supabase.auth.getUser()
    if(!user)return
-   const {data}=await supabase.from('gold_wallets').select('balance_ug,test_grant_claimed').eq('user_id',user.id).maybeSingle()
+   const {data}=await supabase.from('gold_wallets').select('balance_ug,test_grant_claimed,startup_bonus_ug,startup_bonus_repaid_at').eq('user_id',user.id).maybeSingle()
    setWallet(data)
  }
  async function loadSettings(){
@@ -270,7 +270,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.44</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.46</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -289,7 +289,8 @@ export default function Lobby(){
     <div className="goldWalletCard">
      <div className="small">Goldstaub</div>
      <div className="goldBalance">✨ {formatGold(wallet?.balance_ug||0)}</div>
-     {!wallet?.test_grant_claimed&&<button className="btn goldBtn" onClick={claimTestGold}>250 mg Gold holen</button>}
+     {!wallet?.test_grant_claimed&&<button className="btn goldBtn" onClick={claimTestGold}>🎁 {formatGold(settings?.test_grant_ug||250000)} Startbonus holen</button>}
+     {Number(wallet?.startup_bonus_ug||0)>0&&<div className="small bonusNotice">🎁 Davon Startbonus: {formatGold(wallet.startup_bonus_ug)} · wird vor der ersten physischen Auszahlung einmalig zurückgeführt.</div>}
     </div>
    </div>
   </div>

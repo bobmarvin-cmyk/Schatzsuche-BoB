@@ -3745,3 +3745,27 @@ body{
   border-radius:9px;
   background:#111d2d;
 }
+
+
+/* =========================================================
+   V6.46 – News-Vorlagen + Startbonus
+   ========================================================= */
+.newsTemplateBox{
+  margin:10px 0 12px;
+  padding:10px;
+  border:1px solid #33465e;
+  border-radius:10px;
+  background:#111d2d;
+}
+.newsTemplateButtons{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+  margin-top:8px;
+}
+.bonusNotice{
+  margin-top:6px;
+  max-width:320px;
+  line-height:1.35;
+  color:#d5c18a;
+}

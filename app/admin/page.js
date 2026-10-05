@@ -5,6 +5,61 @@ import {formatGold,ugToGoldMg} from '../../lib/gold'
 
 const NUM=(v)=>v===''?0:Number(v)
 
+
+const RELEASE_NEWS_TEMPLATES=[
+ {
+  id:'v646',
+  title:'Update V6.46 – Tutorial, stärkere Mitspieler & Startbonus',
+  kind:'change',
+  body:`Neu in V6.46:
+
+• Tutorial-Erstellung robuster gemacht und den gen_salt/pgcrypto-Fehler abgefangen.
+• Computer-Mitspieler reagieren stärker auf aktive Spiele und erhalten mehr Such-Power.
+• Adaptive Aktivität orientiert sich weiterhin an Felder/min.
+• Autogames können Zufallsnamen aus dem Namenspool erhalten.
+• Spielernamen sind an weiteren Stellen direkt mit dem Profil verlinkt.
+• Startgold ist jetzt ein Startbonus: Es kann im System genutzt werden, wird aber vor der ersten physischen Auszahlung einmalig zurückgeführt.
+
+Viel Spaß bei der Schatzsuche!`
+ },
+ {
+  id:'v645',
+  title:'Update V6.46 – Tutorial-Fix & mehr Gegner-Power',
+  kind:'change',
+  body:`Änderungen aus V6.46:
+
+• Tutorial-Fix für den Fehler „gen_salt does not exist“.
+• Tutorial-Runde wird ohne Passwortpfad erzeugt und anschließend privat geschaltet.
+• Computer-Mitspieler erhalten mehr Grundtempo, höheres Maximaltempo und einen Such-Power-Multiplikator.
+• Aktivitäts-Boost für lebendigere Runden.
+• Bis zu zwei Technologien können pro Bot-Aktivität automatisch ausgebaut werden.`
+ },
+ {
+  id:'v644',
+  title:'Update V6.44 – Adaptive Aktivität & Autogame-Namen',
+  kind:'change',
+  body:`Änderungen aus V6.44:
+
+• Neuer Aktivitätswert „Felder/min je Spieler“.
+• Computer-Mitspieler passen ihr Tempo an die Aktivität echter Spieler an.
+• Grundtempo und Maximaltempo sind in der Schaltzentrale einstellbar.
+• Autogames können optional Zufallsnamen aus dem Namenspool erhalten.
+• Fehlende Profil-Links im Ingame-Ranking wurden ergänzt.`
+ },
+ {
+  id:'v643',
+  title:'Update V6.43 – echtes Tutorial & Spielerprofile',
+  kind:'change',
+  body:`Änderungen aus V6.43:
+
+• Jeder Computer-Mitspieler kann nur noch in einem laufenden Spiel gleichzeitig aktiv sein.
+• Individuelle Aktionszeitpunkte sorgen für weniger starres Verhalten.
+• Neues echtes Tutorial-Spiel mit kleiner Karte und erklärenden Hinweisen.
+• Spielernamen wurden an vielen Stellen als Profil-Link ausgebaut.
+• Zusätzliche Mitspieler-Profile für parallele Schatzsuchen.`
+ }
+]
+
 export default function Admin(){
  const [allowed,setAllowed]=useState(null)
  const [settings,setSettings]=useState(null)
@@ -351,6 +406,13 @@ export default function Admin(){
   }
  }
 
+ function applyNewsTemplate(t){
+  setNewsTitle(t.title||'')
+  setNewsBody(t.body||'')
+  setNewsKind(t.kind||'change')
+  setNewsPinned(false)
+ }
+
  async function publishNews(){
   if(!newsTitle.trim()||!newsBody.trim()){
     setMsg('Titel und Text für die Ankündigung fehlen.')
@@ -390,12 +452,14 @@ export default function Admin(){
   if(!botConfig?.settings)return
   setSaving(true);setMsg('')
   const s=botConfig.settings
-  const {data,error}=await supabase.rpc('admin_save_bot_settings_v644',{
+  const {data,error}=await supabase.rpc('admin_save_bot_settings_v645',{
     p_enabled:!!s.enabled,
     p_bots_per_auto_game:NUM(s.bots_per_auto_game),
-    p_activity_ratio:NUM(s.activity_ratio??0.8),
-    p_idle_fields_per_min:NUM(s.idle_fields_per_min??2),
-    p_max_fields_per_min:NUM(s.max_fields_per_min??40),
+    p_activity_ratio:NUM(s.activity_ratio??1),
+    p_idle_fields_per_min:NUM(s.idle_fields_per_min??5),
+    p_max_fields_per_min:NUM(s.max_fields_per_min??90),
+    p_power_multiplier:NUM(s.power_multiplier??3),
+    p_activity_boost:NUM(s.activity_boost??1.35),
     p_base_solve_percent:NUM(s.base_solve_percent),
     p_use_real_average:!!s.use_real_average,
     p_max_fields_per_action:NUM(s.max_fields_per_action)
@@ -487,7 +551,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.44</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.46</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -503,6 +567,12 @@ export default function Admin(){
   <section className="panel" id="admin-news">
    <div className="sectionTitleRow">
     <div><h2>📰 Lobby-News</h2><p className="small">Ankündigungen, Änderungen, Wartungen oder Events direkt in der Lobby veröffentlichen.</p></div>
+   </div>
+   <div className="newsTemplateBox">
+    <div className="small"><strong>Vorlagen aus den letzten Releases</strong> · übernehmen und anschließend frei bearbeiten.</div>
+    <div className="newsTemplateButtons">
+     {RELEASE_NEWS_TEMPLATES.map(t=><button type="button" className="miniBtn" key={t.id} onClick={()=>applyNewsTemplate(t)}>{t.id.toUpperCase()} übernehmen</button>)}
+    </div>
    </div>
    <div className="adminGrid">
     <Field label="Titel" type="text" value={newsTitle} onChange={setNewsTitle}/>
@@ -866,13 +936,15 @@ export default function Admin(){
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.enabled} onChange={e=>setBotSetting('enabled',e.target.checked)}/> Mitspieler in Schatzsuchen aktiv</label>
    <div className="adminGrid">
     <Field label="Bots je Spiel" value={botConfig.settings?.bots_per_auto_game??3} onChange={v=>setBotSetting('bots_per_auto_game',v)}/>
-    <Field label="Aktivitäts-Verhältnis" step="0.05" value={botConfig.settings?.activity_ratio??0.8} onChange={v=>setBotSetting('activity_ratio',v)}/>
-    <Field label="Grundtempo Felder/min" step="0.1" value={botConfig.settings?.idle_fields_per_min??2} onChange={v=>setBotSetting('idle_fields_per_min',v)}/>
-    <Field label="Max. Felder/min pro Bot" step="0.5" value={botConfig.settings?.max_fields_per_min??40} onChange={v=>setBotSetting('max_fields_per_min',v)}/>
+    <Field label="Aktivitäts-Verhältnis" step="0.05" value={botConfig.settings?.activity_ratio??1} onChange={v=>setBotSetting('activity_ratio',v)}/>
+    <Field label="Grundtempo Felder/min" step="0.5" value={botConfig.settings?.idle_fields_per_min??5} onChange={v=>setBotSetting('idle_fields_per_min',v)}/>
+    <Field label="Max. Felder/min pro Mitspieler" step="1" value={botConfig.settings?.max_fields_per_min??90} onChange={v=>setBotSetting('max_fields_per_min',v)}/>
+    <Field label="Such-Power Multiplikator" step="0.25" value={botConfig.settings?.power_multiplier??3} onChange={v=>setBotSetting('power_multiplier',v)}/>
+    <Field label="Aktivitäts-Boost" step="0.05" value={botConfig.settings?.activity_boost??1.35} onChange={v=>setBotSetting('activity_boost',v)}/>
     <Field label="Fallback Lösequote (%)" step="0.1" value={botConfig.settings?.base_solve_percent??60} onChange={v=>setBotSetting('base_solve_percent',v)}/>
     <Field label="Max. Bot-Felder/Aktion" value={botConfig.settings?.max_fields_per_action??350} onChange={v=>setBotSetting('max_fields_per_action',v)}/>
    </div>
-   <div className="small adminHint">⚡ Adaptive Aktivität: Verhältnis 0,80 bedeutet, dass ein Mitspieler ungefähr 80 % der durchschnittlichen menschlichen Felder/min anpeilt. Bei ruhigen Spielen gilt das Grundtempo.</div>
+   <div className="small adminHint">⚡ Stärke: Verhältnis steuert das Mitziehen, Aktivitäts-Boost macht aktive Runden aggressiver und Such-Power vervielfacht die Felder pro Aktion.</div>
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.use_real_average} onChange={e=>setBotSetting('use_real_average',e.target.checked)}/> echte durchschnittliche Schatzsicherungsquote verwenden</label>
    <div className="winnerActions"><button className="btn primary" disabled={saving} onClick={saveBotSettings}>Bot-Einstellungen speichern</button></div>
 

@@ -17,7 +17,7 @@ export default function Praemien(){
   const {data:{user}}=await supabase.auth.getUser()
   if(!user){location.href='/login';return}
   const [{data:w},{data:s},{data:b},{data:r}]=await Promise.all([
-    supabase.from('gold_wallets').select('balance_ug').eq('user_id',user.id).maybeSingle(),
+    supabase.from('gold_wallets').select('balance_ug,startup_bonus_ug,startup_bonus_repaid_at').eq('user_id',user.id).maybeSingle(),
     supabase.from('platform_settings').select('redemptions_enabled,smelting_enabled,allowed_bar_sizes_mg,gold_bar_size_mg,gold_bar_cost_ug').eq('id',1).single(),
     supabase.from('gold_bars_v6211').select('id,size_mg,cost_ug,serial_no,status,created_at,updated_at').order('created_at',{ascending:false}),
     supabase.from('gold_redemption_requests_v619').select('id,amount_ug,reward_type,status,created_at,bar_id').order('created_at',{ascending:false}).limit(50)
@@ -53,7 +53,7 @@ export default function Praemien(){
  const sizes=settings?.allowed_bar_sizes_mg||[]
 
  return <main className="container rewardsPage">
-  <div className="buildBadge">V6.25.1</div>
+  <div className="buildBadge">V6.46</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a></div>
 
   <section className="panel rewardHero">
@@ -111,6 +111,7 @@ export default function Praemien(){
 
   <section className="panel">
    <h2>📦 Physische Ausgabe</h2>
+   {Number(wallet?.startup_bonus_ug||0)>0&&<div className="noticeBar">🎁 Vor deiner ersten physischen Auszahlung wird dein Startbonus einmalig aus dem frei verfügbaren Goldstaub zurückgeführt. Danach gibt es keinen weiteren Bonus-Abzug.</div>}
    {!settings?.redemptions_enabled&&<div className="noticeBar">Die technische Schmelze ist aktiv, aber reale Barren-/Prämienausgabe bleibt serverseitig deaktiviert. Das kann später in der Schaltzentrale separat freigeschaltet werden.</div>}
    {requests.length===0?<div className="muted">Noch keine Ausgabewünsche.</div>:
     <div className="rewardRequests">{requests.map(r=><div className="card" key={r.id}>
