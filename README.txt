@@ -1,31 +1,28 @@
-SCHATZSUCHE ONLINE V6.53.4
+SCHATZSUCHE ONLINE V6.53.5
 
-ROOT-CAUSE-FIX
+WARUM BOTS TROTZ FUNKTIONIERENDEM INSERT NUR 0–2 FELDER SCHAFFTEN
 
-Die Diagnose zeigte:
-- Kandidaten vorhanden
-- freie Felder vorhanden
-- INSERT meldet 0 Zeilen
+Menschen:
+- Karte lädt Vektordaten
+- Terrain wird clientseitig klassifiziert
+- Feld wird danach aufgedeckt
 
-Ursache:
-terrain_guard_v619 ist ein BEFORE INSERT Trigger auf explored_fields.
-Menschen stehen in discovered_by.
-Bots stehen in discovered_by_bot_id und haben discovered_by=NULL.
+Bots:
+- kein Browser-Kartenclient
+- viele Felder besitzen keinen game_terrain_cells-Eintrag
+- Terrain-Trigger blockierte diese Felder
 
-Der alte Trigger rief deshalb für Bots:
-terrain_access_allowed_v619(game_id, NULL, x, y)
-auf und verworf die Bot-Zeile mit RETURN NULL.
+V6.53.5
+- fehlende Terrain-Klassifikation gilt für Bots vorläufig als offenes Gelände
+- bekannte Terrainwerte werden weiterhin korrekt gesperrt:
+  Wald ter2
+  Wasser ter4
+  Feuchtgebiet ter5
+  Industrie/Sondergebiet ter6
+  ter7 alles
 
-V6.53.4
-- Terrain-Trigger erkennt Bot-Felder separat.
-- Er liest die Techs des Bots.
-- Wald benötigt ter2.
-- Wasser benötigt ter4.
-- Feuchtgebiet benötigt ter5.
-- Industrie/Sondergebiet benötigt ter6.
-- ter7 erlaubt alles.
-- Menschenlogik bleibt unverändert.
+Menschen bleiben unverändert streng terrainbasiert.
 
 INSTALLATION
-1. supabase/v6_53_4_migration.sql EINMAL ausführen.
-2. V6.53.4 deployen.
+1. supabase/v6_53_5_migration.sql EINMAL ausführen.
+2. V6.53.5 deployen.
