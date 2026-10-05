@@ -1,22 +1,22 @@
-SCHATZSUCHE ONLINE V6.36
+SCHATZSUCHE ONLINE V6.37
 
-TECHNOLOGIEN-HOTFIX
+TECHNOLOGIEN KOMPAKTER
 
-- Technologiearten jetzt vollständig untereinander statt horizontal scrollbar.
-- Jeder Zweig hat einen eigenen kompakten Abschnitt.
-- Fortschritt pro Zweig oben als kleine Leiste.
-- aktuell kaufbare Technologie direkt sichtbar.
-- darunter der Zweig vertikal:
-  Technologie
-      ↓
-  Technologie
-      ↓
-  Technologie
-- dadurch kein horizontaler Scrollbalken mehr nötig.
-- „Erforschen“-Buttons repariert: sie rufen wieder die echte Kauf-/Forschungsfunktion auf.
-- keine neue SQL-Migration nötig, wenn V6.33 bereits installiert ist.
+Standardansicht pro Technologie-Kategorie:
+- Kategoriename
+- Fortschritt x/y
+- schmaler Entwicklungsbalken
+- maximal 1–2 aktuell mögliche Entwicklungen
 
-DEPLOY:
-1. Kein SQL nötig.
-2. Dateien hochladen.
-3. Vercel deployen lassen.
+Erst nach Klick auf die Kategorie:
+- kompletter Technologie-Zweig klappt auf
+- bereits erforschte, aktuelle und spätere Technologien sichtbar
+- Voraussetzungen und Kosten sichtbar
+- direktes Erforschen weiterhin möglich
+
+Vorteil:
+- deutlich weniger Scrollen
+- alle Kategorien gleichzeitig schnell erfassbar
+- voller Baum nur bei Bedarf sichtbar
+
+Kein neues SQL nötig, wenn V6.33 bereits installiert ist.

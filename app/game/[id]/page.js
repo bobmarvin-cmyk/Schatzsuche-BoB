@@ -1263,7 +1263,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.36: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.37: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%5!==0)return
   runMachines()
@@ -1319,7 +1319,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.36</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.37</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1510,36 +1510,43 @@ export default function Game(){
      <h2>🧠 Technologien</h2>
     </div>
 
-    {!endgameStatus?.ready&&<div className="technologyBranchStack">
+    {!endgameStatus?.ready&&<div className="technologyBranchStack compactCategories">
      {techProgress.map(track=>{
-      const branchChoices=currentTechChoices.filter(t=>t.branch===track.branch)
-      return <section className="technologyBranchSection" key={track.branch}>
-       <div className="technologyBranchHeader">
-        <div>
-         <strong>{track.branch}</strong>
-         <span>{track.completed}/{track.total} erforscht</span>
+      const branchChoices=currentTechChoices.filter(t=>t.branch===track.branch).slice(0,2)
+      return <details className="technologyBranchSection compactBranch" key={track.branch}>
+       <summary className="technologyBranchSummary">
+        <div className="technologyBranchSummaryMain">
+         <div className="technologyBranchTitleRow">
+          <strong>{track.branch}</strong>
+          <span>{track.completed}/{track.total}</span>
+         </div>
+         <div className="technologyBranchProgress">
+          {track.items.map(t=>{
+           const state=has(t.id)?'done':(t.requires||[]).every(has)?'current':'future'
+           return <span key={t.id} className={state} title={t.name}></span>
+          })}
+         </div>
         </div>
-        <div className="technologyBranchProgress">
-         {track.items.map((t,i)=>{
-          const state=has(t.id)?'done':(t.requires||[]).every(has)?'current':'future'
-          return <span key={t.id} className={state} title={t.name}></span>
-         })}
-        </div>
-       </div>
+        <span className="branchChevron">⌄</span>
+       </summary>
 
-       {branchChoices.length>0&&<div className="branchAvailableTechs">
+       {branchChoices.length>0&&<div className="branchAvailableTechs branchPreviewChoices">
         {branchChoices.map(t=>{
          const enough=Number(me?.coins||0)>=Number(t.cost)
-         return <div className="branchAvailableCard" key={t.id}>
+         return <div className="branchAvailableCard preview" key={t.id}>
           <div>
            <strong>{t.name}{t.exclusive_per_game?' 🔒':''}</strong>
            <div className="small">{techEffect(t)}</div>
           </div>
-          <button className="miniBtn primaryTechAction" disabled={!enough} onClick={()=>buy(t)}>
+          <button className="miniBtn primaryTechAction" disabled={!enough} onClick={e=>{e.preventDefault();e.stopPropagation();buy(t)}}>
            {enough?`${Number(t.cost).toFixed(2)} T · Erforschen`:`${Number(t.cost).toFixed(2)} T`}
           </button>
          </div>
         })}
+       </div>}
+
+       {branchChoices.length===0&&track.completed<track.total&&<div className="small muted branchNoChoice">
+        In diesem Zweig ist aktuell keine neue Technologie direkt verfügbar.
        </div>}
 
        <div className="branchTechPath">
@@ -1568,7 +1575,7 @@ export default function Game(){
          </div>
         })}
        </div>
-      </section>
+      </details>
      })}
     </div>}
 

@@ -3304,3 +3304,116 @@ body{
     width:100%;
   }
 }
+
+
+/* =========================================================
+   V6.37 – kompakte Technologie-Kategorien
+   ========================================================= */
+.technologyBranchStack.compactCategories{
+  gap:8px;
+}
+
+.technologyBranchSection.compactBranch{
+  padding:0;
+  overflow:hidden;
+}
+
+.technologyBranchSummary{
+  list-style:none;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:10px;
+  align-items:center;
+  cursor:pointer;
+  padding:10px 11px;
+}
+.technologyBranchSummary::-webkit-details-marker{display:none}
+
+.technologyBranchSummaryMain{
+  min-width:0;
+}
+.technologyBranchTitleRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:7px;
+}
+.technologyBranchTitleRow strong{
+  font-size:14px;
+}
+.technologyBranchTitleRow span{
+  color:#8fa3bb;
+  font-size:10px;
+}
+
+.branchChevron{
+  color:#8397af;
+  font-size:13px;
+  transition:transform .16s ease;
+}
+.technologyBranchSection[open] .branchChevron{
+  transform:rotate(180deg);
+}
+
+.branchPreviewChoices{
+  padding:0 10px 10px;
+  margin:0;
+}
+.branchAvailableCard.preview{
+  grid-template-columns:minmax(0,1fr) auto;
+  padding:8px 9px;
+}
+.branchAvailableCard.preview + .branchAvailableCard.preview{
+  margin-top:6px;
+}
+
+.branchNoChoice{
+  padding:0 10px 10px;
+}
+
+.technologyBranchSection.compactBranch > .branchTechPath{
+  display:none;
+  padding:0 10px 10px;
+}
+.technologyBranchSection.compactBranch[open] > .branchTechPath{
+  display:grid;
+}
+
+.technologyBranchSection.compactBranch[open] .branchPreviewChoices,
+.technologyBranchSection.compactBranch[open] .branchNoChoice{
+  border-bottom:1px solid rgba(255,255,255,.06);
+  padding-bottom:10px;
+  margin-bottom:8px;
+}
+
+/* geschlossene Kategorien bleiben sehr flach */
+.technologyBranchSection.compactBranch:not([open]){
+  background:#0f1928;
+}
+.technologyBranchSection.compactBranch:not([open]) .technologyBranchSummary{
+  padding-bottom:9px;
+}
+
+/* Tech-Pfad im geöffneten Zustand etwas dezenter */
+.technologyBranchSection.compactBranch[open] .branchTechStep{
+  background:#101a29;
+  border-color:#293a50;
+}
+.technologyBranchSection.compactBranch[open] .branchTechStep.done{
+  background:#10221b;
+  border-color:#315846;
+}
+.technologyBranchSection.compactBranch[open] .branchTechStep.current{
+  background:#201a0d;
+  border-color:#725f31;
+}
+
+@media(max-width:700px){
+  .branchAvailableCard.preview{
+    grid-template-columns:1fr;
+  }
+  .branchAvailableCard.preview .primaryTechAction{
+    width:100%;
+  }
+}
