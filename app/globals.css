@@ -3771,3 +3771,69 @@ body{
 }
 
 .activityInfo{opacity:.6;font-weight:500}
+
+
+/* =========================================================
+   V6.48 – kompakte Lobby-News
+   ========================================================= */
+.compactNewsPanel .lobbyNewsList{
+  gap:8px;
+}
+.compactNewsPanel .lobbyNewsItem{
+  padding:10px 12px;
+}
+.compactNewsPanel .lobbyNewsItem h3{
+  margin:4px 0;
+  font-size:14px;
+}
+.compactNewsPanel .lobbyNewsItem p{
+  margin:4px 0 0;
+  font-size:12px;
+  line-height:1.4;
+  white-space:pre-line;
+}
+.olderNewsDetails{
+  margin-top:8px;
+  border-top:1px solid rgba(255,255,255,.07);
+  padding-top:7px;
+}
+.olderNewsDetails>summary{
+  cursor:pointer;
+  color:#b8c7d9;
+  font-size:12px;
+  font-weight:700;
+  user-select:none;
+}
+.olderNewsList{
+  display:grid;
+  gap:4px;
+  margin-top:7px;
+}
+.olderNewsItem{
+  padding:7px 8px;
+  border-radius:8px;
+  background:#111b29;
+  border:1px solid rgba(255,255,255,.05);
+}
+.olderNewsTitle{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  font-size:11px;
+}
+.olderNewsTitle time{
+  opacity:.55;
+  white-space:nowrap;
+}
+.olderNewsItem p{
+  margin:4px 0 0;
+  color:#aebdce;
+  font-size:10px;
+  line-height:1.35;
+  white-space:pre-line;
+  display:-webkit-box;
+  -webkit-line-clamp:3;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}

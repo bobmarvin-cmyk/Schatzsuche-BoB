@@ -317,7 +317,7 @@ export default function Game(){
 
  async function runBots(){
   if(document.visibilityState!=='visible')return
-  const {data,error}=await supabase.rpc('run_bot_game_tick_v647',{
+  const {data,error}=await supabase.rpc('run_bot_game_tick_v648',{
     p_game_id:id,
     p_active_humans:Math.max(1,onlineIds.length)
   })
@@ -1327,7 +1327,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.47: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.48: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%2!==0)return
   runMachines()
@@ -1421,7 +1421,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.47</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.48</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>

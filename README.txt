@@ -1,41 +1,33 @@
-SCHATZSUCHE ONLINE V6.47
+SCHATZSUCHE ONLINE V6.48
 
-TUTORIAL
-- Fehler mit nicht vorhandener Spalte password_hash entfernt.
-- Tutorial wird erst normal erstellt und danach serverseitig privat markiert.
-- Keine Passwortspalte wird vorausgesetzt.
+LOBBY-NEWS
+- Nur die 3 neuesten Meldungen werden vollständig angezeigt.
+- Ältere News liegen platzsparend unter „Weitere News“.
+- Eingeklappte alte Meldungen sind deutlich kleiner.
+- Das spart besonders auf dem Handy viel Platz, ohne Inhalte zu verlieren.
 
-COMPUTER-SPIELER
-Felder/min bleibt nur als Aktivitätsanzeige und steuert die Bots nicht mehr.
+NOCH STÄRKERE COMPUTER-SPIELER
+Neue Einstellung:
+- „Vollgas-Aktionen pro Zug“: 1 bis 5
 
-LEERLAUF:
-- kein echter Spieler aktiv
-- 1 Feld je Leerlauf-Aktion
-- Standard 45 Sekunden
-- keine aggressive Entwicklung
+Damit wird die Suchleistung innerhalb eines Bot-Zugs zusätzlich vervielfacht.
 
-VOLLGAS:
-- sobald ein echter Spieler die Runde geöffnet hat
-- Bots werden sofort aufgeweckt
-- Aktionszeit orientiert sich an regen_seconds des Spiels
-- reveal_power/Techstand wird voll genutzt
-- Such-Power-Multiplikator wirkt voll
-- bis zu 3 bezahlbare Technologien pro Aktivität
-- Ratio drosselt oder verstärkt
+Außerdem angehobene Grenzen:
+- Vollgas-Ratio: bis 5,0
+- Such-Power: bis ×25
+- Max. Felder/Aktion: bis 10.000
 
-SCHALTZENTRALE
-- Mitspieler je Spiel
-- Vollgas-Ratio
-- Such-Power Multiplikator
-- Leerlauf-Aktion alle X Sekunden
-- Schatzsicherungsquote
-- Max. Felder/Aktion
+Beispiel:
+- Ratio 1,0
+- Such-Power ×3
+- Vollgas-Aktionen 2
+=> ungefähr doppelte Suchleistung gegenüber V6.47.
 
-V6.46 ebenfalls enthalten:
-- Lobby-News-Vorlagen
-- Startgold als rückzahlbarer Startbonus
+Für sehr starke Gegner:
+- Ratio 1,25–1,5
+- Such-Power ×4–6
+- Vollgas-Aktionen 2–3
 
 INSTALLATION
-1. supabase/v6_47_migration.sql EINMAL ausführen.
-2. V6.47 deployen.
-3. V6.45/V6.46 NICHT separat ausführen.
+1. supabase/v6_48_migration.sql EINMAL ausführen.
+2. V6.48 deployen.
