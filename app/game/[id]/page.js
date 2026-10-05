@@ -831,7 +831,7 @@ export default function Game(){
  }
 
  async function runMachines(){
-  if(machineBusy.current||machinePower<=0||document.visibilityState!=='visible'||!document.hasFocus())return
+  if(machineBusy.current||machinePower<=0||document.visibilityState!=='visible')return
   if(Date.now()<machineRetryAfterRef.current)return
   machineBusy.current=true
   try{
@@ -861,9 +861,8 @@ export default function Game(){
         scheduleVisibleReload(350)
       }
     }
-    await loadGoldOnly()
-    await loadPendingClaim()
-    setTimeout(()=>pollLiveState(),600)
+    await Promise.all([loadGoldOnly(),loadPlayersOnly(),loadPendingClaim()])
+    setTimeout(()=>pollLiveState(),350)
     if(data?.game_over){
       setWinnerCelebration({
         won:!!data.won,
@@ -962,10 +961,15 @@ export default function Game(){
  },[tick,joinState,machinePower,id])
 
  useEffect(()=>{
-  if(joinState!=='joined'||machinePower<=0||secondsUntilMachine!==0)return
-  if(document.visibilityState!=='visible'||!document.hasFocus())return
+  if(joinState!=='joined'||machinePower<=0)return
+  if(document.visibilityState!=='visible')return
+  // V6.26.1.1: Maschinenlauf nicht mehr vom lokalen Countdown abhängig.
+  // Alle 3 Sekunden wird kurz beim Server geprüft; "noch nicht fällig"
+  // wird dort ohne Wirkung verworfen. Dadurch kann ein veralteter
+  // machine_last_run_at-Wert die Automatik nicht mehr festhalten.
+  if(tick%3!==0)return
   runMachines()
- },[tick,joinState,secondsUntilMachine,machinePower])
+ },[tick,joinState,machinePower])
 
  function techEffect(t){
   const effects=[]
@@ -1039,10 +1043,6 @@ export default function Game(){
     ].map((v,i)=><div className="quickStat" key={i}><span>{v[1]}</span><strong>{v[0]}</strong></div>)}
    </div>
    <div className="regenBarText">Ungenutzte Züge werden bis zum Speicherlimit gesammelt; darüber hinaus verfallen sie.</div>
-   {machinePower>0&&<div className="machineStatusCompact">
-    <span>⚙️ {machinePower.toLocaleString('de-DE')}/Takt{machinePower>800?` · ${machineBatchSize}/Paket`:''}</span>
-    <span className="small">🤖 Automatik · sucht selbstständig freie Felder</span>
-   </div>}
    </div>
   </div>
 

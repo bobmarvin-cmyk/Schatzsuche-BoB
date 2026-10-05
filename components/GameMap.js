@@ -12,9 +12,23 @@ const SATELLITE_STYLE={
       tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
       tileSize:256,
       attribution:'Esri, Maxar, Earthstar Geographics, and the GIS User Community'
+    },
+    transport:{
+      type:'raster',
+      tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}'],
+      tileSize:256
+    },
+    places:{
+      type:'raster',
+      tiles:['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'],
+      tileSize:256
     }
   },
-  layers:[{id:'satellite-base',type:'raster',source:'satellite'}]
+  layers:[
+    {id:'satellite-base',type:'raster',source:'satellite'},
+    {id:'satellite-roads',type:'raster',source:'transport'},
+    {id:'satellite-labels',type:'raster',source:'places'}
+  ]
 }
 const FALLBACK_STYLE={
   version:8,

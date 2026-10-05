@@ -1,0 +1,15 @@
+SCHATZSUCHE ONLINE V6.26.1
+
+ÄNDERUNGEN
+- Satellitenansicht zeigt zusätzlich Straßen sowie Orts-/Gebietsnamen.
+- Redundanter Maschinen-Statusbalken unter den oberen Spielwerten entfernt.
+- Maschinenlauf ist nicht mehr vom lokalen Countdown abhängig.
+- Solange der Tab sichtbar ist, fragt der Client alle 3 Sekunden beim Server,
+  ob ein Maschinenlauf fällig ist.
+- Nach einem erfolgreichen Maschinenlauf werden Spielerdaten sofort neu geladen.
+- Dadurch sollte die Automatik nicht mehr erst nach einem manuellen Zug weiterlaufen.
+
+INSTALLATION
+- Projektdateien ins Repo übernehmen.
+- KEINE neue SQL-Migration nötig.
+- Vercel deployen lassen.
