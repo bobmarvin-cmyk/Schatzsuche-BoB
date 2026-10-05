@@ -1902,3 +1902,49 @@ button:disabled{cursor:not-allowed;opacity:.45}
 @media (max-width:700px){
   .assistantDoneNotice{align-items:flex-start}
 }
+
+/* V6.30 – Endgame-Ausbau und Admin-Statistik */
+.endgameUpgradePanel{
+  margin-top:1rem;
+  padding:.75rem;
+  border:1px solid rgba(120,170,255,.28);
+  border-radius:12px;
+  background:rgba(100,145,220,.07);
+}
+.endgameUpgradeHead,.endgameUpgradeCard{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:.65rem;
+}
+.endgameUpgradeHead{margin-bottom:.65rem}
+.endgameUpgradeHead span{font-size:.78rem;opacity:.72}
+.endgameUpgradeCard{
+  padding:.6rem 0;
+  border-top:1px solid rgba(255,255,255,.08);
+}
+.endgameLockedHint{margin-top:.7rem}
+.endgameAdminBox{
+  margin-top:1rem;
+  padding-top:1rem;
+  border-top:1px solid rgba(255,255,255,.1);
+}
+.claimStatsGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(130px,1fr));
+  gap:.65rem;
+}
+.claimTypeStats{margin-top:.8rem}
+.claimTypeRow{
+  display:grid;
+  grid-template-columns:1.2fr repeat(4,minmax(90px,1fr));
+  gap:.5rem;
+  align-items:center;
+  padding:.5rem 0;
+  border-top:1px solid rgba(255,255,255,.08);
+  font-size:.86rem;
+}
+@media (max-width:700px){
+  .endgameUpgradeCard{align-items:flex-start}
+  .claimTypeRow{grid-template-columns:1fr 1fr}
+}

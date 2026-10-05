@@ -29,6 +29,7 @@ export default function Admin(){
  const [saving,setSaving]=useState(false)
  const [namePoolLeft,setNamePoolLeft]=useState('')
  const [namePoolRight,setNamePoolRight]=useState('')
+ const [claimStats,setClaimStats]=useState(null)
 
  useEffect(()=>{init()},[])
 
@@ -54,6 +55,8 @@ export default function Admin(){
   ])
   if(se||te||ge||ae||gameErr||namePoolErr){setMsg(se?.message||te?.message||ge?.message||ae?.message||gameErr?.message||namePoolErr?.message||'Fehler beim Laden');return}
   setSettings(s);setTechs(t||[]);setGoldOverview(go||null);setAutoGame(ag||null);setAdminGames(games||[]);setBarOverview(bars||null)
+  const {data:cs}=await supabase.rpc('admin_treasure_claim_stats_v630')
+  setClaimStats(cs||null)
   setBarSizesText((s?.allowed_bar_sizes_mg||[100,250,500,1000,2500,5000]).join(', '))
   setGeoGameId(current=>current||games?.[0]?.id||'')
   setNamePoolLeft((namePool?.left||[]).join('\n'))
@@ -121,6 +124,21 @@ export default function Admin(){
   }
   setSaving(false)
   setMsg(error?error.message:(data?.message||'Globale Einstellungen gespeichert.'))
+  if(!error)await load()
+ }
+
+ async function saveEndgameSettings(){
+  setSaving(true);setMsg('')
+  const {data,error}=await supabase.rpc('admin_set_endgame_settings_v630',{
+    p_reveal_start_cost:NUM(settings.endgame_reveal_start_cost??40),
+    p_reveal_price_factor:NUM(settings.endgame_reveal_price_factor??1.35),
+    p_reveal_bonus:NUM(settings.endgame_reveal_bonus??100),
+    p_machine_start_cost:NUM(settings.endgame_machine_start_cost??25),
+    p_machine_price_factor:NUM(settings.endgame_machine_price_factor??1.35),
+    p_machine_bonus:NUM(settings.endgame_machine_bonus??250)
+  })
+  setSaving(false)
+  setMsg(error?error.message:(data?.message||'Endgame-Ausbauwerte gespeichert.'))
   if(!error)await load()
  }
 
@@ -354,7 +372,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.29</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.30</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -364,7 +382,7 @@ export default function Admin(){
 
   {msg&&<div className="noticeBar">{msg}</div>}
   <nav className="adminJumpNav">
-   <a href="#admin-members">👥 Mitglieder</a><a href="#admin-jobs">🧰 Jobs & Namen</a><a href="#admin-games">🎮 Spiele</a><a href="#admin-geo">🌍 Geodaten</a><a href="#admin-auto">🤖 Auto</a><a href="#admin-economy">✨ Gold</a><a href="#admin-rules">⚙️ Regeln</a><a href="#admin-tech">🧠 Technologien</a>
+   <a href="#admin-members">👥 Mitglieder</a><a href="#admin-jobs">🧰 Jobs & Namen</a><a href="#admin-games">🎮 Spiele</a><a href="#admin-geo">🌍 Geodaten</a><a href="#admin-auto">🤖 Auto</a><a href="#admin-economy">✨ Gold</a><a href="#admin-rules">⚙️ Regeln</a><a href="#admin-claims">📊 Schatzsicherung</a><a href="#admin-tech">🧠 Technologien</a>
   </nav>
 
   <section className="panel" id="admin-jobs">
@@ -558,6 +576,21 @@ export default function Admin(){
     <Field label="Analyse-Hinweis Stufe 5 (Taler)" step="0.1" value={settings.analysis_price_l5} onChange={v=>setSetting('analysis_price_l5',v)}/>
     <Field label="Analyse-Hinweis Stufe 6+ (Taler)" step="0.1" value={settings.analysis_price_l6} onChange={v=>setSetting('analysis_price_l6',v)}/>
    </div>
+
+   <div className="endgameAdminBox">
+    <h3>♾️ Wiederholbarer Endgame-Ausbau</h3>
+    <p className="small">Diese Käufe erscheinen für einen Spieler erst, wenn alle aktiven nicht-exklusiven Technologien gekauft wurden.</p>
+    <div className="adminGrid">
+     <Field label="Erkunden · Startpreis (Taler)" step="0.01" value={settings.endgame_reveal_start_cost??40} onChange={v=>setSetting('endgame_reveal_start_cost',v)}/>
+     <Field label="Erkunden · Preisfaktor" step="0.01" value={settings.endgame_reveal_price_factor??1.35} onChange={v=>setSetting('endgame_reveal_price_factor',v)}/>
+     <Field label="Erkunden · +Felder je Kauf" value={settings.endgame_reveal_bonus??100} onChange={v=>setSetting('endgame_reveal_bonus',v)}/>
+     <Field label="Maschine · Startpreis (Taler)" step="0.01" value={settings.endgame_machine_start_cost??25} onChange={v=>setSetting('endgame_machine_start_cost',v)}/>
+     <Field label="Maschine · Preisfaktor" step="0.01" value={settings.endgame_machine_price_factor??1.35} onChange={v=>setSetting('endgame_machine_price_factor',v)}/>
+     <Field label="Maschine · +Suchfelder je Kauf" value={settings.endgame_machine_bonus??250} onChange={v=>setSetting('endgame_machine_bonus',v)}/>
+    </div>
+    <div className="small muted">Formel: nächster Preis = Startpreis × Preisfaktor ^ bisherige Käufe</div>
+    <button className="btn primary" disabled={saving} onClick={saveEndgameSettings}>Endgame-Werte speichern</button>
+   </div>
   </section>
 
   <section className="panel" id="admin-economy">
@@ -683,6 +716,34 @@ export default function Admin(){
     <button className="btn primary" onClick={generateAutoGameNow} disabled={saving}>Jetzt Game erzeugen</button>
    </div>
   </section>}
+
+  <section className="panel" id="admin-claims">
+   <div className="sectionTitleRow">
+    <div>
+     <h2>📊 Schatzsicherungs-Statistik</h2>
+     <p className="small">Zeigt, wie häufig die Sicherungsaufgaben tatsächlich gelöst werden.</p>
+    </div>
+    <button className="btn" onClick={load}>↻ Aktualisieren</button>
+   </div>
+   {claimStats?<>
+    <div className="claimStatsGrid">
+     <div className="card"><div className="small">Versuche gesamt</div><div className="stat">{Number(claimStats.total||0).toLocaleString('de-DE')}</div></div>
+     <div className="card"><div className="small">Bestanden</div><div className="stat">{Number(claimStats.pass_percent||0).toFixed(2)}%</div><div className="small">{Number(claimStats.passed||0).toLocaleString('de-DE')}</div></div>
+     <div className="card"><div className="small">Fehlgeschlagen</div><div className="stat">{Number(claimStats.failed_percent||0).toFixed(2)}%</div><div className="small">{Number(claimStats.failed||0).toLocaleString('de-DE')}</div></div>
+     <div className="card"><div className="small">Abgelaufen</div><div className="stat">{Number(claimStats.expired_percent||0).toFixed(2)}%</div><div className="small">{Number(claimStats.expired||0).toLocaleString('de-DE')}</div></div>
+     <div className="card"><div className="small">Ø Versuche / Schatz</div><div className="stat">{Number(claimStats.avg_attempts_per_treasure||0).toFixed(2)}</div></div>
+    </div>
+    <div className="claimTypeStats">
+     {(claimStats.by_type||[]).map(x=><div className="claimTypeRow" key={x.challenge_type}>
+      <strong>{x.challenge_type}</strong>
+      <span>{Number(x.attempts||0)} Versuche</span>
+      <span>{Number(x.pass_percent||0).toFixed(2)}% bestanden</span>
+      <span>{Number(x.failed||0)} falsch</span>
+      <span>{Number(x.expired||0)} abgelaufen</span>
+     </div>)}
+    </div>
+   </>:<div className="muted">Noch keine Statistik verfügbar.</div>}
+  </section>
 
   <details className="panel adminCollapsible" id="admin-tech">
    <summary><span>🧠 Technologien</span><span className="small">{techs.length} Einträge</span></summary>

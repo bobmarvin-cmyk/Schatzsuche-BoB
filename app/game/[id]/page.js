@@ -13,6 +13,7 @@ export default function Game(){
  const [msg,setMsg]=useState(''),[regenInfo,setRegenInfo]=useState(null),[wallet,setWallet]=useState(null),[goldTreasures,setGoldTreasures]=useState([])
  const [joinState,setJoinState]=useState('checking'),[joinPassword,setJoinPassword]=useState(''),[analysisHint,setAnalysisHint]=useState(null),[analysisFeatures,setAnalysisFeatures]=useState([]),[analysisFocusToken,setAnalysisFocusToken]=useState(0),[analysisClue,setAnalysisClue]=useState(''),[tick,setTick]=useState(0),[winnerCelebration,setWinnerCelebration]=useState(null),[gimmickPopup,setGimmickPopup]=useState(null),[treasurePopup,setTreasurePopup]=useState(null),[activeGames,setActiveGames]=useState([]),[statsOpen,setStatsOpen]=useState(false),[sessionFields,setSessionFields]=useState(0),[ownTraps,setOwnTraps]=useState([]),[trapMode,setTrapMode]=useState(null),[gameEvent,setGameEvent]=useState(null),[competition,setCompetition]=useState([]),[rankOpen,setRankOpen]=useState(false),[rankMetric,setRankMetric]=useState('coins'),[globalPopup,setGlobalPopup]=useState(null),[analysisPrices,setAnalysisPrices]=useState({1:5,2:10,3:15,4:20,5:25,6:30}),[analysisBuying,setAnalysisBuying]=useState(false),[analysisClues,setAnalysisClues]=useState([]),[onlineIds,setOnlineIds]=useState([]),[terrainInfo,setTerrainInfo]=useState(null),[pendingClaim,setPendingClaim]=useState(null),[claimShow,setClaimShow]=useState(false),[claimInput,setClaimInput]=useState(''),[claimResolving,setClaimResolving]=useState(false),[claimChallenge,setClaimChallenge]=useState(null),[claimStarted,setClaimStarted]=useState(false),[claimTimeLeft,setClaimTimeLeft]=useState(null),[claimResult,setClaimResult]=useState(null),[job,setJob]=useState(null),[jobBusy,setJobBusy]=useState(false),[jobSettings,setJobSettings]=useState({bottlesSeconds:180,bottlesReward:1,scrapSeconds:900,scrapReward:7})
  const [assistantEnabled,setAssistantEnabled]=useState(false),[assistantWaypoints,setAssistantWaypoints]=useState([]),[assistantPosition,setAssistantPosition]=useState(null),[assistantNextIndex,setAssistantNextIndex]=useState(0),[assistantTarget,setAssistantTarget]=useState(null),[assistantUnlocked,setAssistantUnlocked]=useState(false),[assistantUnlockBusy,setAssistantUnlockBusy]=useState(false),[assistantRouteDone,setAssistantRouteDone]=useState(false)
+ const [endgameStatus,setEndgameStatus]=useState(null),[endgameBusy,setEndgameBusy]=useState(false)
 
  const moveRefreshBusy=useRef(false),revealBusy=useRef(false),machineBusy=useRef(false),viewportTimer=useRef(null),viewportSeq=useRef(0),currentViewport=useRef(null),sessionStartedAt=useRef(Date.now()),lastFieldVersion=useRef(0),lastEventId=useRef(0),livePollBusy=useRef(false),playerReloadTimer=useRef(null),winnerHandledRef=useRef(false),lastPlayersSig=useRef(''),lastCompetitionSig=useRef(''),lastVisibleReloadAt=useRef(0),lastPollAt=useRef(0),lastMachineMapRefreshAt=useRef(0),claimTimerRef=useRef(null),machineRetryAfterRef=useRef(0),chunkSummaryRef=useRef(new Map()),chunkPayloadRef=useRef(new Map()),chunkSinceRef=useRef(null),chunkSyncPromiseRef=useRef(null)
  const assistantBusyRef=useRef(false),assistantLastStepAtRef=useRef(Date.now()),assistantPendingStepRef=useRef(null),assistantTokenRef=useRef(0)
@@ -258,7 +259,7 @@ export default function Game(){
  }
 
  async function loadPlayersOnly(){
-  const {data}=await supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,fields_revealed,assistant_unlocked,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at')
+  const {data}=await supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,fields_revealed,assistant_unlocked,endgame_reveal_buys,endgame_machine_buys,endgame_reveal_power_bonus,endgame_machine_power_bonus,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at')
   if(data)setPlayers(data)
  }
  async function loadGameOnly(){
@@ -278,6 +279,22 @@ export default function Game(){
   ])
   setWallet(w.data);setGoldTreasures(gt.data||[])
  }
+ async function loadEndgameStatus(){
+  const {data,error}=await supabase.rpc('get_endgame_upgrade_status_v630',{p_game_id:id})
+  if(!error)setEndgameStatus(data||null)
+  return data||null
+ }
+
+ async function buyEndgame(kind){
+  if(endgameBusy)return
+  setEndgameBusy(true)
+  const {data,error}=await supabase.rpc('buy_endgame_upgrade_v630',{p_game_id:id,p_kind:kind})
+  setEndgameBusy(false)
+  if(error){setMsg(error.message);return}
+  setMsg(data?.message||'Endgame-Ausbau gekauft.')
+  await Promise.all([loadPlayersOnly(),loadEndgameStatus()])
+ }
+
  async function loadCompetition(){
   const {data}=await supabase.rpc('get_game_competition_v615',{p_game_id:id})
   if(data)setCompetition(data)
@@ -401,12 +418,12 @@ export default function Game(){
   try{
     const [g,p,t,w,gt,tech,ps]=await Promise.all([
       supabase.from('games').select('*').eq('id',id).single(),
-      supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,fields_revealed,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
+      supabase.from('game_players').select('user_id,coins,moves_left,reveal_power,reward_multiplier,analysis_level,player_color,move_capacity_bonus,regen_reduction,last_regen_at,machine_last_run_at,auto_focus_x,auto_focus_y,treasure_share_bps,treasure_parts_found,machine_ticks_used,machine_mode,gimmick_reveal_bonus_pending,fields_revealed,endgame_reveal_buys,endgame_machine_buys,endgame_reveal_power_bonus,endgame_machine_power_bonus,assistant_unlocked,profiles(display_name,avatar_path)').eq('game_id',id).order('joined_at'),
       supabase.from('player_technologies').select('technology_id').eq('game_id',id).eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000'),
       supabase.from('gold_wallets').select('balance_ug').eq('user_id',user?.id||'00000000-0000-0000-0000-000000000000').maybeSingle(),
       supabase.rpc('get_treasure_status_v610',{p_game_id:id}),
       supabase.rpc('get_active_technologies_v6241'),
-      supabase.from('platform_settings').select('analysis_price_l1,analysis_price_l2,analysis_price_l3,analysis_price_l4,analysis_price_l5,analysis_price_l6,job_bottles_duration_seconds,job_bottles_reward_taler,job_scrap_duration_seconds,job_scrap_reward_taler').eq('id',1).single()
+      supabase.from('platform_settings').select('analysis_price_l1,analysis_price_l2,analysis_price_l3,analysis_price_l4,analysis_price_l5,analysis_price_l6,job_bottles_duration_seconds,job_bottles_reward_taler,job_scrap_duration_seconds,job_scrap_reward_taler,endgame_reveal_start_cost,endgame_reveal_price_factor,endgame_reveal_bonus,endgame_machine_start_cost,endgame_machine_price_factor,endgame_machine_bonus').eq('id',1).single()
     ])
 
     if(g.error)throw g.error
@@ -453,7 +470,7 @@ export default function Game(){
       scrapSeconds:Number(ps.data?.job_scrap_duration_seconds||900),
       scrapReward:Number(ps.data?.job_scrap_reward_taler||7)
     })
-    loadActiveGames();loadOwnTraps();loadCompetition();loadPendingClaim();loadAnalysisClues();loadJob()
+    loadActiveGames();loadOwnTraps();loadCompetition();loadPendingClaim();loadAnalysisClues();loadJob();loadEndgameStatus()
   }catch(err){
     setMsg('Fehler beim Laden der Karte: '+(err?.message||String(err)))
   }
@@ -1087,7 +1104,7 @@ export default function Game(){
  async function buy(t){
   const {data,error}=await supabase.rpc('buy_technology_v614',{p_game_id:id,p_technology_id:t.id})
   setMsg(error?error.message:(data?.message||'Erforscht'))
-  await Promise.all([loadPlayersOnly(),loadOwnedOnly()])
+  await Promise.all([loadPlayersOnly(),loadOwnedOnly()]); await loadEndgameStatus()
  }
 
  const me=players.find(p=>p.user_id===user?.id)
@@ -1118,6 +1135,7 @@ export default function Game(){
  const machinePower=technologies
    .filter(t=>owned.includes(t.id))
    .reduce((sum,t)=>sum+Number(t.machine_auto_fields||0),0)
+   +Number(me?.endgame_machine_power_bonus||0)
  const machineBatchSize=machinePower
  const machineBatchInterval=effectiveRegen
  const secondsUntilMachine=(()=>{
@@ -1162,7 +1180,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.29: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.30: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%5!==0)return
   runMachines()
@@ -1217,7 +1235,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.29</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.30</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1422,6 +1440,26 @@ export default function Game(){
       <div className="techBottom"><b>{Number(t.cost).toFixed(2)} T</b><button className="btn primary" disabled={bought||!unlocked||!enough} onClick={()=>buy(t)}>{bought?'Erforscht':'Erforschen'}</button></div>
      </div>
     })}</div>
+    {endgameStatus?.ready&&<div className="endgameUpgradePanel">
+      <div className="endgameUpgradeHead">
+       <strong>♾️ Endgame-Ausbau</strong>
+       <span>Normaler Techbaum vollständig</span>
+      </div>
+      <div className="endgameUpgradeCard">
+       <div><strong>🗺️ Expeditionsausbau</strong><div className="small">+{Number(endgameStatus.reveal_bonus_per_buy||0).toLocaleString('de-DE')} Felder/Zug · bisher {Number(endgameStatus.reveal_buys||0)}× gekauft</div></div>
+       <button className="btn primary" disabled={endgameBusy||Number(me?.coins||0)<Number(endgameStatus.reveal_next_cost||0)} onClick={()=>buyEndgame('reveal')}>
+        {Number(endgameStatus.reveal_next_cost||0).toFixed(2)} T
+       </button>
+      </div>
+      <div className="endgameUpgradeCard">
+       <div><strong>⚙️ Maschinenoptimierung</strong><div className="small">+{Number(endgameStatus.machine_bonus_per_buy||0).toLocaleString('de-DE')} virtuelle Suchfelder/Takt · bisher {Number(endgameStatus.machine_buys||0)}× gekauft</div></div>
+       <button className="btn primary" disabled={endgameBusy||Number(me?.coins||0)<Number(endgameStatus.machine_next_cost||0)} onClick={()=>buyEndgame('machine')}>
+        {Number(endgameStatus.machine_next_cost||0).toFixed(2)} T
+       </button>
+      </div>
+      <div className="small muted">Preis: Startpreis × Faktor ^ bisherige Käufe</div>
+    </div>}
+    {!endgameStatus?.ready&&endgameStatus&&<div className="small muted endgameLockedHint">♾️ Endgame-Ausbau erscheint nach vollständigem normalen Techbaum.</div>}
    </aside>
   </div>
 

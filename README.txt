@@ -1,38 +1,28 @@
-SCHATZSUCHE ONLINE V6.29
+SCHATZSUCHE ONLINE V6.30
 
-AKTUELLER STAND
-- V6.27: Maschinen als sehr schlanke virtuelle Schatzsuche
-- V6.28: Assistent/Autopilot für normale Spielerzüge
-- V6.29:
-  - Assistent kostet einmalig 10 Taler pro Spiel
-  - deutliche Meldung am Ende einer Route
-  - abgearbeitete Wegpunkte bleiben erhalten
-  - Route kann direkt erneut abgefahren werden
-  - ungenutzte Hybrid-Technologien werden entfernt
+NEU
+- Wiederholbarer Endgame-Ausbau erscheint erst nach komplettem normalen Techbaum.
+- Exklusive Technologien blockieren die Endgame-Freischaltung nicht.
+- Expeditionsausbau erhöht Felder/Zug dauerhaft im aktuellen Spiel.
+- Maschinenoptimierung erhöht die virtuelle Maschinenleistung dauerhaft im aktuellen Spiel.
+- Beide Upgrades sind beliebig oft kaufbar.
+- Preis steigt nach Formel:
+  Startpreis × Preisfaktor ^ bisherige Käufe
+- Startpreis, Preisfaktor und Bonus je Kauf sind in der Schaltzentrale einstellbar.
+- Schatzsicherungs-Statistik in der Schaltzentrale:
+  Gesamtversuche, bestanden, falsch, abgelaufen, Lösungsquote,
+  Durchschnittsversuche pro Schatz und Werte je Aufgabentyp.
+- Maschinen bleiben technisch weiterhin die schlanke V6.27-Wahrscheinlichkeitssuche.
+  Der Endgame-Ausbau addiert lediglich virtuelle Suchleistung.
 
-ASSISTENT
-- maximal 20 Wegpunkte
-- AN: Kartenklick setzt Wegpunkte
-- AUS: Kartenklick erkundet normal
-- höchstens ein Assistentenschritt pro normalem Zugtakt
-- nutzt exakt die normale reveal_power und Reveal-Logik
-- keine Offline-Nachholung
-- läuft nur bei sichtbarer/aktiver Spielseite
-- Route und Fortschritt bleiben lokal im Browser
-- Maschinenlogik bleibt davon getrennt
-
-DEPLOY V6.29
-1. ZUERST in Supabase SQL Editor EINMAL ausführen:
-   supabase/v6_29_migration.sql
-2. Danach Projektdateien ins GitHub-Repo übernehmen.
+DEPLOY
+1. ZUERST supabase/v6_30_migration.sql EINMAL ausführen.
+2. Danach Projektdateien ins Repo übernehmen.
 3. .env.local nicht hochladen.
 4. Vercel deployen lassen.
 
-SUPABASE-ORDNER
-Bewusst klein gehalten:
+RELEASE-ORDNER
+Bewusst bereinigt. Im Supabase-Ordner liegen nur:
 - setup.sql
-- v6_27_migration.sql
-- v6_29_migration.sql
+- v6_30_migration.sql
 - README.txt
-
-Alte Zwischenmigrationen sind aus dieser Release-ZIP entfernt.
