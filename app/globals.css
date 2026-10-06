@@ -3999,3 +3999,50 @@ body{
     justify-content:flex-start!important;
   }
 }
+
+
+/* =========================================================
+   V6.60 – Energie-/Mana-Balken für Züge
+   rein clientseitig, keine zusätzlichen Requests
+   ========================================================= */
+.moveEnergy{
+  margin-top:7px;
+  padding:7px 9px;
+  border:1px solid #30445f;
+  border-radius:9px;
+  background:#111d2f;
+}
+.moveEnergyHead,.moveEnergyFoot{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.moveEnergyHead{font-size:11px}
+.moveEnergyHead span{font-weight:800}
+.moveEnergyHead strong{font-size:12px}
+.moveEnergyTrack{
+  height:8px;
+  overflow:hidden;
+  margin:5px 0 4px;
+  border-radius:999px;
+  background:#24344b;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.04);
+}
+.moveEnergyTrack>span{
+  display:block;
+  height:100%;
+  min-width:0;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#16a34a,#67e8f9);
+  transition:width .25s ease;
+}
+.moveEnergyFoot{
+  color:#91a4bc;
+  font-size:9px;
+}
+@media(max-width:700px){
+  .moveEnergy{padding:6px 8px;margin-top:5px}
+  .moveEnergyTrack{height:7px}
+  .moveEnergyFoot{font-size:8px}
+}

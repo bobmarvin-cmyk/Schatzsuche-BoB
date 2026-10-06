@@ -1393,7 +1393,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.59: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.60: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%2!==0)return
   runMachines()
@@ -1487,7 +1487,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.59</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.60</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Spiel</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
@@ -1498,8 +1498,8 @@ export default function Game(){
    <div className="gameStatsBody"><div className="gameQuickStats">
     {[
      [Number(me?.coins||0).toFixed(2),'Taler'],
-     [`${me?.moves_left??0} / ${cap}`,'Züge'],
-     [secondsUntilMove===null?`${effectiveRegen}s`: `${secondsUntilMove}s`,'Nächster Zug'],
+     [`${me?.moves_left??0} / ${cap}`,'Energie'],
+     [secondsUntilMove===null?`${effectiveRegen}s`: `${secondsUntilMove}s`,'Regeneration'],
      [me?.reveal_power??1,'Felder/Zug'],
      [(me?.reward_multiplier??1)+'×','Bonus'],
      ['Stufe '+(me?.analysis_level??0),'Analyse'],
@@ -1509,7 +1509,19 @@ export default function Game(){
      [left.toLocaleString('de-DE'),'Felder übrig']
     ].map((v,i)=><div className="quickStat" key={i}><span>{v[1]}</span><strong>{v[0]}</strong></div>)}
    </div>
-   <div className="regenBarText">Ungenutzte Züge werden bis zum Speicherlimit gesammelt; darüber hinaus verfallen sie.</div>
+   <div className="moveEnergy">
+    <div className="moveEnergyHead">
+     <span>⚡ Energie</span>
+     <strong>{Number(me?.moves_left||0).toLocaleString('de-DE')} / {cap}</strong>
+    </div>
+    <div className="moveEnergyTrack">
+     <span style={{width:`${Math.min(100,Math.max(0,(Number(me?.moves_left||0)/Math.max(1,cap))*100))}%`}}/>
+    </div>
+    <div className="moveEnergyFoot">
+     <span>{Number(me?.moves_left||0)>cap?`Aufholenergie +${(Number(me?.moves_left||0)-cap).toLocaleString('de-DE')}`:`Nächste Energie in ${secondsUntilMove===null?effectiveRegen:secondsUntilMove}s`}</span>
+     <span>{me?.reveal_power??1} Felder/Zug</span>
+    </div>
+   </div>
    </div>
   </div>
 
