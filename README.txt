@@ -1,23 +1,27 @@
-SCHATZSUCHE ONLINE V6.61.2
+# BoBsSchatzsuche V7.0
 
-Dies ist bewusst ein Stabilitätsrelease.
+V7.0 ist der erste große Versionssprung mit zwei getrennt weiterentwickelbaren Segmenten:
 
-FEHLERBEHEBUNG
-1. Zufallsnamen-Pool:
-   Ab V6.61.2 existiert eine einzige kanonische Speicherquelle.
-   Speichern, erneutes Laden und Auto-Game-Generierung lesen denselben Stand.
+1. Schatzsuche – der bisherige komplette Spielkern bleibt erhalten.
+2. Welt – neue permanente gemeinsame Grundstücks-/Rohstoff-/Handelsebene.
 
-2. Bot-Min/Max:
-   Die Range wird ebenfalls kanonisch gespeichert.
-   Admin-Laden und reale Bot-Verteilung lesen denselben Stand.
+## V7.0 Welt-MVP
+- einmaliger Weltzugang gegen konfigurierbares Gold
+- gemeinsame Weltkarte
+- 10×10-m-Grundstücke
+- Terrainbasierte Rohstoffe
+- serverseitige Lazy-Produktion
+- Welt-Lager
+- Welt-Taler
+- Spieler-Verkaufsbörse
+- eigene Welt-Schaltzentrale
+- Konfliktdatenmodell vorbereitet, Kämpfe noch deaktiviert
 
-SCHUTZ VOR REGRESSIONEN
-- PROJECT_STATE.md dokumentiert den aktuellen Sollzustand.
-- NON_NEGOTIABLES.md enthält Regeln, die nicht stillschweigend entfernt werden dürfen.
-- RELEASE_CHECKLIST.md ist vor jedem neuen Release abzuarbeiten.
-- release_check.py muss vor Ausgabe eines neuen ZIP erfolgreich sein.
+## Zusätzlich
+Der Zufallsnamen-Pool wird in V7.0 beim Speichern serverseitig hart verifiziert und zeigt den letzten Server-Speicherzeitpunkt in der Schaltzentrale.
 
-INSTALLATION
-1. supabase/v6_61_migration.sql EINMAL ausführen.
-2. V6.61.2 deployen.
-3. setup.sql und ältere Migrationen NICHT erneut ausführen.
+## Installation
+1. Voraussetzung: V6.61.2 installiert.
+2. `supabase/v7_0_migration.sql` EINMAL ausführen.
+3. V7.0 deployen.
+4. `setup.sql` und ältere Migrationen NICHT erneut ausführen.

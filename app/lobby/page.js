@@ -260,7 +260,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.61.2</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V7.0</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -271,7 +271,7 @@ export default function Lobby(){
    <a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a><a className="btn" href="/praemien">🪙 Prämien</a>
    {isAdmin&&<a className="btn adminNavBtn" href="/admin">🎛️ Schaltzentrale</a>}
    <button className="btn" onClick={logout}>Abmelden</button>
-  </div>
+  <a className="btn" href="/welt">🌍 Welt</a></div>
 
   <div className="panel heroPanel">
    <div className="heroSplit">

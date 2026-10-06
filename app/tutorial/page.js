@@ -60,10 +60,10 @@ export default function Tutorial(){
   location.href='/game/'+gid+'?tutorial=1'
  }
 
- if(loading)return <main className="container"><div className="buildBadge">V6.61.2</div><div className="panel">Tutorial wird geladen…</div></main>
+ if(loading)return <main className="container"><div className="buildBadge">V7.0</div><div className="panel">Tutorial wird geladen…</div></main>
 
  return <main className="container tutorialLaunchPage">
-  <div className="buildBadge">V6.61.2</div>
+  <div className="buildBadge">V7.0</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><a className="btn" href="/hilfe">Hilfe</a></div>
 
   <section className="panel tutorialHero realTutorialHero">

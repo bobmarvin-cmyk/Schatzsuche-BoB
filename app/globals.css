@@ -4046,3 +4046,65 @@ body{
   .moveEnergyTrack{height:7px}
   .moveEnergyFoot{font-size:8px}
 }
+
+
+/* =========================================================
+   V7.0 – permanente Welt
+   ========================================================= */
+.worldHero{display:flex;justify-content:space-between;gap:18px;align-items:center}
+.worldHero h1{margin:2px 0 5px}
+.worldHeroStats{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.worldHeroStats span{padding:8px 10px;border-radius:10px;background:#13243a;border:1px solid #31506f;font-size:12px}
+.worldHeroStats b{font-size:16px;margin-right:3px}
+.worldUnlock{text-align:center;max-width:620px;margin:20px auto}
+.worldUnlockIcon{font-size:64px}
+.worldUnlockPrice{font-size:32px;font-weight:900;margin:10px 0}
+.worldUnlock .btn{margin-top:15px}
+
+.worldMainGrid{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:12px;align-items:start}
+.worldMapPanel{min-width:0}
+.worldParcelPanel{position:sticky;top:10px}
+.worldMapWrap{position:relative}
+.worldMap{height:62vh;min-height:500px;border-radius:12px;overflow:hidden;border:1px solid #2d425e}
+.worldMapLoading{position:absolute;inset:45% auto auto 50%;transform:translate(-50%,-50%);padding:8px 11px;border-radius:8px;background:#0d1726dd;border:1px solid #31455f;font-size:12px}
+.worldMapLegend{display:flex;gap:12px;flex-wrap:wrap;margin-top:7px;font-size:10px;color:#9fb0c8}
+.worldMapLegend span{display:flex;align-items:center;gap:5px}
+.worldMapLegend i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.worldLegendMine{background:#22c55e}.worldLegendOther{background:#f59e0b}
+.worldParcelTerrain{font-size:21px;font-weight:900;margin:8px 0}
+.worldParcelPrice{font-size:23px;font-weight:900;margin:14px 0 6px}
+.worldOwnedInfo{display:flex;flex-direction:column;gap:5px;margin-top:15px;padding:11px;border-radius:10px;background:#17263a;border:1px solid #31445f}
+
+.worldInventory{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-top:10px}
+.worldResource{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:9px 10px;border-radius:9px;background:#142237;border:1px solid #2e425e;font-size:12px}
+.worldResource strong{font-size:15px}
+
+.worldSellForm{display:grid;grid-template-columns:1.3fr 1fr 1fr auto;gap:7px;margin:10px 0}
+.worldSellForm .input{margin:0}
+.worldOrderBook{display:grid;gap:6px}
+.worldOrder{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;background:#111e31;border:1px solid #2e425d}
+.worldOrder>div{display:flex;flex-direction:column;gap:2px}
+.worldOrder>div:last-child{align-items:flex-end}
+.worldOrder span{font-size:10px;color:#9fb0c8}
+.worldConflictPreview{border-color:#584a37}
+.namePoolSaved{margin-top:7px;color:#86efac}
+
+.worldRateTable{display:grid;gap:5px}
+.worldRateRow{display:grid;grid-template-columns:minmax(180px,1fr) 130px auto;gap:7px;align-items:center;padding:7px;border-radius:8px;background:#111e31}
+.worldRateRow .input{margin:0}
+.worldAdminPage .adminSaveBar{position:sticky;bottom:8px;z-index:15}
+
+@media(max-width:850px){
+ .worldMainGrid{grid-template-columns:1fr}
+ .worldParcelPanel{position:static}
+ .worldMap{height:54vh;min-height:390px}
+ .worldHero{align-items:flex-start;flex-direction:column}
+ .worldHeroStats{justify-content:flex-start}
+ .worldSellForm{grid-template-columns:1fr 1fr}
+}
+@media(max-width:520px){
+ .worldSellForm{grid-template-columns:1fr}
+ .worldRateRow{grid-template-columns:1fr 95px auto}
+ .worldMap{height:50vh;min-height:340px}
+ .worldOrder{align-items:flex-start}
+}
