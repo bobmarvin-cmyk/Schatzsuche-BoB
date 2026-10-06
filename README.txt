@@ -1,16 +1,19 @@
-SCHATZSUCHE ONLINE V6.58.1
+SCHATZSUCHE ONLINE V6.59
 
-UI-HOTFIX
-Der Aufholausgleich war bereits in V6.58 vorhanden, aber nicht in der Sprungnavigation der Schaltzentrale verlinkt.
+BOT-SUCHMUSTER
+Die Botlogik bleibt lokal und nutzt weiterhin Zielgebiete.
 
-Jetzt gibt es oben:
-⚖️ Ausgleich
+Neu:
+- kompakte Suchwolken
+- horizontal/vertikal längliche Suchgebiete
+- fleckige/wandernde Suchformen
+- leichte Verschiebung des Zentrums
+- kleine zufällige Lücken
+- unregelmäßige Ränder
 
-Der Link springt direkt zu:
-- Neueinsteiger erhalten (%)
-- Rückkehrer erhalten (%)
-- Abwesenheit zählt ab (Min.)
-- Max. Aufholzüge
+Dadurch sollen keine perfekten Kreise oder Quadrate mehr entstehen.
+Bots springen weiterhin NICHT zufällig über die ganze Karte.
 
-SUPABASE
-Keine neue Migration nötig, wenn V6.58 bereits installiert ist.
+INSTALLATION
+1. supabase/v6_59_migration.sql EINMAL ausführen.
+2. V6.59 deployen.
