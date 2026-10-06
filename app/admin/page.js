@@ -8,6 +8,19 @@ const NUM=(v)=>v===''?0:Number(v)
 
 const RELEASE_NEWS_TEMPLATES=[
  {
+  id:'v656',
+  title:'Update V6.56 – steuerbare Bots & vielfältigere Karten',
+  kind:'change',
+  body:`Neu in V6.56:
+
+• Bot-Icons wurden aus der Oberfläche entfernt.
+• Spieltempo und Suchleistung wirken jetzt direkt und nachvollziehbar.
+• Ein einstellbarer Bot-Beitrittsverzug bestimmt, wann Mitspieler einer Runde beitreten.
+• Der Passivbetrieb läuft serverseitig als echtes verlangsamtes Tempo weiter.
+• Mobile Spieltyp-Labels wurden stabilisiert und „Nächstes Game“ heißt „Nächstes Spiel“.
+• Zufallskarten verwenden einen deutlich größeren Pool aus Großstädten, kleineren Orten, Sehenswürdigkeiten, Inseln und Naturzielen.`
+ },
+ {
   id:'v655',
   title:'Update V6.55 – Endgame-Sicherung & Auto-Game-Vorlauf',
   kind:'change',
@@ -21,9 +34,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v654',
-  title:'Update V6.55 – lokale Bot-Suchgebiete & kompaktere Verwaltung',
+  title:'Update V6.54 – lokale Bot-Suchgebiete & kompaktere Verwaltung',
   kind:'change',
-  body:`Neu in V6.55:
+  body:`Neu in V6.54:
 
 • Computer-Mitspieler decken keine zufälligen Einzel-Felder mehr über die ganze Karte verteilt auf.
 • Sie suchen lokal um ein Zielzentrum und wechseln bei erschöpftem Gebiet nur das Suchzentrum.
@@ -35,9 +48,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v6535',
-  title:'Update V6.55 – Bot-Terrainlogik korrigiert',
+  title:'Update V6.53.5 – Bot-Terrainlogik korrigiert',
   kind:'change',
-  body:`Hotfix V6.55:
+  body:`Hotfix V6.53.5:
 
 • Bots besitzen keinen Karten-Client, der vor jedem Zug Terraininformationen cached.
 • Nicht klassifizierte Felder wurden deshalb bisher vom Terrain-Trigger verworfen.
@@ -47,9 +60,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v6534',
-  title:'Update V6.55 – Terrain-Trigger für Bots repariert',
+  title:'Update V6.53.4 – Terrain-Trigger für Bots repariert',
   kind:'change',
-  body:`Hotfix V6.55:
+  body:`Hotfix V6.53.4:
 
 • Die Ursache der blockierten Bot-Felder lag in einem alten Terrain-Trigger.
 • Bot-Felder besitzen discovered_by_bot_id, aber kein discovered_by.
@@ -59,9 +72,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v6533',
-  title:'Update V6.55 – Bot-Feldtabelle korrigiert',
+  title:'Update V6.53.3 – Bot-Feldtabelle korrigiert',
   kind:'change',
-  body:`Hotfix V6.55:
+  body:`Hotfix V6.53.3:
 
 • Die temporäre Tabelle der freien Bot-Felder hatte versehentlich nur x als Primary Key.
 • Dadurch kollidierten Felder mit gleichem x und unterschiedlichem y.
@@ -71,9 +84,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v6532',
-  title:'Update V6.55 – Bot-Insert repariert',
+  title:'Update V6.53.2 – Bot-Insert repariert',
   kind:'change',
-  body:`Hotfix V6.55:
+  body:`Hotfix V6.53.2:
 
 • Freie Bot-Felder werden jetzt zuerst in einer separaten temporären Tabelle gesammelt.
 • Danach erfolgt ein normaler INSERT in explored_fields statt eines verschachtelten Data-Modifying-CTE.
@@ -83,9 +96,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v6531',
-  title:'Update V6.55.1 – Bot-Feldsuche repariert',
+  title:'Update V6.53.1 – Bot-Feldsuche repariert',
   kind:'change',
-  body:`Hotfix V6.55.1:
+  body:`Hotfix V6.53.1:
 
 • Die Bot-Simulation konnte Züge verbrauchen, obwohl 0 Felder geöffnet wurden.
 • Die Feldsuche nutzt jetzt ein deterministisches Rasterfenster statt nur Zufallsstichproben.
@@ -95,9 +108,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v653',
-  title:'Update V6.55 – neue Bot-Simulationsengine',
+  title:'Update V6.53 – neue Bot-Simulationsengine',
   kind:'change',
-  body:`Neu in V6.55:
+  body:`Neu in V6.53:
 
 • Computer-Mitspieler sind nicht mehr von ihrem moves_left-Zähler abhängig.
 • Ihre Aktionen werden aus der vergangenen Zeit und der effektiven Zugzeit berechnet.
@@ -109,9 +122,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v6521',
-  title:'Update V6.55.1 – Bot-Zugversorgung korrigiert',
+  title:'Update V6.52.1 – Bot-Zugversorgung korrigiert',
   kind:'change',
-  body:`Hotfix V6.55.1:
+  body:`Hotfix V6.52.1:
 
 • Neue Computer-Mitspieler starten jetzt mit gefülltem Zugspeicher statt praktisch nur einem Zug.
 • Bestehende aktive Bots werden beim Update ebenfalls auf den normalen Runden-Zugspeicher aufgefüllt.
@@ -121,9 +134,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v652',
-  title:'Update V6.55 – schnellere Computer-Mitspieler',
+  title:'Update V6.56 – schnellere Computer-Mitspieler',
   kind:'change',
-  body:`Neu in V6.55:
+  body:`Neu in V6.56:
 
 • Computer-Mitspieler verarbeiten ihre verfügbaren Züge jetzt in einer gemeinsamen Serveroperation statt Zug für Zug.
 • Dadurch werden große Mengen Felder deutlich effizienter aufgedeckt.
@@ -134,9 +147,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v651',
-  title:'Update V6.55 – flüssigere Mitspieler',
+  title:'Update V6.56 – flüssigere Mitspieler',
   kind:'change',
-  body:`Neu in V6.55:
+  body:`Neu in V6.56:
 
 • Computer-Mitspieler verarbeiten ihre echten Züge jetzt in kleinen Batches im Sekundentakt.
 • Dadurch reagieren sie deutlich flüssiger, ohne große Datenbankabfragen zu erzeugen.
@@ -147,9 +160,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v650',
-  title:'Update V6.55 – neue Mitspieler-Architektur',
+  title:'Update V6.56 – neue Mitspieler-Architektur',
   kind:'change',
-  body:`Neu in V6.55:
+  body:`Neu in V6.56:
 
 • Computer-Mitspieler besitzen jetzt echte Züge und regenerieren sie wie normale Spieler.
 • Sobald echte Spieler aktiv sind, spielen sie alle verfügbaren Züge aus.
@@ -162,9 +175,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v649',
-  title:'Update V6.55 – kompaktere News & stärkere Gegner',
+  title:'Update V6.56 – kompaktere News & stärkere Gegner',
   kind:'change',
-  body:`Neu in V6.55:
+  body:`Neu in V6.56:
 
 • In der Lobby heißt der Bereich jetzt nur noch „News“.
 • Nur die zwei neuesten Meldungen sind direkt sichtbar; ältere News lassen sich platzsparend aufklappen.
@@ -174,9 +187,9 @@ const RELEASE_NEWS_TEMPLATES=[
  },
  {
   id:'v648',
-  title:'Update V6.55 – kompakte News & mehr Bot-Power',
+  title:'Update V6.56 – kompakte News & mehr Bot-Power',
   kind:'change',
-  body:`Änderungen aus V6.55:
+  body:`Änderungen aus V6.56:
 
 • Lobby-News wurden kompakter gestaltet.
 • Vollgas-Ratio, Such-Power und maximale Felder/Aktion wurden deutlich erweitert.
@@ -196,9 +209,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v646',
-  title:'Update V6.55 – Tutorial, stärkere Mitspieler & Startbonus',
+  title:'Update V6.56 – Tutorial, stärkere Mitspieler & Startbonus',
   kind:'change',
-  body:`Neu in V6.55:
+  body:`Neu in V6.56:
 
 • Tutorial-Erstellung robuster gemacht und den gen_salt/pgcrypto-Fehler abgefangen.
 • Computer-Mitspieler reagieren stärker auf aktive Spiele und erhalten mehr Such-Power.
@@ -211,9 +224,9 @@ Viel Spaß bei der Schatzsuche!`
  },
  {
   id:'v645',
-  title:'Update V6.55 – Tutorial-Fix & mehr Gegner-Power',
+  title:'Update V6.56 – Tutorial-Fix & mehr Gegner-Power',
   kind:'change',
-  body:`Änderungen aus V6.55:
+  body:`Änderungen aus V6.56:
 
 • Tutorial-Fix für den Fehler „gen_salt does not exist“.
 • Tutorial-Runde wird ohne Passwortpfad erzeugt und anschließend privat geschaltet.
@@ -280,7 +293,6 @@ export default function Admin(){
  const [botConfig,setBotConfig]=useState(null)
  const [botRuntime,setBotRuntime]=useState([])
  const [newBotName,setNewBotName]=useState('')
- const [newBotIcon,setNewBotIcon]=useState('🤖')
  const [newBotDifficulty,setNewBotDifficulty]=useState('normal')
 
  useEffect(()=>{init()},[])
@@ -313,7 +325,7 @@ export default function Admin(){
   setNewsPosts(Array.isArray(newsData)?newsData:[])
   const {data:botData}=await supabase.rpc('admin_get_bot_config_v651')
   setBotConfig(botData||null)
-  const {data:runtimeData}=await supabase.rpc('admin_bot_runtime_v653')
+  const {data:runtimeData}=await supabase.rpc('admin_bot_runtime_v656')
   setBotRuntime(Array.isArray(runtimeData)?runtimeData:[])
   setBarSizesText((s?.allowed_bar_sizes_mg||[100,250,500,1000,2500,5000]).join(', '))
   setGeoGameId(current=>current||games?.[0]?.id||'')
@@ -457,7 +469,7 @@ export default function Admin(){
  }
  async function generateAutoGameNow(){
   setSaving(true);setMsg('Erzeuge Auto-Game…')
-  const {data,error}=await supabase.rpc('admin_generate_auto_game_v655')
+  const {data,error}=await supabase.rpc('admin_generate_auto_game_v656')
   setSaving(false)
   if(error){setMsg(error.message);return}
   setMsg(data?.created?'Auto-Game wurde erstellt.':'Kein Game erstellt.')
@@ -643,11 +655,13 @@ export default function Admin(){
   if(!botConfig?.settings)return
   setSaving(true);setMsg('')
   const s=botConfig.settings
-  const {data,error}=await supabase.rpc('admin_save_bot_settings_v653',{
+  const {data,error}=await supabase.rpc('admin_save_bot_settings_v656',{
     p_enabled:!!s.enabled,
     p_bots_per_auto_game:NUM(s.bots_per_auto_game),
     p_active_percent:NUM(s.simulation_active_percent??100),
+    p_search_percent:NUM(s.simulation_search_percent??65),
     p_idle_percent:NUM(s.simulation_idle_percent??10),
+    p_join_delay_minutes:NUM(s.join_delay_minutes??0),
     p_max_moves_per_run:NUM(s.simulation_max_moves_per_run??40),
     p_max_fields_per_run:NUM(s.simulation_max_fields_per_run??8000),
     p_base_solve_percent:NUM(s.base_solve_percent),
@@ -663,12 +677,12 @@ export default function Admin(){
   setSaving(true);setMsg('')
   const {data,error}=await supabase.rpc('admin_add_bot_v640',{
     p_name:newBotName.trim(),
-    p_icon:newBotIcon||'🤖',
+    p_icon:'',
     p_difficulty:newBotDifficulty
   })
   setSaving(false)
   setMsg(error?error.message:(data?.message||'Bot angelegt.'))
-  if(!error){setNewBotName('');setNewBotIcon('🤖');await load()}
+  if(!error){setNewBotName('');await load()}
  }
 
  async function saveBot(bot){
@@ -695,7 +709,6 @@ export default function Admin(){
   if(!error)await load()
  }
 
- const BOT_ICONS=['🤖','🧭','✨','☄️','👾','🦊','🐺','🦉','🦝','🛰️','🦜','🐾','🌙','⭐','🪐','🌿']
 
  async function seedBots(gameId){
   setSaving(true);setMsg('')
@@ -751,7 +764,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.55</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.56</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -1138,20 +1151,21 @@ export default function Admin(){
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.enabled} onChange={e=>setBotSetting('enabled',e.target.checked)}/> Mitspieler in Schatzsuchen aktiv</label>
    <div className="adminGrid">
     <Field label="Mitspieler je Spiel" value={botConfig.settings?.bots_per_auto_game??3} onChange={v=>setBotSetting('bots_per_auto_game',v)}/>
-    <Field label="Aktiv-Leistung (%)" step="5" value={botConfig.settings?.simulation_active_percent??100} onChange={v=>setBotSetting('simulation_active_percent',v)}/>
-    <Field label="Sparmodus ohne echte Spieler (%)" step="1" value={botConfig.settings?.simulation_idle_percent??10} onChange={v=>setBotSetting('simulation_idle_percent',v)}/>
+    <Field label="Bot-Beitritt nach (Minuten)" value={botConfig.settings?.join_delay_minutes??0} onChange={v=>setBotSetting('join_delay_minutes',v)}/>
+    <Field label="Spieltempo bei aktiven Spielern (%)" step="5" value={botConfig.settings?.simulation_active_percent??100} onChange={v=>setBotSetting('simulation_active_percent',v)}/>
+    <Field label="Suchleistung / Felder pro Zug (%)" step="5" value={botConfig.settings?.simulation_search_percent??65} onChange={v=>setBotSetting('simulation_search_percent',v)}/>
+    <Field label="Passivtempo ohne Spieler (%)" step="1" value={botConfig.settings?.simulation_idle_percent??10} onChange={v=>setBotSetting('simulation_idle_percent',v)}/>
     <Field label="Max. virtuelle Züge pro Lauf" value={botConfig.settings?.simulation_max_moves_per_run??40} onChange={v=>setBotSetting('simulation_max_moves_per_run',v)}/>
     <Field label="Max. Felder pro Lauf" value={botConfig.settings?.simulation_max_fields_per_run??8000} onChange={v=>setBotSetting('simulation_max_fields_per_run',v)}/>
     <Field label="Fallback Schatzsicherung (%)" step="0.1" value={botConfig.settings?.base_solve_percent??60} onChange={v=>setBotSetting('base_solve_percent',v)}/>
    </div>
-   <div className="small adminHint">⚡ V6.55: Alle verfügbaren Bot-Züge werden pro Bot zu EINER gemeinsamen Feldoperation zusammengefasst. „Max. Bot-Felder pro Tick“ ist nur ein Sicherheitsdeckel gegen Datenbank-Timeouts; übrig gebliebene Züge folgen im nächsten Tick.</div>
+   <div className="small adminHint">Die Regler wirken jetzt direkt: 50 % Spieltempo = doppelte Zeit pro Bot-Zug; 50 % Suchleistung = ungefähr halb so viele Felder pro Zug. „locker / normal / aktiv“ beeinflusst zusätzlich die individuelle Suchstärke. Das Passivtempo läuft serverseitig auch ohne geöffnetes Spiel.</div>
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.use_real_average} onChange={e=>setBotSetting('use_real_average',e.target.checked)}/> echte durchschnittliche Schatzsicherungsquote verwenden</label>
    <div className="winnerActions"><button className="btn primary" disabled={saving} onClick={saveBotSettings}>Bot-Einstellungen speichern</button></div>
 
    <h3 style={{marginTop:20}}>Bot-Profile</h3>
    <div className="botAdminCreate">
     <input className="input" value={newBotName} placeholder="Neuer Bot-Name" onChange={e=>setNewBotName(e.target.value)}/>
-    <input className="input botIconInput" value={newBotIcon} maxLength={12} placeholder="Icon" onChange={e=>setNewBotIcon(e.target.value)}/>
     <select className="input" value={newBotDifficulty} onChange={e=>setNewBotDifficulty(e.target.value)}>
      <option value="locker">locker</option><option value="normal">normal</option><option value="aktiv">aktiv</option>
     </select>
@@ -1160,15 +1174,8 @@ export default function Admin(){
 
    <div className="botAdminList">
     {(botConfig.bots||[]).map(bot=><div className="botAdminRow" key={bot.id}>
-     <div className="botAdminIdentity"><span className="botAdminAvatar">{bot.avatar_emoji||'🤖'}</span><div><strong>{bot.display_name}</strong><span className="small">{Number(bot.total_games||0)} Spiele · {Number(bot.total_fields_revealed||0).toLocaleString('de-DE')} Felder</span></div></div>
+     <div className="botAdminIdentity"><div><strong>{bot.display_name}</strong><span className="small">{Number(bot.total_games||0)} Spiele · {Number(bot.total_fields_revealed||0).toLocaleString('de-DE')} Felder</span></div></div>
      <input className="input" value={bot.display_name} onChange={e=>setBotValue(bot.id,'display_name',e.target.value)}/>
-     <div className="botIconEditor">
-      <input className="input botIconInput" value={bot.avatar_emoji||'🤖'} maxLength={12} onChange={e=>setBotValue(bot.id,'avatar_emoji',e.target.value)}/>
-      <details className="botIconPicker">
-       <summary>{bot.avatar_emoji||'🤖'} Icon wählen</summary>
-       <div className="botIconPresets">{BOT_ICONS.map(icon=><button type="button" className={'botIconPreset '+(bot.avatar_emoji===icon?'active':'')} key={icon} onClick={()=>setBotValue(bot.id,'avatar_emoji',icon)}>{icon}</button>)}</div>
-      </details>
-     </div>
      <select className="input" value={bot.difficulty||'normal'} onChange={e=>setBotValue(bot.id,'difficulty',e.target.value)}>
       <option value="locker">locker</option><option value="normal">normal</option><option value="aktiv">aktiv</option>
      </select>
@@ -1183,8 +1190,8 @@ export default function Admin(){
     <div className="botRuntimeList">
      {botRuntime.length===0&&<div className="small">Keine aktiven Bots in laufenden Spielen.</div>}
      {botRuntime.map(r=><div className="botRuntimeRow" key={r.game_id+'-'+r.bot_id}>
-      <span>{r.avatar_emoji||'🤖'} <strong>{r.bot_name}</strong></span>
-      <span>fällig {r.virtual_due_moves} Züge</span>
+      <span><strong>{r.bot_name}</strong></span>
+      <span>aktiv fällig {r.active_due_moves??0} · passiv fällig {r.passive_due_moves??0}</span>
       <span>letzter Lauf {r.last_simulated_moves} Züge / {r.last_simulated_fields} Felder</span>
       <span>Power {r.reveal_power}</span>
       <span>{Number(r.fields_revealed||0).toLocaleString('de-DE')} Felder gesamt</span>

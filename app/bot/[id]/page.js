@@ -29,7 +29,6 @@ export default function BotProfile(){
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a></div>
 
   <section className="panel publicProfileHero botProfileHero">
-   <div className="profileAvatar avatarFallback botAvatar">{bot.avatar_emoji||'🤖'}</div>
    <div>
     <div className="eyebrow">SPIELERPROFIL</div>
     <h1>{bot.display_name}</h1>

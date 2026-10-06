@@ -359,7 +359,7 @@ export default function Game(){
   if(document.visibilityState!=='visible'||botTickBusyRef.current)return
   botTickBusyRef.current=true
   try{
-    const {data,error}=await supabase.rpc('run_bot_simulation_v655',{
+    const {data,error}=await supabase.rpc('run_bot_simulation_v656',{
       p_game_id:id,
       p_active_humans:Math.max(1,onlineIds.length)
     })
@@ -1376,7 +1376,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.55: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.56: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%2!==0)return
   runMachines()
@@ -1471,8 +1471,8 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.55</div>
-  <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Game</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
+ return <main className="container gamePage"><div className="buildBadge">V6.56</div>
+  <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Spiel</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
    <div className="worldMeta">
@@ -1522,7 +1522,7 @@ export default function Game(){
      return <span key={t.id} className={'treasurePill '+(found?'found':'')}>
        {found?'✅':'🧩'} {i+1}: {(Number(t.share_bps||0)/10000).toFixed(3)}
        {(game.game_type==='pay'||game.game_type==='sponsor')&&<> · {formatGold(t.amount_ug)}</>}
-       {found&&<> · {botFinder?`${botFinder.avatar_emoji||'🙂'} ${botFinder.display_name}`:(finder?.profiles?.display_name||'gefunden')}</>}
+       {found&&<> · {botFinder?`${botFinder.display_name}`:(finder?.profiles?.display_name||'gefunden')}</>}
      </span>
     })}</div>
     <div className="small">Gesamtschatz 1,000 · Spielende erst nach allen Teilen · größter Gesamtanteil gewinnt.</div>
@@ -1556,7 +1556,7 @@ export default function Game(){
      </div>
      <div className="mapLegend">
       {players.map(p=><div className={'legendItem '+(onlineIds.includes(p.user_id)?'online':'offline')} key={p.user_id}><span className="colorDot" style={{background:p.player_color||'#35516d'}}></span><a className="profileLink" href={'/spieler/'+p.user_id}>{p.profiles?.display_name||'Spieler'}</a>{onlineIds.includes(p.user_id)&&<span className="onlineDot" title="online">●</span>}</div>)}
-      {botPlayers.map(b=><div className="legendItem online" key={'legend-'+b.bot_id}><span className="colorDot" style={{background:b.player_color||'#35516d'}}></span><a className="profileLink" href={'/bot/'+b.bot_id}>{b.avatar_emoji||'🙂'} {b.display_name||'Spieler'}</a><span className="onlineDot" title="online">●</span></div>)}
+      {botPlayers.map(b=><div className="legendItem online" key={'legend-'+b.bot_id}><span className="colorDot" style={{background:b.player_color||'#35516d'}}></span><a className="profileLink" href={'/bot/'+b.bot_id}>{b.display_name||'Spieler'}</a><span className="onlineDot" title="online">●</span></div>)}
      </div>
     </div>
     {game&&<>
@@ -1792,7 +1792,7 @@ export default function Game(){
      {ranked.map((r,i)=><div className={'rankingRow '+(r.user_id===user?.id?'me':'')} key={r.user_id}>
       <span>{i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</span>
       <strong>{r.is_bot
-       ?<a className="profileLink" href={'/bot/'+r.bot_id}>{r.avatar_emoji||'🙂'} {r.display_name||'Spieler'} <span className="onlineDot" title="online">●</span></a>
+       ?<a className="profileLink" href={'/bot/'+r.bot_id}>{r.display_name||'Spieler'} <span className="onlineDot" title="online">●</span></a>
        :<><a className="profileLink" href={'/spieler/'+r.user_id}>{r.display_name||'Spieler'}</a> {onlineIds.includes(r.user_id)&&<span className="onlineDot" title="online">●</span>}</>}</strong>
       <b>{rankValue(r)}</b>
      </div>)}
@@ -1806,7 +1806,7 @@ export default function Game(){
     <div className="small">{Number(p.coins).toFixed(2)} T · {p.moves_left} gespeicherte Züge · {p.reveal_power} Felder/Zug · 🗺️ {Number(p.fields_revealed||0).toLocaleString('de-DE')} Felder · 🧩 {(Number(p.treasure_share_bps||0)/100).toFixed(2)}%</div>
    </div>)}
    {botPlayers.map(b=><div className="card playerStatusCard online" key={'bot-'+b.bot_id}>
-    <div className="playerNameLine"><span className="colorDot large" style={{background:b.player_color||'#35516d'}}></span><strong><a className="profileLink" href={'/bot/'+b.bot_id}>{b.avatar_emoji||'🙂'} {b.display_name||'Spieler'}</a></strong><span className="presenceLabel online">● online</span></div>
+    <div className="playerNameLine"><span className="colorDot large" style={{background:b.player_color||'#35516d'}}></span><strong><a className="profileLink" href={'/bot/'+b.bot_id}>{b.display_name||'Spieler'}</a></strong><span className="presenceLabel online">● online</span></div>
     <div className="small">{Number(b.coins||0).toFixed(2)} T · {Number(b.moves_left||1)} gespeicherte Züge · {Number(b.reveal_power||1)} Felder/Zug · 🗺️ {Number(b.fields_revealed||0).toLocaleString('de-DE')} Felder · 🧩 {(Number(b.treasure_share_bps||0)/100).toFixed(2)}%</div>
    </div>)}
   </div></div>
