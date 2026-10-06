@@ -1376,7 +1376,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.56: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.57.1: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%2!==0)return
   runMachines()
@@ -1429,7 +1429,6 @@ export default function Game(){
     bot_id:b.bot_id,
     is_bot:true,
     display_name:b.display_name,
-    avatar_emoji:b.avatar_emoji,
     coins:b.coins,
     fields_revealed:b.fields_revealed,
     treasure_share_bps:b.treasure_share_bps,
@@ -1471,7 +1470,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.56</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.57.1</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Spiel</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>

@@ -8,6 +8,32 @@ const NUM=(v)=>v===''?0:Number(v)
 
 const RELEASE_NEWS_TEMPLATES=[
  {
+  id:'v6571',
+  title:'Update V6.57.1 – Hall of Fame & Cleanup',
+  kind:'change',
+  body:`Neu in V6.57.1:
+
+• Reine Bot-Runden ohne tatsächlich mitspielenden Menschen werden nach Bot-Sieg nicht in der Hall of Fame gespeichert.
+• Bereits vorhandene reine Bot-Archive werden bereinigt.
+• Beendete und geschlossene Spiele bleiben nur noch 10 Minuten in den Live-Daten sichtbar und werden danach gelöscht.
+• Der Cleanup läuft zusätzlich serverseitig alle fünf Minuten.`
+ },
+
+ {
+  id:'v657',
+  title:'Update V6.57.1 – organischere Bots & Lobby-Feinschliff',
+  kind:'change',
+  body:`Neu in V6.57.1:
+
+• Die Botanzahl wird pro Spiel zufällig aus einer einstellbaren Min-/Max-Spanne gewählt.
+• Alle Bots verwenden bei der Schatzbergung dieselbe globale Durchschnittsquote.
+• Der editierbare Namenspool wird nach dem Speichern serverseitig verifiziert und neu geladen.
+• In der Lobby entfällt „Felder/min“, mobile Spielkarten sind sauberer angeordnet und „Neues Spiel erstellen“ ist deutlich hervorgehoben.
+• 3 Sekunden Zugzeit sind jetzt erlaubt.
+• Der Zufallsort-Pool wurde um weitere kleine Städte, Inseln, Naturziele und Sehenswürdigkeiten erweitert.`
+ },
+
+ {
   id:'v656',
   title:'Update V6.56 – steuerbare Bots & vielfältigere Karten',
   kind:'change',
@@ -134,9 +160,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v652',
-  title:'Update V6.56 – schnellere Computer-Mitspieler',
+  title:'Update V6.57.1 – schnellere Computer-Mitspieler',
   kind:'change',
-  body:`Neu in V6.56:
+  body:`Neu in V6.57.1:
 
 • Computer-Mitspieler verarbeiten ihre verfügbaren Züge jetzt in einer gemeinsamen Serveroperation statt Zug für Zug.
 • Dadurch werden große Mengen Felder deutlich effizienter aufgedeckt.
@@ -147,9 +173,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v651',
-  title:'Update V6.56 – flüssigere Mitspieler',
+  title:'Update V6.57.1 – flüssigere Mitspieler',
   kind:'change',
-  body:`Neu in V6.56:
+  body:`Neu in V6.57.1:
 
 • Computer-Mitspieler verarbeiten ihre echten Züge jetzt in kleinen Batches im Sekundentakt.
 • Dadurch reagieren sie deutlich flüssiger, ohne große Datenbankabfragen zu erzeugen.
@@ -160,9 +186,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v650',
-  title:'Update V6.56 – neue Mitspieler-Architektur',
+  title:'Update V6.57.1 – neue Mitspieler-Architektur',
   kind:'change',
-  body:`Neu in V6.56:
+  body:`Neu in V6.57.1:
 
 • Computer-Mitspieler besitzen jetzt echte Züge und regenerieren sie wie normale Spieler.
 • Sobald echte Spieler aktiv sind, spielen sie alle verfügbaren Züge aus.
@@ -175,9 +201,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v649',
-  title:'Update V6.56 – kompaktere News & stärkere Gegner',
+  title:'Update V6.57.1 – kompaktere News & stärkere Gegner',
   kind:'change',
-  body:`Neu in V6.56:
+  body:`Neu in V6.57.1:
 
 • In der Lobby heißt der Bereich jetzt nur noch „News“.
 • Nur die zwei neuesten Meldungen sind direkt sichtbar; ältere News lassen sich platzsparend aufklappen.
@@ -187,9 +213,9 @@ const RELEASE_NEWS_TEMPLATES=[
  },
  {
   id:'v648',
-  title:'Update V6.56 – kompakte News & mehr Bot-Power',
+  title:'Update V6.57.1 – kompakte News & mehr Bot-Power',
   kind:'change',
-  body:`Änderungen aus V6.56:
+  body:`Änderungen aus V6.57.1:
 
 • Lobby-News wurden kompakter gestaltet.
 • Vollgas-Ratio, Such-Power und maximale Felder/Aktion wurden deutlich erweitert.
@@ -209,9 +235,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v646',
-  title:'Update V6.56 – Tutorial, stärkere Mitspieler & Startbonus',
+  title:'Update V6.57.1 – Tutorial, stärkere Mitspieler & Startbonus',
   kind:'change',
-  body:`Neu in V6.56:
+  body:`Neu in V6.57.1:
 
 • Tutorial-Erstellung robuster gemacht und den gen_salt/pgcrypto-Fehler abgefangen.
 • Computer-Mitspieler reagieren stärker auf aktive Spiele und erhalten mehr Such-Power.
@@ -224,9 +250,9 @@ Viel Spaß bei der Schatzsuche!`
  },
  {
   id:'v645',
-  title:'Update V6.56 – Tutorial-Fix & mehr Gegner-Power',
+  title:'Update V6.57.1 – Tutorial-Fix & mehr Gegner-Power',
   kind:'change',
-  body:`Änderungen aus V6.56:
+  body:`Änderungen aus V6.57.1:
 
 • Tutorial-Fix für den Fehler „gen_salt does not exist“.
 • Tutorial-Runde wird ohne Passwortpfad erzeugt und anschließend privat geschaltet.
@@ -429,15 +455,18 @@ export default function Admin(){
   const left=namePoolLeft.split(/\n|,/).map(x=>x.trim()).filter(Boolean)
   const right=namePoolRight.split(/\n|,/).map(x=>x.trim()).filter(Boolean)
   setSaving(true);setMsg('')
-  const {data,error}=await supabase.rpc('admin_replace_game_name_pool_v625',{
+  const {data,error}=await supabase.rpc('admin_replace_game_name_pool_v657',{
     p_left:left,p_right:right
   })
-  setSaving(false)
-  setMsg(error?error.message:'Namenspool gespeichert.')
-  if(!error&&data){
-    setNamePoolLeft((data.left||[]).join('\n'))
-    setNamePoolRight((data.right||[]).join('\n'))
+  if(error){
+    setSaving(false);setMsg(error.message);return
   }
+  const {data:fresh,error:freshError}=await supabase.rpc('list_game_name_parts_v625')
+  setSaving(false)
+  if(freshError){setMsg('Gespeichert, aber Kontrolle fehlgeschlagen: '+freshError.message);return}
+  setNamePoolLeft((fresh?.left||data?.left||[]).join('\n'))
+  setNamePoolRight((fresh?.right||data?.right||[]).join('\n'))
+  setMsg(`Namenspool gespeichert · ${(fresh?.left||[]).length}× ${(fresh?.right||[]).length} Bausteine.`)
  }
 
  function setAuto(key,value){setAutoGame(a=>({...a,[key]:value}))}
@@ -655,9 +684,10 @@ export default function Admin(){
   if(!botConfig?.settings)return
   setSaving(true);setMsg('')
   const s=botConfig.settings
-  const {data,error}=await supabase.rpc('admin_save_bot_settings_v656',{
+  const {data,error}=await supabase.rpc('admin_save_bot_settings_v657',{
     p_enabled:!!s.enabled,
-    p_bots_per_auto_game:NUM(s.bots_per_auto_game),
+    p_bots_min_per_game:NUM(s.bots_min_per_game??s.bots_per_auto_game??0),
+    p_bots_max_per_game:NUM(s.bots_max_per_game??s.bots_per_auto_game??3),
     p_active_percent:NUM(s.simulation_active_percent??100),
     p_search_percent:NUM(s.simulation_search_percent??65),
     p_idle_percent:NUM(s.simulation_idle_percent??10),
@@ -690,7 +720,7 @@ export default function Admin(){
   const {data,error}=await supabase.rpc('admin_update_bot_v640',{
     p_bot_id:bot.id,
     p_name:bot.display_name,
-    p_icon:bot.avatar_emoji||'🤖',
+    p_icon:'',
     p_active:!!bot.active,
     p_difficulty:bot.difficulty||'normal',
     p_color:bot.player_color||'#6f86a8'
@@ -764,7 +794,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.56</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.57.1</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -1075,7 +1105,7 @@ export default function Admin(){
    <h2>⏱️ Spiel-Lebenszyklus</h2>
    <div className="adminGrid">
     <Field label="Schließen nach Inaktivität (h)" value={settings.game_inactivity_hours} onChange={v=>setSetting('game_inactivity_hours',v)}/>
-    <Field label="Geschlossene Spiele löschen nach (h)" value={settings.closed_game_retention_hours} onChange={v=>setSetting('closed_game_retention_hours',v)}/>
+    <div className="adminReadOnly"><span>Beendete Spiele: <b>10 Minuten Live-Anzeige</b></span></div>
     <Field label="Restgold → Community (Basispunkte)" value={settings.inactive_community_share_bps} onChange={v=>setSetting('inactive_community_share_bps',v)}/>
     <Field label="Restgold → Plattform (Basispunkte)" value={settings.inactive_platform_share_bps} onChange={v=>setSetting('inactive_platform_share_bps',v)}/>
    </div>
@@ -1150,7 +1180,8 @@ export default function Admin(){
 
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.enabled} onChange={e=>setBotSetting('enabled',e.target.checked)}/> Mitspieler in Schatzsuchen aktiv</label>
    <div className="adminGrid">
-    <Field label="Mitspieler je Spiel" value={botConfig.settings?.bots_per_auto_game??3} onChange={v=>setBotSetting('bots_per_auto_game',v)}/>
+    <Field label="Bots pro Spiel – mindestens" value={botConfig.settings?.bots_min_per_game??botConfig.settings?.bots_per_auto_game??0} onChange={v=>setBotSetting('bots_min_per_game',v)}/>
+    <Field label="Bots pro Spiel – höchstens" value={botConfig.settings?.bots_max_per_game??botConfig.settings?.bots_per_auto_game??3} onChange={v=>setBotSetting('bots_max_per_game',v)}/>
     <Field label="Bot-Beitritt nach (Minuten)" value={botConfig.settings?.join_delay_minutes??0} onChange={v=>setBotSetting('join_delay_minutes',v)}/>
     <Field label="Spieltempo bei aktiven Spielern (%)" step="5" value={botConfig.settings?.simulation_active_percent??100} onChange={v=>setBotSetting('simulation_active_percent',v)}/>
     <Field label="Suchleistung / Felder pro Zug (%)" step="5" value={botConfig.settings?.simulation_search_percent??65} onChange={v=>setBotSetting('simulation_search_percent',v)}/>
@@ -1159,7 +1190,7 @@ export default function Admin(){
     <Field label="Max. Felder pro Lauf" value={botConfig.settings?.simulation_max_fields_per_run??8000} onChange={v=>setBotSetting('simulation_max_fields_per_run',v)}/>
     <Field label="Fallback Schatzsicherung (%)" step="0.1" value={botConfig.settings?.base_solve_percent??60} onChange={v=>setBotSetting('base_solve_percent',v)}/>
    </div>
-   <div className="small adminHint">Die Regler wirken jetzt direkt: 50 % Spieltempo = doppelte Zeit pro Bot-Zug; 50 % Suchleistung = ungefähr halb so viele Felder pro Zug. „locker / normal / aktiv“ beeinflusst zusätzlich die individuelle Suchstärke. Das Passivtempo läuft serverseitig auch ohne geöffnetes Spiel.</div>
+   <div className="small adminHint">Die Botanzahl wird für jedes neue Spiel einmal zufällig zwischen Minimum und Maximum gewählt und bleibt dann für diese Runde stabil. 50 % Spieltempo = doppelte Zeit pro Bot-Zug; 50 % Suchleistung = ungefähr halb so viele Felder pro Zug. Das Passivtempo läuft serverseitig auch ohne geöffnetes Spiel.</div>
    <label className="adminToggle"><input type="checkbox" checked={!!botConfig.settings?.use_real_average} onChange={e=>setBotSetting('use_real_average',e.target.checked)}/> echte durchschnittliche Schatzsicherungsquote verwenden</label>
    <div className="winnerActions"><button className="btn primary" disabled={saving} onClick={saveBotSettings}>Bot-Einstellungen speichern</button></div>
 

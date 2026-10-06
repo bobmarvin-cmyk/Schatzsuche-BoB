@@ -3963,3 +3963,39 @@ body{
 @media(max-width:390px){
  .gameBadge{max-width:38vw;font-size:8px;padding:3px 5px}
 }
+
+
+/* =========================================================
+   V6.57 – Lobby-Feinschliff
+   ========================================================= */
+.createGameDetails{
+  border-color:#36d982!important;
+  box-shadow:0 0 0 1px rgba(54,217,130,.16),0 0 24px rgba(54,217,130,.12);
+}
+.createGameDetails>.createGameSummary{
+  background:linear-gradient(135deg,rgba(34,197,94,.16),rgba(16,185,129,.05));
+}
+.createGameDetails>.createGameSummary b{
+  color:#77f2a8;
+}
+@media(max-width:700px){
+  .gameCardTop{
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    gap:5px!important;
+  }
+  .gameCardTop .gameBadge{
+    order:-1;
+    align-self:flex-start;
+    max-width:100%;
+  }
+  .gameCardTop h3{
+    width:100%;
+    margin:0!important;
+    padding:0!important;
+  }
+  .capacityLine{
+    justify-content:flex-start!important;
+  }
+}

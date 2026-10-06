@@ -35,7 +35,6 @@ export default function Lobby(){
  const [news,setNews]=useState([])
  const [joinedGameIds,setJoinedGameIds]=useState(new Set())
  const [botCounts,setBotCounts]=useState({})
- const [activityByGame,setActivityByGame]=useState({})
 
  useEffect(()=>{
    setName(creativeGameName(namePool))
@@ -51,16 +50,8 @@ export default function Lobby(){
    await supabase.rpc('run_game_maintenance_v66')
    const {data:adminFlag}=await supabase.rpc('is_admin_v67')
    setIsAdmin(!!adminFlag)
-   await Promise.all([loadGames(),loadWallet(),loadSettings(),loadNamePool(),loadNews(),loadJoinedGames(),loadBotCounts(),loadActivity()])
+   await Promise.all([loadGames(),loadWallet(),loadSettings(),loadNamePool(),loadNews(),loadJoinedGames(),loadBotCounts()])
    setAuthReady(true)
- }
-
- async function loadActivity(){
-   const {data,error}=await supabase.rpc('get_lobby_activity_v644')
-   if(error)return
-   const next={}
-   for(const row of data||[])next[String(row.game_id)]=Number(row.fields_per_min||0)
-   setActivityByGame(next)
  }
 
  async function loadBotCounts(){
@@ -254,12 +245,11 @@ export default function Lobby(){
    return sortDir==='asc'?d:-d
  })
  const inactivityHours=settings?.game_inactivity_hours||24
- const retentionHours=settings?.closed_game_retention_hours||72
  const regenOptions=(()=>{
    const min=Math.max(1,Number(settings?.min_regen_seconds||5))
    const max=Math.max(min,Number(settings?.max_regen_seconds||3600))
    const def=Math.min(max,Math.max(min,Number(settings?.default_regen_seconds||min)))
-   return [...new Set([min,def,5,10,15,20,30,45,60,120,300,600,1800,3600,max]
+   return [...new Set([min,def,3,5,10,15,20,30,45,60,120,300,600,1800,3600,max]
      .map(Number).filter(n=>Number.isFinite(n)&&n>=min&&n<=max))]
      .sort((a,b)=>a-b)
  })()
@@ -270,7 +260,7 @@ export default function Lobby(){
    return `1 Zug / ${n} Sekunden`
  }
 
- if(!authReady)return <main className="container"><div className="buildBadge">V6.56</div><div className="panel">Anmeldung wird geprüft…</div></main>
+ if(!authReady)return <main className="container"><div className="buildBadge">V6.57.1</div><div className="panel">Anmeldung wird geprüft…</div></main>
 
  return <>
   <FirstLoginHelp/>
@@ -502,7 +492,6 @@ export default function Lobby(){
       const count=Number(g.player_count||0)
       const botInfo=botCounts[String(g.id)]||{count:0,blocked:false}
       const botCount=Number(botInfo.count||0)
-      const activity=Number(activityByGame[String(g.id)]||0)
       const isPay=g.game_type==='pay'
       const isSponsor=g.game_type==='sponsor'
       return <div className={'card '+(isPay?'payGameCard':isSponsor?'sponsorGameCard':'')} key={g.id}>
@@ -516,7 +505,7 @@ export default function Lobby(){
        {isSponsor&&<div className="payFacts sponsorFacts">
         <span>Sponsor: <b>{g.sponsor_name||'Sponsor'}</b></span><span>Teilnahme: <b>kostenlos</b></span><span>Pool: <b>{formatGold(g.gold_prize_pool_ug)}</b></span>
        </div>}
-       <div className="capacityLine"><span>👥 {Math.min(Number(g.max_players||0),count+botCount)} / {g.max_players}</span><span>⚡ {activity.toFixed(1)} Felder/min</span></div>
+       <div className="capacityLine"><span>👥 {Math.min(Number(g.max_players||0),count+botCount)} / {g.max_players}</span></div>
        <div className="gameProgressLine">
         <div><span style={{width:`${Math.round(gameProgress(g)*100)}%`}}/></div>
         <small>{(gameProgress(g)*100).toFixed(1)} % erkundet</small>
@@ -541,7 +530,7 @@ export default function Lobby(){
   <details className="panel closedGamesPanel lobbyArchiveDetails">
    <summary><span><b>🗂️ Geschlossene Spiele</b><small>{closedGames.length} Einträge</small></span><span>⌄</span></summary>
    <div className="lobbyArchiveBody">
-   <p className="small">Die Live-Einträge werden nach {Math.round(retentionHours/24)} Tagen bereinigt. Endkarte und Endstand bleiben dauerhaft in der Hall of Fame erhalten.</p>
+   <p className="small">Beendete Spiele bleiben hier etwa 10 Minuten sichtbar. Hall-of-Fame-Einträge echter Runden bleiben dauerhaft erhalten.</p>
    <div className="grid gameCards">
     {closedGames.length===0&&<div className="muted">Keine kürzlich geschlossenen Spiele.</div>}
     {closedGames.map(g=><div className="card closedGameCard" key={g.id}>

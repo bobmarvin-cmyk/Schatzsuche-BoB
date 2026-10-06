@@ -40,7 +40,7 @@ export default function BotProfile(){
    <div className="card"><div className="small">Spiele</div><div className="stat">{Number(bot.total_games||0)}</div></div>
    <div className="card"><div className="small">Erforschte Felder</div><div className="stat">{Number(bot.total_fields_revealed||0).toLocaleString('de-DE')}</div></div>
    <div className="card"><div className="small">Technologien</div><div className="stat">{Number(bot.total_technologies||0)}</div></div>
-   <div className="card"><div className="small">Schatzsicherung</div><div className="stat">{success.toFixed(1)}%</div></div>
+   <div className="card"><div className="small">Bergung bisher</div><div className="stat">{success.toFixed(1)}%</div><div className="small">{Number(bot.treasure_successes||0)} / {Number(bot.treasure_attempts||0)} Versuche</div></div>
    <div className="card"><div className="small">Aktiv seit</div><div className="stat memberSince">{bot.created_at?new Date(bot.created_at).toLocaleDateString('de-DE',{month:'short',year:'numeric'}):'–'}</div></div>
   </section>
 
