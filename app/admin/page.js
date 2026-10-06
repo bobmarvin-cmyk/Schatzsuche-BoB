@@ -9,9 +9,9 @@ const NUM=(v)=>v===''?0:Number(v)
 const RELEASE_NEWS_TEMPLATES=[
  {
   id:'v658',
-  title:'Update V6.58 – Aufholausgleich',
+  title:'Update V6.58.1 – Aufholausgleich',
   kind:'change',
-  body:`Neu in V6.58:
+  body:`Neu in V6.58.1:
 
 • Neue Spieler können einen einstellbaren Prozentsatz der seit Spielstart theoretisch verpassten Züge erhalten.
 • Rückkehrer können nach einer einstellbaren Mindest-Abwesenheit einen Prozentsatz ihrer verpassten Züge erhalten.
@@ -22,9 +22,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v6571',
-  title:'Update V6.58 – Hall of Fame & Cleanup',
+  title:'Update V6.58.1 – Hall of Fame & Cleanup',
   kind:'change',
-  body:`Neu in V6.58:
+  body:`Neu in V6.58.1:
 
 • Reine Bot-Runden ohne tatsächlich mitspielenden Menschen werden nach Bot-Sieg nicht in der Hall of Fame gespeichert.
 • Bereits vorhandene reine Bot-Archive werden bereinigt.
@@ -34,9 +34,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v657',
-  title:'Update V6.58 – organischere Bots & Lobby-Feinschliff',
+  title:'Update V6.58.1 – organischere Bots & Lobby-Feinschliff',
   kind:'change',
-  body:`Neu in V6.58:
+  body:`Neu in V6.58.1:
 
 • Die Botanzahl wird pro Spiel zufällig aus einer einstellbaren Min-/Max-Spanne gewählt.
 • Alle Bots verwenden bei der Schatzbergung dieselbe globale Durchschnittsquote.
@@ -173,9 +173,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v652',
-  title:'Update V6.58 – schnellere Computer-Mitspieler',
+  title:'Update V6.58.1 – schnellere Computer-Mitspieler',
   kind:'change',
-  body:`Neu in V6.58:
+  body:`Neu in V6.58.1:
 
 • Computer-Mitspieler verarbeiten ihre verfügbaren Züge jetzt in einer gemeinsamen Serveroperation statt Zug für Zug.
 • Dadurch werden große Mengen Felder deutlich effizienter aufgedeckt.
@@ -186,9 +186,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v651',
-  title:'Update V6.58 – flüssigere Mitspieler',
+  title:'Update V6.58.1 – flüssigere Mitspieler',
   kind:'change',
-  body:`Neu in V6.58:
+  body:`Neu in V6.58.1:
 
 • Computer-Mitspieler verarbeiten ihre echten Züge jetzt in kleinen Batches im Sekundentakt.
 • Dadurch reagieren sie deutlich flüssiger, ohne große Datenbankabfragen zu erzeugen.
@@ -199,9 +199,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v650',
-  title:'Update V6.58 – neue Mitspieler-Architektur',
+  title:'Update V6.58.1 – neue Mitspieler-Architektur',
   kind:'change',
-  body:`Neu in V6.58:
+  body:`Neu in V6.58.1:
 
 • Computer-Mitspieler besitzen jetzt echte Züge und regenerieren sie wie normale Spieler.
 • Sobald echte Spieler aktiv sind, spielen sie alle verfügbaren Züge aus.
@@ -214,9 +214,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v649',
-  title:'Update V6.58 – kompaktere News & stärkere Gegner',
+  title:'Update V6.58.1 – kompaktere News & stärkere Gegner',
   kind:'change',
-  body:`Neu in V6.58:
+  body:`Neu in V6.58.1:
 
 • In der Lobby heißt der Bereich jetzt nur noch „News“.
 • Nur die zwei neuesten Meldungen sind direkt sichtbar; ältere News lassen sich platzsparend aufklappen.
@@ -226,9 +226,9 @@ const RELEASE_NEWS_TEMPLATES=[
  },
  {
   id:'v648',
-  title:'Update V6.58 – kompakte News & mehr Bot-Power',
+  title:'Update V6.58.1 – kompakte News & mehr Bot-Power',
   kind:'change',
-  body:`Änderungen aus V6.58:
+  body:`Änderungen aus V6.58.1:
 
 • Lobby-News wurden kompakter gestaltet.
 • Vollgas-Ratio, Such-Power und maximale Felder/Aktion wurden deutlich erweitert.
@@ -248,9 +248,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v646',
-  title:'Update V6.58 – Tutorial, stärkere Mitspieler & Startbonus',
+  title:'Update V6.58.1 – Tutorial, stärkere Mitspieler & Startbonus',
   kind:'change',
-  body:`Neu in V6.58:
+  body:`Neu in V6.58.1:
 
 • Tutorial-Erstellung robuster gemacht und den gen_salt/pgcrypto-Fehler abgefangen.
 • Computer-Mitspieler reagieren stärker auf aktive Spiele und erhalten mehr Such-Power.
@@ -263,9 +263,9 @@ Viel Spaß bei der Schatzsuche!`
  },
  {
   id:'v645',
-  title:'Update V6.58 – Tutorial-Fix & mehr Gegner-Power',
+  title:'Update V6.58.1 – Tutorial-Fix & mehr Gegner-Power',
   kind:'change',
-  body:`Änderungen aus V6.58:
+  body:`Änderungen aus V6.58.1:
 
 • Tutorial-Fix für den Fehler „gen_salt does not exist“.
 • Tutorial-Runde wird ohne Passwortpfad erzeugt und anschließend privat geschaltet.
@@ -813,7 +813,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.58</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.58.1</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -823,7 +823,7 @@ export default function Admin(){
 
   {msg&&<div className="noticeBar">{msg}</div>}
   <nav className="adminJumpNav">
-   <a href="#admin-news">📰 News</a><a href="#admin-members">👥 Mitglieder</a><a href="#admin-jobs">🧰 Jobs & Namen</a><a href="#admin-games">🎮 Spiele</a><a href="#admin-geo">🌍 Geodaten</a><a href="#admin-auto">🤖 Auto</a><a href="#admin-bots">🤖 Bots</a><a href="#admin-economy">✨ Gold</a><a href="#admin-rules">⚙️ Regeln</a><a href="#admin-claims">📊 Schatzsicherung</a><a href="#admin-tech">🧠 Technologien</a>
+   <a href="#admin-news">📰 News</a><a href="#admin-members">👥 Mitglieder</a><a href="#admin-jobs">🧰 Jobs & Namen</a><a href="#admin-games">🎮 Spiele</a><a href="#admin-geo">🌍 Geodaten</a><a href="#admin-auto">🤖 Auto</a><a href="#admin-bots">🤖 Bots</a><a href="#admin-catchup">⚖️ Ausgleich</a><a href="#admin-economy">✨ Gold</a><a href="#admin-rules">⚙️ Regeln</a><a href="#admin-claims">📊 Schatzsicherung</a><a href="#admin-tech">🧠 Technologien</a>
   </nav>
 
   <section className="panel" id="admin-news">
@@ -1120,7 +1120,7 @@ export default function Admin(){
    </div>
   </section>
 
-  <section className="panel">
+  <section className="panel" id="admin-catchup">
    <h2>⚖️ Aufholausgleich</h2>
    <p className="small">Späte Einsteiger und länger abwesende Spieler erhalten einen Teil der theoretisch verpassten Züge. Diese Bonuszüge dürfen den normalen Zugspeicher überschreiten.</p>
    <div className="adminGrid">
