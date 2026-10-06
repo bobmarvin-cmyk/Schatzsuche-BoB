@@ -1,185 +1,129 @@
 # BoBsSchatzsuche – PROJECT_STATE
 
-Aktueller verbindlicher Stand: V7.1
+Aktueller verbindlicher Stand: V7.2
 
-V7 ist die gemeinsame Weiterentwicklung der bisherigen Schatzsuche.
-Die bestehende Schatzsuche bleibt vollständig erhalten und weiterhin separat weiterentwickelbar.
-Die neue permanente „Welt“ ist ein zusätzliches Segment mit eigener Datenbasis und eigener Schaltzentrale.
+V7 ist die gemeinsame Weiterentwicklung der bestehenden Schatzsuche plus der permanenten Welt. Beide Segmente bleiben getrennt weiterentwickelbar.
 
 ## Versionslinie
-- Letzter stabiler V6-Stand: V6.61.2.
-- V7.0: Start der permanenten gemeinsamen Welt.
-- Neue V7-Releases dürfen Schatzsuche und Welt unabhängig voneinander erweitern.
-- Eine Änderung in einem Segment darf das andere Segment nicht stillschweigend beschädigen.
+- Letzter stabiler V6-Rückfallstand: V6.61.2.
+- V7.0: permanente Welt gestartet.
+- V7.1: Satellitenwelt, Mehrfachauswahl, Grundstücksfarben/Bilder, Weltwirtschaft nur in mg Gold, Goldspiele 24h sichtbar.
+- V7.2: Base/Zweitwohnsitze, verbundene Erschließung, Sammelkapazität, Grundstücksformen.
 
-## Schatzsuche – bestehender Kern
-- Reale Weltkarte mit Rasterfeldern.
-- Schatzteile werden serverseitig bereits bei Spielbeginn fest auf Felder gelegt.
-- Schatzpositionen werden nicht nachträglich absichtlich nach hinten verschoben.
-- Mehrteilige Schatzspiele enden erst, wenn alle Teile vergeben/geborgen sind.
-- Gewinner ist nach aktueller Regel der größte Schatzanteil.
-- Spieltypen: Schatzsuche, Goldgame, Sponsorspiel.
-- 3 Sekunden Zugzeit ist als Mindestoption zulässig.
-- Technologien, Maschinen, Fallen, Analyse, Gimmicks und Terrain-Technologien bleiben Bestandteil.
-- MapLibre/OpenFreeMap + Satellitenansicht.
-- Chunk-/Canvas-Darstellung für große Karten.
-- Feld-Deckkraft lokal einstellbar.
-
-## Schatzsuche – Terrain
-- Wald: ter2 oder ter7.
-- Wasser: ter4 oder ter7.
-- Feuchtgebiet: ter5 oder ter7.
-- Industrie/Restricted: ter6 oder ter7.
-- ter7 umgeht Terrain-Sperren.
-- Bekannte Terrain-Klassifizierung gilt auch für Bots.
-- Unklassifiziertes Terrain ist für Bots vorläufig offen, bis eine serverseitige Klassifizierungslösung existiert.
-
-## Schatzsuche – Bots
-- Bots werden öffentlich wie normale Spieler dargestellt.
-- Nie öffentlich als „Bot“ markieren.
-- Keine Bot-Icons mehr anzeigen.
-- Profile/Statistiken dürfen wie bei normalen Spielern anklickbar sein.
-- Bots suchen lokal, nicht global verstreut.
-- Kein Rückfall zum alten globalen Scatter-Fallback.
-- Suchgebiete dürfen organisch, fleckig und leicht wandernd sein.
-- Botanzahl pro Spiel wird einmal zufällig aus Min/Max gewählt und bleibt für die Runde stabil.
-- Bot-Beitrittsverzögerung bleibt erhalten.
-- Aktives und passives Tempo bleiben getrennt steuerbar.
-- Passivspiel läuft serverseitig weiter.
-- Bot-only-Runden ohne echte menschliche Aktivität werden nicht in der Hall of Fame gespeichert.
-
-## Schatzsuche – Lobby/Lebenszyklus
-- „Neues Spiel erstellen“ bleibt deutlich hervorgehoben.
-- Mobile Spieltyp-Labels stehen sauber oberhalb des Spielnamens.
-- „Felder/min“ bleibt aus der Lobby-Spieleübersicht entfernt.
-- „Nächstes Spiel“ bleibt so benannt.
-- Beendete/geschlossene Spiele bleiben ungefähr 10 Minuten in den Live-Daten und werden danach bereinigt.
-- Hall-of-Fame-Archive echter Runden bleiben erhalten.
-
-## Schatzsuche – Auto-Games
-- Einladevorlauf bleibt erhalten.
-- Bots sammeln während des Vorlaufs keine virtuelle Vorlaufzeit.
-- Zufallsorte verwenden den erweiterten globalen Ortspool.
-- Derselbe Zufallsort soll möglichst 30 Tage nicht wiederholt werden.
-- Zufallsnamen werden aus dem editierbaren Namenspool der Schaltzentrale erzeugt.
-- Namenspool ist serverseitig persistent und ab V7.0 nach dem Speichern verifizierbar.
-
-## Schatzsuche – Aufholausgleich
-- Neueinsteiger und Rückkehrer können konfigurierbare Aufholzüge erhalten.
-- Aufholzüge dürfen den normalen Zugspeicher überschreiten.
-- Normale Regeneration darf Aufhol-Überhang nicht abschneiden.
-- Präsenz wird serverseitig verfolgt.
-- Zugvorrat wird zusätzlich als Energie-/Mana-Balken dargestellt.
-- Der Balken erzeugt keine zusätzlichen Requests.
+## Schatzsuche – unverändert zu schützen
+- Bestehender Spielkern bleibt vollständig erhalten und weiterentwickelbar.
+- Schatzpositionen werden bei Spielstart serverseitig festgelegt.
+- Bots bleiben lokal; kein globaler Scatter-Fallback.
+- Bekannte Terrain-Gates gelten auch für Bots: ter2/ter4/ter5/ter6/ter7.
+- Bots werden öffentlich nicht als Bots markiert und ohne Bot-Icons dargestellt.
+- Bot-Min/Max, Join-Verzögerung und passives Botspiel bleiben erhalten.
+- Bot-only-Runden ohne echte menschliche Aktivität kommen nicht in die Hall of Fame.
+- Aufholausgleich darf den normalen Energiespeicher überschreiten.
+- Energieanzeige erzeugt keine zusätzlichen Netzwerkrequests.
+- Standard-/Sponsorspiele bleiben nach Ende ungefähr 10 Minuten live sichtbar.
+- Goldspiele bleiben nach Ende 24 Stunden unter geschlossenen Spielen sichtbar.
+- Auto-Game-Zufallsnamen kommen aus dem persistenten editierbaren Namenspool.
 
 # V7 – WELT
 
-## Grundidee
-- Eine einzige permanente gemeinsame Weltkarte für alle Spieler.
-- Welt ist ein zusätzliches Segment; Schatzsuche bleibt unabhängig weiterentwickelbar.
-- Weltzugang kann einmalig Gold kosten.
-- V7.0 Standard: 100 mg Gold (= 0,1 g).
-- Nach Freischaltung gilt der Zugang dauerhaft für den Account.
+## Grundprinzip
+- Eine gemeinsame permanente Weltkarte für alle Spieler.
+- Standardkarte Satellit; Vektor-/Terrainwerte bleiben unsichtbar im Hintergrund aktiv.
+- Weltwirtschaft verwendet ausschließlich mg Gold aus `gold_wallets`.
+- Keine separate Welt-Taler-Währung mehr.
+- Grundstücksgröße Standard 10 × 10 m.
+- Die Erde wird nicht vollständig als Grundstückstabelle vorab angelegt.
 
-## Grundstücke
-- Globales Web-Mercator-Raster.
-- Standardgröße: 10 × 10 m.
-- Grundstücke werden nicht global vorab gespeichert; Datensätze entstehen erst beim Kauf.
-- Freie Felder können gekauft werden.
-- Standardlimit: 100 Grundstücke pro Spieler.
-- Standardpreis: 10 Welt-Taler.
-- Welt-Taler sind in V7.0 bewusst von Rundentalern der Schatzsuche getrennt.
-- Weltzugang gibt ein konfigurierbares Startguthaben Welt-Taler.
-- Kauf erhält eine Schutzfrist.
+## Zugang und Base
+- Weltzugang kann einmalig Gold kosten.
+- Nach Freischaltung setzt der Spieler seine erste Base selbst auf ein freies Grundstück.
+- Das Base-Grundstück kostet nichts.
+- Die Base ist das primäre Zuhause und der erste Erschließungsanker.
+- Beim Öffnen der Welt zoomt die Karte auf die eigene Base.
+- Bestehende V7.1-Spieler mit Grundstücken bekommen ihr ältestes Grundstück automatisch als Base.
+
+## Zweitwohnsitze
+- Spieler können zusätzliche Zweitwohnsitze auf freien Feldern gründen.
+- Ein Zweitwohnsitz darf unabhängig vom bestehenden Grundstücksnetz gesetzt werden und eröffnet einen neuen Erschließungsanker.
+- Der erste Zweitwohnsitz kostet einen konfigurierbaren Goldbetrag.
+- Jeder weitere Zweitwohnsitz wird um einen konfigurierbaren Goldbetrag teurer.
+- Standard: 50 mg erster Zweitwohnsitz, +50 mg je weiterem.
+
+## Erschließung / Verbindung
+- Normale Grundstücke dürfen nur gekauft werden, wenn sie orthogonal an eigenes erschlossenes Gelände anschließen.
+- Mehrfachkäufe dürfen als zusammenhängende Kette vom bestehenden Besitz aus erworben werden.
+- Neue getrennte Gebiete können nur über einen Zweitwohnsitz begonnen werden.
+- Diagonale Berührung allein zählt nicht als Verbindung.
+
+## Grundstücksformen
+Jedes Grundstück hat neben Terrain eine Nutzungsform:
+- `production`: Produktionsfläche – erzeugt Rohstoffe.
+- `compensation`: Ausgleichsfläche – Grundlage für spätere Umwelt-/Ausgleichsmechaniken.
+- `trade`: Handelsfläche – Grundlage für spätere Handelsgebäude/-boni.
+- `path`: Wegeparzelle – Erschließung und Verbindung.
+
+Alle Formen zählen als eigene erschlossene Fläche. In V7.2 produzieren nur Produktionsflächen Rohstoffe.
+
+## Grundstücksdarstellung / Personalisierung
+- Jedes Grundstück besitzt eine eigene Farbe.
+- Besitzer können Farben ändern.
+- Grundstücksbilder können aus `world-parcel-art` hinterlegt werden.
+- Bilder sind erst ab einer konfigurierbaren Zahl zusammenhängender eigener Grundstücke erlaubt; Standard 25.
+- Base/Zweitwohnsitze sowie Grundstücksformen werden auf der Karte gekennzeichnet.
 
 ## Terrain / Rohstoffe
-- Terrain eines gekauften Feldes wird aus der sichtbaren Kartenklassifizierung übernommen.
-- V7.0 Hauptterrain: Wald, Acker, Grünland, Wasser, Feuchtgebiet, Fels, Industrie, Gewerbe, Wohnen, Park, Sand, Verkehr, Offen.
+- Terrain wird beim Kauf aus der weiter aktiven Kartenklassifizierung übernommen.
+- Hauptterrain: Wald, Acker, Grünland, Wasser, Feuchtgebiet, Fels, Industrie, Gewerbe, Wohnen, Park, Sand, Verkehr, Offen.
 - Ressourcen: Holz, Harz, Nahrung, Pflanzen, Wasser, Fisch, Stein, Erz, Schrott, Metall.
-- Produktionsraten werden in world_resource_rates_v70 administriert.
-- Grundstück-Level multipliziert V7.0 Produktion um +25 % je Level.
-- Mischterrain ist im Datenmodell vorgesehen; V7.0 speichert beim Kauf zunächst den erkannten Haupttyp.
+- Produktionsraten sind administrierbar.
 
-## Produktion
-- Globaler konfigurierbarer Produktionstick, Standard 60 Minuten.
-- Keine ständigen Cron-Gutschriften je Feld.
-- Produktion wird serverseitig lazy anhand verstrichener voller Ticks berechnet.
-- Dadurch entstehen keine permanenten Millionen Schreibvorgänge.
-
-## Lager
-- Jeder Weltspieler besitzt ein serverseitiges Rohstoffinventar.
-- V7.0 hat noch kein hartes Lagerlimit.
+## Produktionsintervall und Sammelkapazität
+- Der frühere sichtbare Begriff „Produktionstick“ heißt ab V7.2 `Produktionsintervall`.
+- Standardintervall bleibt konfigurierbar (V7.1: 60 Minuten).
+- Produktion wird weiterhin lazy serverseitig anhand verstrichener Intervalle berechnet.
+- Jeder Spieler besitzt eine maximale Sammelkapazität in Produktionsintervallen.
+- Nur bis zu dieser Kapazität können Rohstoffe vor dem Einsammeln angesammelt werden.
+- Ältere Intervalle oberhalb der Kapazität verfallen beim nächsten Einsammeln.
+- Sammelkapazität hat ein Skill-Level und kann gegen mg Gold erhöht werden.
+- Standard: 24 Intervalle Basis, +12 Intervalle je Level, max. Level 20.
+- Standard-Upgradekosten: 10 mg für Level 1, danach +10 mg je weiterem Level.
+- Nur Produktionsflächen erzeugen Rohstoffe.
 
 ## Börse
-- V7.0 enthält echte Spieler-Verkaufsorders.
-- Rohstoffe werden beim Einstellen der Verkaufsorder reserviert.
-- Andere Spieler können Teilmengen kaufen.
-- Verkäufer erhält Erlös abzüglich Börsengebühr.
-- Restmengen können storniert und ins Lager zurückgegeben werden.
-- Standardgebühr: 2 %.
-- Preis entsteht durch Spielerangebote; keine künstlichen Festpreise.
-- Vollständiges Bid/Ask-Orderbuch mit Kauforders kann später ergänzt werden.
+- Spieler-Verkaufsorders bleiben erhalten.
+- Rohstoffe werden beim Einstellen reserviert.
+- Käufe/Verkäufe laufen ausschließlich über mg Gold.
+- Gebühren sind administrierbar.
 
 ## Konflikte
-- Datenmodell und Admin-Balancing sind in V7.0 vorbereitet.
-- Geschicklichkeitsduell wird noch nicht automatisch ausgetragen.
-- Standardidee: Herausforderung, Reaktionsfrist, Skill-Spiel, Schutzzeiten.
-- Kein Pay-to-Win-Kampf.
-- Schutz nach Kauf: Standard 7 Tage.
-- Schutz nach Konflikt: Standard 7 Tage.
-- Unangreifbarer Mindestbesitz: Standard 10 Grundstücke.
-- Standard max. 3 Angriffe/Tag.
-- Konflikte sind in V7.0 standardmäßig deaktiviert, bis das Geschicklichkeitsspiel umgesetzt ist.
+- Datenmodell/Balancing vorbereitet.
+- Kein Pay-to-Win.
+- Konflikte bleiben deaktiviert, bis das Geschicklichkeitssystem umgesetzt ist.
 
 ## Welt-Schaltzentrale
-Eigene Route /admin/welt.
-Konfigurierbar:
-- Welt an/aus
-- Weltzugang Gold
-- Startguthaben
+Eigene Route `/admin/welt`. Konfigurierbar sind u. a.:
+- Weltzugang
 - Grundstückspreis
-- Besitzlimit
-- Produktionstick
+- Grundstückslimit
+- Produktionsintervall
 - Rohstoffraten
 - Börsengebühr
-- offene Orders
+- Bild-Personalisierungsschwelle
+- Zweitwohnsitz-Grundpreis und Preissteigerung
+- Sammelkapazität, Skill-Zuwachs, Upgradekosten und Max-Level
 - Konfliktparameter
 
-## Technische Trennung
-V7.0 eigene Tabellen:
-- world_settings_v70
-- world_resource_rates_v70
-- world_access_v70
-- world_wallets_v70
-- world_inventory_v70
-- world_parcels_v70
-- world_orders_v70
-- world_trades_v70
-- world_conflicts_v70
-
-Gemeinsam bleiben:
-- Auth
-- profiles
-- gold_wallets / Goldsystem
+## Datenstrukturen
+Zusätzlich zu V7.0/V7.1:
+- `world_homes_v72`
+- `world_access_v70.collection_level`
+- `world_parcels_v70.parcel_use`
 
 ## Release-Regel
-Vor jedem Release:
-1. unmittelbar vorherige Version als Basis,
-2. PROJECT_STATE.md lesen,
-3. NON_NEGOTIABLES.md prüfen,
-4. RELEASE_CHECKLIST.md abarbeiten,
-5. release_check.py erfolgreich ausführen,
-6. Schatzsuche-Regressionen UND Welt-Regressionen prüfen,
-7. nur aktuelle Migration + setup.sql + aktuelles Supabase-README,
-8. .env.local niemals paketieren.
-
-
-# V7.1 Ergänzungen
-- Geschlossene Goldspiele bleiben 24 Stunden in „geschlossene Spiele“, Standard/Sponsor weiter ca. 10 Minuten.
-- Weltkarte startet als Satellitenkarte; Vektor-/Terrainwerte bleiben unsichtbar im Hintergrund aktiv.
-- Grundstücke können per Mehrfachauswahl gesammelt gekauft werden.
-- Grundstückskäufe und Weltbörse verwenden ausschließlich mg Gold aus gold_wallets.
-- Die separate Welt-Taler-Logik ist ab V7.1 deprecated und wird nicht mehr genutzt.
-- Jedes Grundstück besitzt eine eigene Farbe und kann vom Besitzer geändert werden.
-- Grundstücksbilder sind über Supabase Storage möglich.
-- Bild-Personalisierung ist erst ab einer einstellbaren Zahl zusammenhängender eigener Grundstücke erlaubt; Standard 25.
+1. Immer unmittelbar vorherige Version als Basis.
+2. PROJECT_STATE und NON_NEGOTIABLES vor Änderungen prüfen.
+3. Schatzsuche und Welt separat auf Regressionen prüfen.
+4. release_check.py muss erfolgreich sein.
+5. Genau eine aktuelle Migration im Supabase-Releaseordner.
+6. setup.sql nicht erneut ausführen.
+7. `.env.local` und Geheimnisse niemals paketieren.

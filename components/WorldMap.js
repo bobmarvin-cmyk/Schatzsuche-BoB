@@ -87,7 +87,7 @@ function parcelFC(parcels,size){
       type:'Feature',
       properties:{
         id:String(p.id),owner_name:p.owner_name||'Spieler',terrain_type:p.terrain_type,
-        is_mine:!!p.is_mine,level:Number(p.level||0),color_hex:p.color_hex||'#22c55e'
+        is_mine:!!p.is_mine,level:Number(p.level||0),color_hex:p.color_hex||'#22c55e',parcel_use:p.parcel_use||'production',home_type:p.home_type||''
       },
       geometry:{type:'Polygon',coordinates:polygonFor(p.gx,p.gy,size)}
     }))
@@ -117,11 +117,12 @@ function imagePointsFC(parcels,size,imageIds){
   }
 }
 
-export default function WorldMap({parcelSize=10,parcels=[],selected=[],onSelect,onViewport}){
+export default function WorldMap({parcelSize=10,parcels=[],selected=[],onSelect,onViewport,focusHome=null}){
   const holder=useRef(null),mapRef=useRef(null)
   const onSelectRef=useRef(onSelect),onViewportRef=useRef(onViewport)
   const parcelsRef=useRef(parcels),selectedRef=useRef(selected),sizeRef=useRef(parcelSize)
   const imageIdsRef=useRef({})
+  const focusHomeRef=useRef(focusHome)
   const [ready,setReady]=useState(false)
 
   useEffect(()=>{onSelectRef.current=onSelect},[onSelect])
@@ -129,6 +130,14 @@ export default function WorldMap({parcelSize=10,parcels=[],selected=[],onSelect,
   useEffect(()=>{parcelsRef.current=parcels;updateSources();syncImages()},[parcels])
   useEffect(()=>{selectedRef.current=selected;updateSources()},[selected])
   useEffect(()=>{sizeRef.current=parcelSize;updateSources()},[parcelSize])
+  useEffect(()=>{
+    focusHomeRef.current=focusHome
+    const map=mapRef.current
+    if(map&&focusHome){
+      const [lng,lat]=centerFor(focusHome.gx,focusHome.gy,sizeRef.current)
+      try{map.flyTo({center:[lng,lat],zoom:18,duration:900})}catch{}
+    }
+  },[focusHome])
 
   function updateSources(){
     const map=mapRef.current
@@ -169,8 +178,9 @@ export default function WorldMap({parcelSize=10,parcels=[],selected=[],onSelect,
       const mod=await import('maplibre-gl')
       if(cancelled||!holder.current)return
       const maplibregl=mod.default||mod
+      const start=focusHomeRef.current?centerFor(focusHomeRef.current.gx,focusHomeRef.current.gy,sizeRef.current):[10,50]
       map=new maplibregl.Map({
-        container:holder.current,style:STYLE,center:[10,50],zoom:16,maxZoom:21,minZoom:2
+        container:holder.current,style:STYLE,center:start,zoom:focusHomeRef.current?18:16,maxZoom:21,minZoom:2
       })
       mapRef.current=map
       map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right')
@@ -185,6 +195,19 @@ export default function WorldMap({parcelSize=10,parcels=[],selected=[],onSelect,
         map.addLayer({
           id:'world-parcels-line',type:'line',source:'world-parcels',
           paint:{'line-color':['case',['boolean',['get','is_mine'],false],'#f8fafc','#fbbf24'],'line-width':1.25}
+        })
+        map.addLayer({
+          id:'world-parcel-kind',type:'symbol',source:'world-parcels',
+          layout:{
+            'text-field':['case',
+              ['==',['get','home_type'],'base'],'⌂',
+              ['==',['get','home_type'],'residence'],'⌂',
+              ['==',['get','parcel_use'],'production'],'P',
+              ['==',['get','parcel_use'],'compensation'],'A',
+              ['==',['get','parcel_use'],'trade'],'H','W'],
+            'text-size':11,'text-allow-overlap':true
+          },
+          paint:{'text-color':'#ffffff','text-halo-color':'#111827','text-halo-width':1}
         })
 
         map.addSource('world-selection',{type:'geojson',data:selectionFC(selectedRef.current,sizeRef.current)})
@@ -220,6 +243,7 @@ export default function WorldMap({parcelSize=10,parcels=[],selected=[],onSelect,
           features=map.queryRenderedFeatures(e.point)?.filter(f=>
             f.layer?.id!=='world-parcels-fill' &&
             f.layer?.id!=='world-parcels-line' &&
+            f.layer?.id!=='world-parcel-kind' &&
             f.layer?.id!=='world-selection-fill' &&
             f.layer?.id!=='world-selection-line' &&
             f.layer?.id!=='world-images-symbol' &&
@@ -240,6 +264,7 @@ export default function WorldMap({parcelSize=10,parcels=[],selected=[],onSelect,
     <div className="worldMapLegend">
       <span><i className="worldLegendMine"/> Grundstücksfarbe</span>
       <span><i className="worldLegendSelected"/> Auswahl</span>
+      <span>P Produktion · A Ausgleich · H Handel · W Weg · ⌂ Zuhause</span>
       <span>🛰 Satellit + Terrainwerte im Hintergrund</span>
     </div>
   </div>

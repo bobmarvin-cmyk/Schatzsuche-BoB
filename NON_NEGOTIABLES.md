@@ -1,47 +1,45 @@
-# NON_NEGOTIABLES – BoBsSchatzsuche V7
+# NON_NEGOTIABLES – BoBsSchatzsuche V7.2
 
-Diese Regeln dürfen nur auf ausdrücklichen Wunsch von Marvin geändert oder entfernt werden.
+Diese Regeln dürfen nur auf ausdrücklichen Wunsch von Marvin geändert werden.
 
 ## Gesamtprojekt
 1. Neue Versionen bauen auf der unmittelbar vorherigen Version auf.
 2. Vorhandene Features werden nicht stillschweigend entfernt.
-3. Schatzsuche und Welt sind getrennte Segmente desselben Projekts.
-4. Änderungen an der Welt dürfen die Schatzsuche nicht ungefragt verändern und umgekehrt.
-5. V6.61.2 bleibt der dokumentierte letzte stabile V6-Rückfallstand.
+3. Schatzsuche und Welt bleiben getrennt weiterentwickelbare Segmente.
 
 ## Schatzsuche
-6. Bots werden öffentlich nicht als Bots gekennzeichnet.
-7. Bot-Icons bleiben öffentlich entfernt.
-8. Bots dürfen nicht wieder global zufällig über die ganze Karte verstreut aufdecken.
-9. Bekannte Terrain-Gates gelten auch für Bots.
-10. Schatzpositionen werden zu Spielbeginn serverseitig festgelegt.
-11. Bot-only-Siege ohne echte menschliche Aktivität kommen nicht in die Hall of Fame.
-12. Beendete Live-Spiele werden nach ungefähr 10 Minuten bereinigt.
-13. Aufholausgleich darf den normalen Zugspeicher überschreiten.
-14. Der Energie-Balken erzeugt keine zusätzlichen Polling-/Netzwerkrequests.
-15. Auto-Game-Zufallsnamen kommen aus dem editierbaren persistenten Namenspool.
-16. Bot-Min/Max ist eine echte Range und wird pro Spiel einmal zufällig gewählt.
+4. Bots öffentlich nicht als Bots markieren.
+5. Keine öffentlichen Bot-Icons.
+6. Kein global verstreutes Bot-Aufdecken.
+7. Bekannte Terrain-Gates bleiben erhalten.
+8. Schatzpositionen bei Spielstart festlegen.
+9. Bot-only-Siege ohne echte Menschen nicht Hall of Fame.
+10. Standard/Sponsor ca. 10 Minuten live; Goldspiele 24 Stunden live.
+11. Aufholausgleich und Energieanzeige erhalten.
+12. Namenspool persistent und von Auto-Games verwendet.
+13. Bot-Min/Max bleibt persistent.
 
 ## Welt
-17. Es gibt genau eine gemeinsame permanente Welt für alle Spieler.
-18. Standard-Grundstücksgröße V7.1 ist 10 × 10 m.
-19. Die gesamte Erde wird niemals als Milliarden vorab angelegte Grundstückszeilen gespeichert.
-20. Weltgrundstücke werden erst bei Kauf/Interaktion persistent.
-21. Welt-Taler sind V7.1 getrennt von Rundentalern der Schatzsuche.
-22. Produktion wird lazy berechnet; keine ständigen Schreib-Ticks über alle Grundstücke.
-23. Rohstoffhandel zwischen Spielern darf keine negativen Inventare oder negativen Welt-Taler erzeugen.
-24. Verkaufte Rohstoffe werden bei Ordererstellung reserviert.
-25. Kämpfe um Grundstücke dürfen nicht Pay-to-Win werden.
-26. Konflikte bleiben deaktiviert, bis ein serverseitig plausibilisiertes Geschicklichkeitssystem vorhanden ist.
-27. Grundstücksschutz und Mindestbesitz dürfen nicht stillschweigend entfernt werden.
+14. Eine gemeinsame permanente Welt.
+15. Welt verwendet ausschließlich mg Gold, keine separate Weltwährung.
+16. Satellitenanzeige darf Terrain-Hintergrundwerte nicht abschalten.
+17. Erste Base ist kostenlos.
+18. Normale Grundstücke müssen mit eigener Base/Zweitwohnsitz-Fläche verbunden sein.
+19. Getrennte neue Gebiete dürfen nur über Zweitwohnsitze entstehen.
+20. Zweitwohnsitze werden mit jedem weiteren teurer.
+21. Die Erde wird nicht mit Milliarden Grundstückszeilen vorab gespeichert.
+22. Produktion bleibt lazy/serverseitig.
+23. Sammelkapazität begrenzt die ansammelbaren Produktionsintervalle; Überschuss verfällt.
+24. Sammelkapazität ist hochskillbar und serverseitig bezahlt/geprüft.
+25. Nur Produktionsflächen produzieren in V7.2 Rohstoffe.
+26. Grundstücksformen production/compensation/trade/path bleiben unterscheidbar.
+27. Verkaufsorders dürfen Inventar nicht negativ machen.
+28. Goldkäufe dürfen Goldsaldo nicht negativ machen.
+29. Grundstücksbilder erst ab konfigurierter zusammenhängender Mindestfläche.
+30. Konflikte bleiben deaktiviert, bis Skill-Duell fertig ist.
 
-## Sicherheit/Release
-28. Neue öffentliche Tabellen bekommen RLS.
-29. Interne Tabellen ohne direkte Browsernutzung entziehen anon/authenticated direkten Zugriff.
-30. setup.sql wird bei bestehenden Installationen niemals erneut als Migration ausgeführt.
-31. .env.local und geheime Schlüssel kommen niemals ins Release-ZIP.
-
-32. Goldspiele bleiben nach Ende 24 Stunden in den Live-Daten sichtbar.
-33. Die Welt verwendet ab V7.1 nur mg Gold, keine separate Weltwährung.
-34. Satellitenanzeige darf Terrain-Hintergrundwerte nicht abschalten.
-35. Grundstücksbilder sind erst ab der konfigurierten Mindestgröße zusammenhängender eigener Fläche zulässig.
+## Sicherheit / Release
+31. Neue Tabellen bekommen RLS.
+32. Interne Tabellen entziehen anon/authenticated Direktzugriff.
+33. setup.sql nie als Update ausführen.
+34. `.env.local` und geheime Schlüssel nie ins Release-ZIP.
