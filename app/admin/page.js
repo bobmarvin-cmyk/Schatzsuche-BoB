@@ -8,10 +8,23 @@ const NUM=(v)=>v===''?0:Number(v)
 
 const RELEASE_NEWS_TEMPLATES=[
  {
-  id:'v660',
-  title:'Update V6.60 – echter Namenspool, organischere Bots & Energieanzeige',
+  id:'v661',
+  title:'Update V6.61.2 – Stabilität & persistente Zentrale',
   kind:'change',
-  body:`Neu in V6.60:
+  body:`Neu in V6.61.2:
+
+• Zufallsnamen-Pool und Bot-Min/Max verwenden jetzt eine gemeinsame kanonische Konfiguration.
+• Speichern, Laden und Autospiel-Nutzung greifen damit auf dieselbe Datenquelle zu.
+• Bot-Min/Max wird auch von der tatsächlichen Bot-Verteilung direkt aus dieser Quelle gelesen.
+• PROJECT_STATE.md, NON_NEGOTIABLES.md und RELEASE_CHECKLIST.md dokumentieren den verbindlichen Sollzustand.
+• release_check.py prüft wichtige Regressionen vor zukünftigen Releases.`
+ },
+
+ {
+  id:'v660',
+  title:'Update V6.61.2 – echter Namenspool, organischere Bots & Energieanzeige',
+  kind:'change',
+  body:`Neu in V6.61.2:
 
 • Auto-Spiel-Zufallsnamen verwenden jetzt wirklich den in der Schaltzentrale gespeicherten Namenspool statt alter fest eingebauter Wortlisten.
 • Bot-Suchgebiete bestehen aus mehreren überlappenden lokalen Suchlappen mit stärkeren Lücken und wanderndem Zentrum.
@@ -22,9 +35,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v659',
-  title:'Update V6.60 – organischere Bot-Suche',
+  title:'Update V6.61.2 – organischere Bot-Suche',
   kind:'change',
-  body:`Neu in V6.60:
+  body:`Neu in V6.61.2:
 
 • Bots bleiben weiterhin in lokalen Suchgebieten.
 • Statt sauberer Kreise und Quadrate entstehen nun verzerrte, leicht wandernde Suchwolken.
@@ -35,9 +48,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v658',
-  title:'Update V6.60 – Aufholausgleich',
+  title:'Update V6.61.2 – Aufholausgleich',
   kind:'change',
-  body:`Neu in V6.60:
+  body:`Neu in V6.61.2:
 
 • Neue Spieler können einen einstellbaren Prozentsatz der seit Spielstart theoretisch verpassten Züge erhalten.
 • Rückkehrer können nach einer einstellbaren Mindest-Abwesenheit einen Prozentsatz ihrer verpassten Züge erhalten.
@@ -48,9 +61,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v6571',
-  title:'Update V6.60 – Hall of Fame & Cleanup',
+  title:'Update V6.61.2 – Hall of Fame & Cleanup',
   kind:'change',
-  body:`Neu in V6.60:
+  body:`Neu in V6.61.2:
 
 • Reine Bot-Runden ohne tatsächlich mitspielenden Menschen werden nach Bot-Sieg nicht in der Hall of Fame gespeichert.
 • Bereits vorhandene reine Bot-Archive werden bereinigt.
@@ -60,9 +73,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v657',
-  title:'Update V6.60 – organischere Bots & Lobby-Feinschliff',
+  title:'Update V6.61.2 – organischere Bots & Lobby-Feinschliff',
   kind:'change',
-  body:`Neu in V6.60:
+  body:`Neu in V6.61.2:
 
 • Die Botanzahl wird pro Spiel zufällig aus einer einstellbaren Min-/Max-Spanne gewählt.
 • Alle Bots verwenden bei der Schatzbergung dieselbe globale Durchschnittsquote.
@@ -199,9 +212,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v652',
-  title:'Update V6.60 – schnellere Computer-Mitspieler',
+  title:'Update V6.61.2 – schnellere Computer-Mitspieler',
   kind:'change',
-  body:`Neu in V6.60:
+  body:`Neu in V6.61.2:
 
 • Computer-Mitspieler verarbeiten ihre verfügbaren Züge jetzt in einer gemeinsamen Serveroperation statt Zug für Zug.
 • Dadurch werden große Mengen Felder deutlich effizienter aufgedeckt.
@@ -212,9 +225,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v651',
-  title:'Update V6.60 – flüssigere Mitspieler',
+  title:'Update V6.61.2 – flüssigere Mitspieler',
   kind:'change',
-  body:`Neu in V6.60:
+  body:`Neu in V6.61.2:
 
 • Computer-Mitspieler verarbeiten ihre echten Züge jetzt in kleinen Batches im Sekundentakt.
 • Dadurch reagieren sie deutlich flüssiger, ohne große Datenbankabfragen zu erzeugen.
@@ -225,9 +238,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v650',
-  title:'Update V6.60 – neue Mitspieler-Architektur',
+  title:'Update V6.61.2 – neue Mitspieler-Architektur',
   kind:'change',
-  body:`Neu in V6.60:
+  body:`Neu in V6.61.2:
 
 • Computer-Mitspieler besitzen jetzt echte Züge und regenerieren sie wie normale Spieler.
 • Sobald echte Spieler aktiv sind, spielen sie alle verfügbaren Züge aus.
@@ -240,9 +253,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v649',
-  title:'Update V6.60 – kompaktere News & stärkere Gegner',
+  title:'Update V6.61.2 – kompaktere News & stärkere Gegner',
   kind:'change',
-  body:`Neu in V6.60:
+  body:`Neu in V6.61.2:
 
 • In der Lobby heißt der Bereich jetzt nur noch „News“.
 • Nur die zwei neuesten Meldungen sind direkt sichtbar; ältere News lassen sich platzsparend aufklappen.
@@ -252,9 +265,9 @@ const RELEASE_NEWS_TEMPLATES=[
  },
  {
   id:'v648',
-  title:'Update V6.60 – kompakte News & mehr Bot-Power',
+  title:'Update V6.61.2 – kompakte News & mehr Bot-Power',
   kind:'change',
-  body:`Änderungen aus V6.60:
+  body:`Änderungen aus V6.61.2:
 
 • Lobby-News wurden kompakter gestaltet.
 • Vollgas-Ratio, Such-Power und maximale Felder/Aktion wurden deutlich erweitert.
@@ -274,9 +287,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v646',
-  title:'Update V6.60 – Tutorial, stärkere Mitspieler & Startbonus',
+  title:'Update V6.61.2 – Tutorial, stärkere Mitspieler & Startbonus',
   kind:'change',
-  body:`Neu in V6.60:
+  body:`Neu in V6.61.2:
 
 • Tutorial-Erstellung robuster gemacht und den gen_salt/pgcrypto-Fehler abgefangen.
 • Computer-Mitspieler reagieren stärker auf aktive Spiele und erhalten mehr Such-Power.
@@ -289,9 +302,9 @@ Viel Spaß bei der Schatzsuche!`
  },
  {
   id:'v645',
-  title:'Update V6.60 – Tutorial-Fix & mehr Gegner-Power',
+  title:'Update V6.61.2 – Tutorial-Fix & mehr Gegner-Power',
   kind:'change',
-  body:`Änderungen aus V6.60:
+  body:`Änderungen aus V6.61.2:
 
 • Tutorial-Fix für den Fehler „gen_salt does not exist“.
 • Tutorial-Runde wird ohne Passwortpfad erzeugt und anschließend privat geschaltet.
@@ -500,7 +513,7 @@ export default function Admin(){
   const left=namePoolLeft.split(/\n|,/).map(x=>x.trim()).filter(Boolean)
   const right=namePoolRight.split(/\n|,/).map(x=>x.trim()).filter(Boolean)
   setSaving(true);setMsg('')
-  const {data,error}=await supabase.rpc('admin_replace_game_name_pool_v657',{
+  const {data,error}=await supabase.rpc('admin_save_name_pool_v661',{
     p_left:left,p_right:right
   })
   if(error){
@@ -729,7 +742,7 @@ export default function Admin(){
   if(!botConfig?.settings)return
   setSaving(true);setMsg('')
   const s=botConfig.settings
-  const {data,error}=await supabase.rpc('admin_save_bot_settings_v657',{
+  const {data,error}=await supabase.rpc('admin_save_bot_settings_v661',{
     p_enabled:!!s.enabled,
     p_bots_min_per_game:NUM(s.bots_min_per_game??s.bots_per_auto_game??0),
     p_bots_max_per_game:NUM(s.bots_max_per_game??s.bots_per_auto_game??3),
@@ -839,7 +852,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V6.60</div>
+ return <main className="container adminPage"><div className="buildBadge">V6.61.2</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">

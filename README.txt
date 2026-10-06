@@ -1,30 +1,23 @@
-SCHATZSUCHE ONLINE V6.60
+SCHATZSUCHE ONLINE V6.61.2
 
-1. ZUFALLSNAMEN
-Der bisherige Fehler lag nicht primär beim Speichern:
-Der Admin-Namenspool wurde gespeichert, aber die Auto-Game-Zufallsfunktion verwendete weiterhin alte fest eingebaute Namenslisten.
+Dies ist bewusst ein Stabilitätsrelease.
 
-V6.60:
-- random_game_name_v6151 liest direkt aus game_name_parts_v625
-- Änderungen am Namenspool wirken damit tatsächlich auf neue Auto-Games
-- leere Pools besitzen nur noch einen Notfall-Fallback
+FEHLERBEHEBUNG
+1. Zufallsnamen-Pool:
+   Ab V6.61.2 existiert eine einzige kanonische Speicherquelle.
+   Speichern, erneutes Laden und Auto-Game-Generierung lesen denselben Stand.
 
-2. BOT-SUCHMUSTER
-V6.59 war optisch zu schwach, weil die Kandidaten am Ende wieder stark nach Entfernung sortiert wurden.
+2. Bot-Min/Max:
+   Die Range wird ebenfalls kanonisch gespeichert.
+   Admin-Laden und reale Bot-Verteilung lesen denselben Stand.
 
-V6.60:
-- 3–5 lokale überlappende Suchlappen plus Kern
-- deutlich unregelmäßigere Ränder
-- kleine sichtbare Lücken
-- stärkeres lokales Wandern des Suchzentrums
-- weiterhin kein globales Scatter-Aufdecken
-
-3. ENERGIEBALKEN
-- Züge werden zusätzlich als Energie-/Mana-Balken angezeigt
-- aktueller Wert / normales Speicherlimit
-- bei Aufholzügen wird Überhang als „Aufholenergie +X“ angezeigt
-- keine zusätzlichen Netzwerkabfragen
+SCHUTZ VOR REGRESSIONEN
+- PROJECT_STATE.md dokumentiert den aktuellen Sollzustand.
+- NON_NEGOTIABLES.md enthält Regeln, die nicht stillschweigend entfernt werden dürfen.
+- RELEASE_CHECKLIST.md ist vor jedem neuen Release abzuarbeiten.
+- release_check.py muss vor Ausgabe eines neuen ZIP erfolgreich sein.
 
 INSTALLATION
-1. supabase/v6_60_migration.sql EINMAL ausführen.
-2. V6.60 deployen.
+1. supabase/v6_61_migration.sql EINMAL ausführen.
+2. V6.61.2 deployen.
+3. setup.sql und ältere Migrationen NICHT erneut ausführen.
