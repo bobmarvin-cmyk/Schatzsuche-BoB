@@ -237,6 +237,15 @@ export default function Game(){
   }
  }
 
+ useEffect(()=>{
+  if(joinState!=='joined')return
+  supabase.rpc('player_presence_v658',{p_game_id:id})
+  const timer=setInterval(()=>{
+    supabase.rpc('player_presence_v658',{p_game_id:id})
+  },30000)
+  return ()=>clearInterval(timer)
+ },[joinState,id])
+
  async function init(){
   const {data:{user}}=await supabase.auth.getUser()
   if(!user){location.href='/login';return}
@@ -255,6 +264,10 @@ export default function Game(){
   }
 
   setJoinState('joined')
+  const {data:catchup}=await supabase.rpc('claim_player_catchup_v658',{p_game_id:id})
+  if(Number(catchup?.awarded||0)>0){
+    setMsg(`⚖️ Aufholausgleich: +${Number(catchup.awarded).toLocaleString('de-DE')} Züge`)
+  }
   await refreshMoves()
   await load()
  }
@@ -264,6 +277,10 @@ export default function Game(){
   if(error){setMsg(error.message);return}
   sessionStorage.setItem('game_password_'+id,joinPassword)
   setJoinState('joined');setMsg('')
+  const {data:catchup}=await supabase.rpc('claim_player_catchup_v658',{p_game_id:id})
+  if(Number(catchup?.awarded||0)>0){
+    setMsg(`⚖️ Aufholausgleich: +${Number(catchup.awarded).toLocaleString('de-DE')} Züge`)
+  }
   await refreshMoves();await load()
  }
 
@@ -1376,7 +1393,7 @@ export default function Game(){
  useEffect(()=>{
   if(joinState!=='joined'||machinePower<=0)return
   if(document.visibilityState!=='visible')return
-  // V6.57.1: nur noch leichter Server-Würfel statt Kartenberechnung.
+  // V6.58: nur noch leichter Server-Würfel statt Kartenberechnung.
   // Der Client fragt regelmäßig an; der Server würfelt nur, wenn der Takt fällig ist.
   if(tick%2!==0)return
   runMachines()
@@ -1470,7 +1487,7 @@ export default function Game(){
   return <main className="container authGate"><div className="panel compactPanel"><h1>Spiel nicht verfügbar</h1><p>{msg}</p><a className="btn" href="/lobby">Zur Lobby</a></div></main>
  }
 
- return <main className="container gamePage"><div className="buildBadge">V6.57.1</div>
+ return <main className="container gamePage"><div className="buildBadge">V6.58</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={nextGame} disabled={activeGames.length<2}>↪ Nächstes Spiel</button><a className="btn" href="/profile">Profil</a><a className="btn" href="/legenden">🏆 Legenden</a><a className="btn" href="/hall-of-fame">🏛️ Hall of Fame</a></div>
 
   <div className="panel gameTopPanel mobileAllStats"><div className="gameTopTitle"><h1>{game?.name||'Spiel'}</h1></div>
