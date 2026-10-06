@@ -9,9 +9,9 @@ const NUM=(v)=>v===''?0:Number(v)
 const RELEASE_NEWS_TEMPLATES=[
  {
   id:'v70',
-  title:'BoBsSchatzsuche V7.0 – Die Welt beginnt',
+  title:'BoBsSchatzsuche V7.1 – Die Welt beginnt',
   kind:'change',
-  body:`Neu in V7.0:
+  body:`Neu in V7.1:
 
 • Die bestehende Schatzsuche bleibt vollständig erhalten.
 • Zusätzlich gibt es jetzt eine gemeinsame permanente Welt.
@@ -24,9 +24,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v661',
-  title:'Update V7.0 – Stabilität & persistente Zentrale',
+  title:'Update V7.1 – Stabilität & persistente Zentrale',
   kind:'change',
-  body:`Neu in V7.0:
+  body:`Neu in V7.1:
 
 • Zufallsnamen-Pool und Bot-Min/Max verwenden jetzt eine gemeinsame kanonische Konfiguration.
 • Speichern, Laden und Autospiel-Nutzung greifen damit auf dieselbe Datenquelle zu.
@@ -37,9 +37,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v660',
-  title:'Update V7.0 – echter Namenspool, organischere Bots & Energieanzeige',
+  title:'Update V7.1 – echter Namenspool, organischere Bots & Energieanzeige',
   kind:'change',
-  body:`Neu in V7.0:
+  body:`Neu in V7.1:
 
 • Auto-Spiel-Zufallsnamen verwenden jetzt wirklich den in der Schaltzentrale gespeicherten Namenspool statt alter fest eingebauter Wortlisten.
 • Bot-Suchgebiete bestehen aus mehreren überlappenden lokalen Suchlappen mit stärkeren Lücken und wanderndem Zentrum.
@@ -50,9 +50,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v659',
-  title:'Update V7.0 – organischere Bot-Suche',
+  title:'Update V7.1 – organischere Bot-Suche',
   kind:'change',
-  body:`Neu in V7.0:
+  body:`Neu in V7.1:
 
 • Bots bleiben weiterhin in lokalen Suchgebieten.
 • Statt sauberer Kreise und Quadrate entstehen nun verzerrte, leicht wandernde Suchwolken.
@@ -63,9 +63,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v658',
-  title:'Update V7.0 – Aufholausgleich',
+  title:'Update V7.1 – Aufholausgleich',
   kind:'change',
-  body:`Neu in V7.0:
+  body:`Neu in V7.1:
 
 • Neue Spieler können einen einstellbaren Prozentsatz der seit Spielstart theoretisch verpassten Züge erhalten.
 • Rückkehrer können nach einer einstellbaren Mindest-Abwesenheit einen Prozentsatz ihrer verpassten Züge erhalten.
@@ -76,9 +76,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v6571',
-  title:'Update V7.0 – Hall of Fame & Cleanup',
+  title:'Update V7.1 – Hall of Fame & Cleanup',
   kind:'change',
-  body:`Neu in V7.0:
+  body:`Neu in V7.1:
 
 • Reine Bot-Runden ohne tatsächlich mitspielenden Menschen werden nach Bot-Sieg nicht in der Hall of Fame gespeichert.
 • Bereits vorhandene reine Bot-Archive werden bereinigt.
@@ -88,9 +88,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v657',
-  title:'Update V7.0 – organischere Bots & Lobby-Feinschliff',
+  title:'Update V7.1 – organischere Bots & Lobby-Feinschliff',
   kind:'change',
-  body:`Neu in V7.0:
+  body:`Neu in V7.1:
 
 • Die Botanzahl wird pro Spiel zufällig aus einer einstellbaren Min-/Max-Spanne gewählt.
 • Alle Bots verwenden bei der Schatzbergung dieselbe globale Durchschnittsquote.
@@ -227,9 +227,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v652',
-  title:'Update V7.0 – schnellere Computer-Mitspieler',
+  title:'Update V7.1 – schnellere Computer-Mitspieler',
   kind:'change',
-  body:`Neu in V7.0:
+  body:`Neu in V7.1:
 
 • Computer-Mitspieler verarbeiten ihre verfügbaren Züge jetzt in einer gemeinsamen Serveroperation statt Zug für Zug.
 • Dadurch werden große Mengen Felder deutlich effizienter aufgedeckt.
@@ -240,9 +240,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v651',
-  title:'Update V7.0 – flüssigere Mitspieler',
+  title:'Update V7.1 – flüssigere Mitspieler',
   kind:'change',
-  body:`Neu in V7.0:
+  body:`Neu in V7.1:
 
 • Computer-Mitspieler verarbeiten ihre echten Züge jetzt in kleinen Batches im Sekundentakt.
 • Dadurch reagieren sie deutlich flüssiger, ohne große Datenbankabfragen zu erzeugen.
@@ -253,9 +253,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v650',
-  title:'Update V7.0 – neue Mitspieler-Architektur',
+  title:'Update V7.1 – neue Mitspieler-Architektur',
   kind:'change',
-  body:`Neu in V7.0:
+  body:`Neu in V7.1:
 
 • Computer-Mitspieler besitzen jetzt echte Züge und regenerieren sie wie normale Spieler.
 • Sobald echte Spieler aktiv sind, spielen sie alle verfügbaren Züge aus.
@@ -268,9 +268,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v649',
-  title:'Update V7.0 – kompaktere News & stärkere Gegner',
+  title:'Update V7.1 – kompaktere News & stärkere Gegner',
   kind:'change',
-  body:`Neu in V7.0:
+  body:`Neu in V7.1:
 
 • In der Lobby heißt der Bereich jetzt nur noch „News“.
 • Nur die zwei neuesten Meldungen sind direkt sichtbar; ältere News lassen sich platzsparend aufklappen.
@@ -280,9 +280,9 @@ const RELEASE_NEWS_TEMPLATES=[
  },
  {
   id:'v648',
-  title:'Update V7.0 – kompakte News & mehr Bot-Power',
+  title:'Update V7.1 – kompakte News & mehr Bot-Power',
   kind:'change',
-  body:`Änderungen aus V7.0:
+  body:`Änderungen aus V7.1:
 
 • Lobby-News wurden kompakter gestaltet.
 • Vollgas-Ratio, Such-Power und maximale Felder/Aktion wurden deutlich erweitert.
@@ -302,9 +302,9 @@ const RELEASE_NEWS_TEMPLATES=[
 
  {
   id:'v646',
-  title:'Update V7.0 – Tutorial, stärkere Mitspieler & Startbonus',
+  title:'Update V7.1 – Tutorial, stärkere Mitspieler & Startbonus',
   kind:'change',
-  body:`Neu in V7.0:
+  body:`Neu in V7.1:
 
 • Tutorial-Erstellung robuster gemacht und den gen_salt/pgcrypto-Fehler abgefangen.
 • Computer-Mitspieler reagieren stärker auf aktive Spiele und erhalten mehr Such-Power.
@@ -317,9 +317,9 @@ Viel Spaß bei der Schatzsuche!`
  },
  {
   id:'v645',
-  title:'Update V7.0 – Tutorial-Fix & mehr Gegner-Power',
+  title:'Update V7.1 – Tutorial-Fix & mehr Gegner-Power',
   kind:'change',
-  body:`Änderungen aus V7.0:
+  body:`Änderungen aus V7.1:
 
 • Tutorial-Fix für den Fehler „gen_salt does not exist“.
 • Tutorial-Runde wird ohne Passwortpfad erzeugt und anschließend privat geschaltet.
@@ -870,7 +870,7 @@ export default function Admin(){
  const normalSum=NUM(settings.prize_share_bps)+NUM(settings.community_share_bps)+NUM(settings.platform_share_bps)
  const inactiveSum=NUM(settings.inactive_community_share_bps)+NUM(settings.inactive_platform_share_bps)
 
- return <main className="container adminPage"><div className="buildBadge">V7.0</div>
+ return <main className="container adminPage"><div className="buildBadge">V7.1</div>
   <div className="topnav"><a className="btn" href="/lobby">← Lobby</a><button className="btn" onClick={load}>↻ Neu laden</button></div>
 
   <div className="panel adminHero">
@@ -1193,7 +1193,7 @@ export default function Admin(){
    <h2>⏱️ Spiel-Lebenszyklus</h2>
    <div className="adminGrid">
     <Field label="Schließen nach Inaktivität (h)" value={settings.game_inactivity_hours} onChange={v=>setSetting('game_inactivity_hours',v)}/>
-    <div className="adminReadOnly"><span>Beendete Spiele: <b>10 Minuten Live-Anzeige</b></span></div>
+    <div className="adminReadOnly"><span>Beendete Spiele: <b>Standard/Sponsor ~10 Min. · Goldspiele 24 Std.</b></span></div>
     <Field label="Restgold → Community (Basispunkte)" value={settings.inactive_community_share_bps} onChange={v=>setSetting('inactive_community_share_bps',v)}/>
     <Field label="Restgold → Plattform (Basispunkte)" value={settings.inactive_platform_share_bps} onChange={v=>setSetting('inactive_platform_share_bps',v)}/>
    </div>

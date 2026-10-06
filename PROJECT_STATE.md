@@ -1,6 +1,6 @@
 # BoBsSchatzsuche – PROJECT_STATE
 
-Aktueller verbindlicher Stand: V7.0
+Aktueller verbindlicher Stand: V7.1
 
 V7 ist die gemeinsame Weiterentwicklung der bisherigen Schatzsuche.
 Die bestehende Schatzsuche bleibt vollständig erhalten und weiterhin separat weiterentwickelbar.
@@ -172,3 +172,14 @@ Vor jedem Release:
 6. Schatzsuche-Regressionen UND Welt-Regressionen prüfen,
 7. nur aktuelle Migration + setup.sql + aktuelles Supabase-README,
 8. .env.local niemals paketieren.
+
+
+# V7.1 Ergänzungen
+- Geschlossene Goldspiele bleiben 24 Stunden in „geschlossene Spiele“, Standard/Sponsor weiter ca. 10 Minuten.
+- Weltkarte startet als Satellitenkarte; Vektor-/Terrainwerte bleiben unsichtbar im Hintergrund aktiv.
+- Grundstücke können per Mehrfachauswahl gesammelt gekauft werden.
+- Grundstückskäufe und Weltbörse verwenden ausschließlich mg Gold aus gold_wallets.
+- Die separate Welt-Taler-Logik ist ab V7.1 deprecated und wird nicht mehr genutzt.
+- Jedes Grundstück besitzt eine eigene Farbe und kann vom Besitzer geändert werden.
+- Grundstücksbilder sind über Supabase Storage möglich.
+- Bild-Personalisierung ist erst ab einer einstellbaren Zahl zusammenhängender eigener Grundstücke erlaubt; Standard 25.

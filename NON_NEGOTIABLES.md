@@ -24,10 +24,10 @@ Diese Regeln dürfen nur auf ausdrücklichen Wunsch von Marvin geändert oder en
 
 ## Welt
 17. Es gibt genau eine gemeinsame permanente Welt für alle Spieler.
-18. Standard-Grundstücksgröße V7.0 ist 10 × 10 m.
+18. Standard-Grundstücksgröße V7.1 ist 10 × 10 m.
 19. Die gesamte Erde wird niemals als Milliarden vorab angelegte Grundstückszeilen gespeichert.
 20. Weltgrundstücke werden erst bei Kauf/Interaktion persistent.
-21. Welt-Taler sind V7.0 getrennt von Rundentalern der Schatzsuche.
+21. Welt-Taler sind V7.1 getrennt von Rundentalern der Schatzsuche.
 22. Produktion wird lazy berechnet; keine ständigen Schreib-Ticks über alle Grundstücke.
 23. Rohstoffhandel zwischen Spielern darf keine negativen Inventare oder negativen Welt-Taler erzeugen.
 24. Verkaufte Rohstoffe werden bei Ordererstellung reserviert.
@@ -40,3 +40,8 @@ Diese Regeln dürfen nur auf ausdrücklichen Wunsch von Marvin geändert oder en
 29. Interne Tabellen ohne direkte Browsernutzung entziehen anon/authenticated direkten Zugriff.
 30. setup.sql wird bei bestehenden Installationen niemals erneut als Migration ausgeführt.
 31. .env.local und geheime Schlüssel kommen niemals ins Release-ZIP.
+
+32. Goldspiele bleiben nach Ende 24 Stunden in den Live-Daten sichtbar.
+33. Die Welt verwendet ab V7.1 nur mg Gold, keine separate Weltwährung.
+34. Satellitenanzeige darf Terrain-Hintergrundwerte nicht abschalten.
+35. Grundstücksbilder sind erst ab der konfigurierten Mindestgröße zusammenhängender eigener Fläche zulässig.

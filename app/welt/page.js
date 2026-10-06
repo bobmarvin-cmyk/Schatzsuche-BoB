@@ -1,83 +1,71 @@
 'use client'
-import {useEffect,useMemo,useState} from 'react'
+import {useEffect,useState} from 'react'
 import {supabase} from '../../lib/supabase-browser'
-import {formatGold} from '../../lib/gold'
+import {formatGold,mgToUg} from '../../lib/gold'
 import WorldMap from '../../components/WorldMap'
 
-const RESOURCE_ICON={
- wood:'🪵',resin:'🟤',food:'🌾',plants:'🌿',water:'💧',
- fish:'🐟',stone:'🪨',ore:'⛏️',scrap:'🔩',metal:'⚙️'
-}
-const TERRAIN_LABEL={
- forest:'🌲 Wald',farmland:'🚜 Acker',grass:'🌾 Grünland',water:'🌊 Wasser',
- wetland:'🟫 Feuchtgebiet',rock:'🪨 Fels',industrial:'🏭 Industrie',
- commercial:'🏬 Gewerbe',residential:'🏙 Wohnen',park:'🌳 Park',
- sand:'🏖 Sand',road:'🛣 Verkehr',open:'🧭 Offen'
-}
+const RESOURCE_ICON={wood:'🪵',resin:'🟤',food:'🌾',plants:'🌿',water:'💧',fish:'🐟',stone:'🪨',ore:'⛏️',scrap:'🔩',metal:'⚙️'}
+const TERRAIN_LABEL={forest:'🌲 Wald',farmland:'🚜 Acker',grass:'🌾 Grünland',water:'🌊 Wasser',wetland:'🟫 Feuchtgebiet',rock:'🪨 Fels',industrial:'🏭 Industrie',commercial:'🏬 Gewerbe',residential:'🏙 Wohnen',park:'🌳 Park',sand:'🏖 Sand',road:'🛣 Verkehr',open:'🧭 Offen'}
 
 export default function WorldPage(){
- const [state,setState]=useState(null)
- const [parcels,setParcels]=useState([])
- const [selected,setSelected]=useState(null)
- const [market,setMarket]=useState([])
- const [msg,setMsg]=useState('')
- const [busy,setBusy]=useState(false)
- const [sellResource,setSellResource]=useState('wood')
- const [sellQty,setSellQty]=useState('1')
- const [sellPrice,setSellPrice]=useState('1')
- const [view,setView]=useState(null)
+ const [state,setState]=useState(null),[parcels,setParcels]=useState([]),[selected,setSelected]=useState([])
+ const [market,setMarket]=useState([]),[msg,setMsg]=useState(''),[busy,setBusy]=useState(false),[view,setView]=useState(null)
+ const [multi,setMulti]=useState(false),[buyColor,setBuyColor]=useState('#22c55e')
+ const [sellResource,setSellResource]=useState('wood'),[sellQty,setSellQty]=useState('1'),[sellPriceMg,setSellPriceMg]=useState('1')
+ const [styleColor,setStyleColor]=useState('#22c55e'),[styleFile,setStyleFile]=useState(null)
 
  useEffect(()=>{init()},[])
-
  async function init(){
    const {data:{user}}=await supabase.auth.getUser()
    if(!user){location.replace('/login');return}
    await Promise.all([loadState(),loadMarket()])
  }
-
  async function loadState(){
    const {data,error}=await supabase.rpc('world_get_state_v70')
    if(error){setMsg(error.message);return}
    setState(data)
  }
  async function loadMarket(){
-   const {data,error}=await supabase.rpc('world_market_v70',{p_resource:null})
+   const {data,error}=await supabase.rpc('world_market_v71',{p_resource:null})
    if(!error)setMarket(data||[])
  }
  async function loadView(v=view){
    if(!v)return
-   const {data,error}=await supabase.rpc('world_parcels_in_view_v70',{
+   const {data,error}=await supabase.rpc('world_parcels_in_view_v71',{
      p_min_gx:v.minGx,p_max_gx:v.maxGx,p_min_gy:v.minGy,p_max_gy:v.maxGy,p_limit:5000
    })
    if(!error)setParcels(data||[])
  }
- async function viewport(v){
-   setView(v)
-   await loadView(v)
+ async function viewport(v){setView(v);await loadView(v)}
+ function pick(cell){
+   const key=`${cell.gx}:${cell.gy}`
+   if(!multi){
+     setSelected([cell])
+     if(cell.occupied?.is_mine)setStyleColor(cell.occupied.color_hex||'#22c55e')
+     return
+   }
+   setSelected(list=>{
+     const exists=list.some(x=>`${x.gx}:${x.gy}`===key)
+     return exists?list.filter(x=>`${x.gx}:${x.gy}`!==key):[...list,cell].slice(-250)
+   })
  }
-
  async function unlock(){
    setBusy(true);setMsg('')
-   const {data,error}=await supabase.rpc('world_unlock_v70')
+   const {error}=await supabase.rpc('world_unlock_v70')
    setBusy(false)
    if(error){setMsg(error.message);return}
-   setMsg(data?.already_unlocked?'Weltzugang ist bereits aktiv.':'🌍 Willkommen in der Welt!')
-   await loadState()
+   setMsg('🌍 Willkommen in der Welt!');await loadState()
  }
-
- async function buyParcel(){
-   if(!selected||selected.occupied)return
+ async function buySelected(){
+   const free=selected.filter(x=>!x.occupied)
+   if(!free.length)return
    setBusy(true);setMsg('')
-   const {data,error}=await supabase.rpc('world_buy_parcel_v70',{
-     p_gx:selected.gx,p_gy:selected.gy,p_terrain_type:selected.terrain
-   })
+   const {data,error}=await supabase.rpc('world_buy_parcels_v71',{p_cells:free.map(x=>({gx:x.gx,gy:x.gy,terrain:x.terrain,color:buyColor}))})
    setBusy(false)
    if(error){setMsg(error.message);return}
-   setMsg(`Grundstück gekauft · ${TERRAIN_LABEL[data?.terrain]||data?.terrain}`)
-   setSelected(null)
-   await Promise.all([loadState(),loadView()])
+   setMsg(`${data.count} Grundstück(e) gekauft · ${formatGold(data.total_ug)}`)
+   setSelected([]);await Promise.all([loadState(),loadView()])
  }
-
  async function claimProduction(){
    setBusy(true);setMsg('')
    const {data,error}=await supabase.rpc('world_claim_production_v70')
@@ -86,27 +74,24 @@ export default function WorldPage(){
    setMsg(data?.parcels_updated?`Produktion eingesammelt · ${data.parcels_updated} Grundstücke aktualisiert.`:'Noch kein neuer Produktionstick verfügbar.')
    await loadState()
  }
-
  async function createSellOrder(){
    setBusy(true);setMsg('')
-   const {data,error}=await supabase.rpc('world_create_sell_order_v70',{
-     p_resource:sellResource,p_quantity:Number(sellQty),p_unit_price_taler:Number(sellPrice)
+   const {error}=await supabase.rpc('world_create_sell_order_v71',{
+     p_resource:sellResource,p_quantity:Number(sellQty),p_unit_price_ug:mgToUg(sellPriceMg)
    })
    setBusy(false)
    if(error){setMsg(error.message);return}
-   setMsg('Verkaufsorder eingestellt.')
-   await Promise.all([loadState(),loadMarket()])
+   setMsg('Verkaufsorder eingestellt.');await Promise.all([loadState(),loadMarket()])
  }
  async function buyOrder(o){
-   const raw=prompt(`Wie viel ${RESOURCE_ICON[o.resource]||''} ${o.resource} kaufen?`,String(Math.min(1,Number(o.remaining))))
+   const raw=prompt(`Wie viel ${o.resource} kaufen?`,String(Math.min(1,Number(o.remaining))))
    if(raw===null)return
-   const qty=Number(String(raw).replace(',','.'))
-   if(!(qty>0))return
+   const qty=Number(String(raw).replace(',','.')); if(!(qty>0))return
    setBusy(true);setMsg('')
-   const {data,error}=await supabase.rpc('world_buy_order_v70',{p_order_id:o.id,p_quantity:qty})
+   const {data,error}=await supabase.rpc('world_buy_order_v71',{p_order_id:o.id,p_quantity:qty})
    setBusy(false)
    if(error){setMsg(error.message);return}
-   setMsg(`Gekauft: ${Number(data.quantity).toLocaleString('de-DE')} für ${Number(data.cost).toLocaleString('de-DE')} Taler.`)
+   setMsg(`Gekauft: ${Number(data.quantity).toLocaleString('de-DE')} für ${formatGold(data.cost_ug)}.`)
    await Promise.all([loadState(),loadMarket()])
  }
  async function cancelOrder(o){
@@ -114,107 +99,109 @@ export default function WorldPage(){
    const {error}=await supabase.rpc('world_cancel_order_v70',{p_order_id:o.id})
    setBusy(false)
    if(error){setMsg(error.message);return}
-   setMsg('Order storniert, Restmenge liegt wieder im Lager.')
-   await Promise.all([loadState(),loadMarket()])
+   setMsg('Order storniert.');await Promise.all([loadState(),loadMarket()])
+ }
+ async function saveStyle(){
+   const mine=selected.length===1?selected[0]:null
+   if(!mine?.occupied?.is_mine)return
+   setBusy(true);setMsg('')
+   let imageUrl=mine.occupied.image_url||null
+   try{
+     if(styleFile){
+       const {data:{user}}=await supabase.auth.getUser()
+       const ext=(styleFile.name.split('.').pop()||'webp').toLowerCase().replace(/[^a-z0-9]/g,'')
+       const path=`${user.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+       const {error:upErr}=await supabase.storage.from('world-parcel-art').upload(path,styleFile,{upsert:false,contentType:styleFile.type})
+       if(upErr)throw upErr
+       imageUrl=supabase.storage.from('world-parcel-art').getPublicUrl(path).data.publicUrl
+     }
+     const {error}=await supabase.rpc('world_set_parcel_style_v71',{
+       p_gx:mine.gx,p_gy:mine.gy,p_color_hex:styleColor,p_image_url:imageUrl
+     })
+     if(error)throw error
+     setMsg(styleFile?'Grundstücksbild gespeichert.':'Grundstücksfarbe gespeichert.')
+     setStyleFile(null);await loadView()
+   }catch(e){setMsg(e.message||'Personalisierung fehlgeschlagen')}
+   setBusy(false)
  }
 
  if(!state)return <main className="container"><div className="panel">🌍 Welt wird geladen…</div></main>
- const s=state.settings||{}
- const inventory=state.inventory||[]
- const invResources=inventory.length?inventory.map(x=>x.resource):['wood','stone','food','water']
+ const s=state.settings||{},inventory=state.inventory||[]
+ const freeCount=selected.filter(x=>!x.occupied).length
+ const single=selected.length===1?selected[0]:null
+ const totalBuyUg=freeCount*Number(s.parcel_price_ug||10000)
 
  return <main className="container worldPage">
-  <div className="buildBadge">V7.0</div>
-  <div className="topnav">
-   <a className="btn" href="/lobby">🧭 Schatzsuche</a>
-   <a className="btn primary" href="/welt">🌍 Welt</a>
-   <a className="btn" href="/profile">Profil</a>
-  </div>
+  <div className="buildBadge">V7.1</div>
+  <div className="topnav"><a className="btn" href="/lobby">🧭 Schatzsuche</a><a className="btn primary" href="/welt">🌍 Welt</a><a className="btn" href="/profile">Profil</a></div>
 
   <div className="panel worldHero">
-   <div>
-    <div className="small">BoBsSchatzsuche V7</div>
-    <h1>🌍 Welt</h1>
-    <p className="muted">Eine gemeinsame permanente Welt. Kaufe reale 10×10-m-Parzellen, produziere Rohstoffe und handle mit anderen Spielern.</p>
-   </div>
-   {state.has_access&&<div className="worldHeroStats">
-    <span><b>{Number(state.world_taler||0).toLocaleString('de-DE',{maximumFractionDigits:2})}</b> Taler</span>
-    <span><b>{state.parcel_count||0}</b> / {s.max_parcels_per_player} Grundstücke</span>
-   </div>}
+   <div><div className="small">BoBsSchatzsuche V7</div><h1>🌍 Welt</h1><p className="muted">Gemeinsame permanente Satellitenwelt · Grundstücke · Rohstoffe · Handel in mg Gold.</p></div>
+   {state.has_access&&<div className="worldHeroStats"><span><b>{formatGold(state.gold_balance_ug||0)}</b></span><span><b>{state.parcel_count||0}</b> / {s.max_parcels_per_player} Grundstücke</span></div>}
   </div>
 
   {msg&&<div className="noticeBar">{msg}</div>}
 
   {!state.has_access?<section className="panel worldUnlock">
-   <div className="worldUnlockIcon">🌐</div>
-   <h2>Weltzugang freischalten</h2>
-   <p>Der Zugang gilt dauerhaft für deinen Account.</p>
+   <div className="worldUnlockIcon">🌐</div><h2>Weltzugang freischalten</h2>
    <div className="worldUnlockPrice">{formatGold(s.entry_gold_ug||0)}</div>
-   <div className="small">Dein Gold: {formatGold(state.gold_balance_ug||0)} · Startguthaben: {Number(s.starter_taler||0).toLocaleString('de-DE')} Welt-Taler</div>
+   <div className="small">Dein Gold: {formatGold(state.gold_balance_ug||0)}</div>
    <button className="btn primary" disabled={busy||!s.enabled} onClick={unlock}>{s.enabled?'Welt betreten':'Welt derzeit deaktiviert'}</button>
   </section>:<>
    <section className="worldMainGrid">
     <div className="panel worldMapPanel">
-     <div className="sectionTitleRow"><div><h2>Grundstücke</h2><p className="small">{s.parcel_size_m} × {s.parcel_size_m} m · Klick auf ein Feld zum Prüfen/Kaufen.</p></div><button className="miniBtn" onClick={()=>loadView()}>↻</button></div>
-     <WorldMap parcelSize={Number(s.parcel_size_m||10)} parcels={parcels} selected={selected} onSelect={setSelected} onViewport={viewport}/>
+     <div className="sectionTitleRow"><div><h2>Grundstücke</h2><p className="small">{s.parcel_size_m} × {s.parcel_size_m} m · Satellit mit Terrainwerten im Hintergrund.</p></div><button className="miniBtn" onClick={()=>loadView()}>↻</button></div>
+     <div className="worldSelectionBar">
+      <label className="adminToggle"><input type="checkbox" checked={multi} onChange={e=>{setMulti(e.target.checked);setSelected([])}}/> Mehrfachauswahl</label>
+      <label className="worldColorPick">Kauffarbe <input type="color" value={buyColor} onChange={e=>setBuyColor(e.target.value)}/></label>
+      {selected.length>0&&<span>{selected.length} ausgewählt · {freeCount} frei</span>}
+      {freeCount>0&&<button className="btn primary" disabled={busy} onClick={buySelected}>{freeCount} kaufen · {formatGold(totalBuyUg)}</button>}
+      {selected.length>0&&<button className="miniBtn" onClick={()=>setSelected([])}>Auswahl löschen</button>}
+     </div>
+     <WorldMap parcelSize={Number(s.parcel_size_m||10)} parcels={parcels} selected={selected} onSelect={pick} onViewport={viewport}/>
     </div>
+
     <aside className="panel worldParcelPanel">
      <h2>📍 Grundstück</h2>
-     {!selected?<p className="muted">Wähle ein Feld auf der Karte.</p>:<>
-      <div className="worldParcelTerrain">{TERRAIN_LABEL[selected.terrain]||selected.terrain}</div>
-      <div className="small mono">Raster {selected.gx} / {selected.gy}</div>
-      {selected.occupied?
-       <div className="worldOwnedInfo">
-        <strong>{selected.occupied.is_mine?'Dein Grundstück':'Bereits vergeben'}</strong>
-        <span>{selected.occupied.owner_name}</span>
-        <span>Level {selected.occupied.level||0}</span>
-       </div>
-       :<>
-        <div className="worldParcelPrice">{Number(s.parcel_price_taler||0).toLocaleString('de-DE')} Taler</div>
-        <p className="small">Terrain wird beim Kauf aus der sichtbaren Kartenklassifizierung übernommen.</p>
-        <button className="btn primary wideOnMobile" disabled={busy||state.parcel_count>=s.max_parcels_per_player} onClick={buyParcel}>Grundstück kaufen</button>
-       </>}
+     {!single?<p className="muted">{selected.length>1?`${selected.length} Grundstücke ausgewählt.`:'Wähle ein Feld auf der Karte.'}</p>:<>
+      <div className="worldParcelTerrain">{TERRAIN_LABEL[single.terrain]||single.terrain}</div>
+      <div className="small mono">Raster {single.gx} / {single.gy}</div>
+      {single.occupied?<div className="worldOwnedInfo">
+        <strong>{single.occupied.is_mine?'Dein Grundstück':'Bereits vergeben'}</strong>
+        <span>{single.occupied.owner_name}</span><span>Level {single.occupied.level||0}</span>
+        {single.occupied.is_mine&&<>
+         <div className="worldStyleEditor">
+          <label>Farbe <input type="color" value={styleColor} onChange={e=>setStyleColor(e.target.value)}/></label>
+          <label>Bild <input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>setStyleFile(e.target.files?.[0]||null)}/></label>
+          <div className="small">Bild ab {s.personalization_min_connected_parcels||25} zusammenhängenden eigenen Grundstücken.</div>
+          <button className="btn" disabled={busy} onClick={saveStyle}>Personalisierung speichern</button>
+         </div>
+        </>}
+       </div>:<><div className="worldParcelPrice">{formatGold(s.parcel_price_ug||10000)}</div><button className="btn primary wideOnMobile" disabled={busy} onClick={buySelected}>Grundstück kaufen</button></>}
      </>}
     </aside>
    </section>
 
    <section className="panel">
-    <div className="sectionTitleRow"><div><h2>📦 Lager & Produktion</h2><p className="small">Produktion wird serverseitig nach globalen {s.production_tick_minutes}-Minuten-Ticks berechnet.</p></div>
-     <button className="btn" disabled={busy} onClick={claimProduction}>Produktion einsammeln</button>
-    </div>
-    <div className="worldInventory">
-     {inventory.length?inventory.map(x=><div className="worldResource" key={x.resource}>
-       <span>{RESOURCE_ICON[x.resource]||'📦'} {x.label||x.resource}</span>
-       <strong>{Number(x.amount).toLocaleString('de-DE',{maximumFractionDigits:3})}</strong>
-      </div>):<div className="muted">Noch keine Rohstoffe im Lager.</div>}
-    </div>
+    <div className="sectionTitleRow"><div><h2>📦 Lager & Produktion</h2><p className="small">Produktion nach globalen {s.production_tick_minutes}-Minuten-Ticks.</p></div><button className="btn" disabled={busy} onClick={claimProduction}>Produktion einsammeln</button></div>
+    <div className="worldInventory">{inventory.length?inventory.map(x=><div className="worldResource" key={x.resource}><span>{RESOURCE_ICON[x.resource]||'📦'} {x.label||x.resource}</span><strong>{Number(x.amount).toLocaleString('de-DE',{maximumFractionDigits:3})}</strong></div>):<div className="muted">Noch keine Rohstoffe im Lager.</div>}</div>
    </section>
 
    <section className="panel">
-    <div className="sectionTitleRow"><div><h2>📈 Rohstoffbörse</h2><p className="small">Spieler handeln direkt miteinander · Gebühr {(Number(s.exchange_fee_bps||0)/100).toFixed(2)} %.</p></div><button className="miniBtn" onClick={loadMarket}>↻</button></div>
+    <div className="sectionTitleRow"><div><h2>📈 Rohstoffbörse</h2><p className="small">Alle Preise ausschließlich in mg Gold · Gebühr {(Number(s.exchange_fee_bps||0)/100).toFixed(2)} %.</p></div><button className="miniBtn" onClick={loadMarket}>↻</button></div>
     <div className="worldSellForm">
-     <select className="input" value={sellResource} onChange={e=>setSellResource(e.target.value)}>
-      {[...new Set([...invResources,'wood','resin','food','plants','water','fish','stone','ore','scrap','metal'])].map(r=><option value={r} key={r}>{RESOURCE_ICON[r]||'📦'} {r}</option>)}
-     </select>
+     <select className="input" value={sellResource} onChange={e=>setSellResource(e.target.value)}>{['wood','resin','food','plants','water','fish','stone','ore','scrap','metal'].map(r=><option value={r} key={r}>{RESOURCE_ICON[r]||'📦'} {r}</option>)}</select>
      <input className="input" type="number" min="0.001" step="0.001" value={sellQty} onChange={e=>setSellQty(e.target.value)} placeholder="Menge"/>
-     <input className="input" type="number" min="0.01" step="0.01" value={sellPrice} onChange={e=>setSellPrice(e.target.value)} placeholder="Taler/Stück"/>
+     <input className="input" type="number" min="0.001" step="0.001" value={sellPriceMg} onChange={e=>setSellPriceMg(e.target.value)} placeholder="mg Gold/Stück"/>
      <button className="btn primary" disabled={busy} onClick={createSellOrder}>Verkaufen</button>
     </div>
-    <div className="worldOrderBook">
-     {market.length?market.map(o=><div className="worldOrder" key={o.id}>
-      <div><strong>{RESOURCE_ICON[o.resource]||'📦'} {o.resource}</strong><span>{Number(o.remaining).toLocaleString('de-DE',{maximumFractionDigits:3})} verfügbar · {o.seller_name}</span></div>
-      <div><strong>{Number(o.unit_price_taler).toLocaleString('de-DE')} Taler</strong>
-       {o.is_mine?<button className="miniBtn" onClick={()=>cancelOrder(o)}>Stornieren</button>:<button className="miniBtn" onClick={()=>buyOrder(o)}>Kaufen</button>}
-      </div>
-     </div>):<div className="muted">Noch keine offenen Verkaufsorders.</div>}
-    </div>
+    <div className="worldOrderBook">{market.length?market.map(o=><div className="worldOrder" key={o.id}>
+      <div><strong>{RESOURCE_ICON[o.resource]||'📦'} {o.resource}</strong><span>{Number(o.remaining).toLocaleString('de-DE',{maximumFractionDigits:3})} · {o.seller_name}</span></div>
+      <div><strong>{formatGold(o.unit_price_ug)} / Stück</strong>{o.is_mine?<button className="miniBtn" onClick={()=>cancelOrder(o)}>Stornieren</button>:<button className="miniBtn" onClick={()=>buyOrder(o)}>Kaufen</button>}</div>
+     </div>):<div className="muted">Noch keine offenen Verkaufsorders.</div>}</div>
    </section>
 
-   <section className="panel worldConflictPreview">
-    <h2>⚔️ Grundstückskonflikte</h2>
-    <p>{s.conflicts_enabled?'Konfliktsystem ist freigeschaltet. Das Geschicklichkeitsduell folgt als nächster Ausbau.':'Für V7.0 ist das Konfliktdatenmodell vorbereitet; die Kämpfe sind noch deaktiviert.'}</p>
-    <div className="small">Geplant: 24-h-Herausforderung, Geschicklichkeit statt Zufall, Schutzzeiten und unangreifbarer Mindestbesitz.</div>
-   </section>
+   <section className="panel worldConflictPreview"><h2>⚔️ Grundstückskonflikte</h2><p>{s.conflicts_enabled?'Konfliktsystem ist freigeschaltet.':'Noch deaktiviert, bis das Geschicklichkeitsduell umgesetzt ist.'}</p></section>
   </>}
  </main>
 }
